@@ -1,6 +1,6 @@
 import uuid
 
-from autobotai_integrations.autobotai_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
+from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService
 
 
@@ -24,9 +24,14 @@ class GitlabService(BaseService):
     def get_schema():
         return GitlabIntegration
 
-    @staticmethod
-    def test_integration(integration: dict):
-        return {'success': True}
+    def _test_integration(self, integration: dict):
+        creds = self.generate_rest_api_creds()
+        try:
+            response = BaseService.generic_rest_api_call(creds, "get", "/api/v4/user")
+            print(response)
+            return {'success': True}
+        except BaseException as e:
+            return {'success': False}
 
     def get_credentials(self):
         return {

@@ -1,3 +1,12 @@
+import datetime
+
+def fromisoformat(strdate):
+    try:
+        return datetime.strptime(strdate, "%Y-%m-%dT%H:%M:%S.%f")
+    except:
+        return datetime.strptime(strdate, "%Y-%m-%dT%H:%M:%S")
+
+
 import json
 
 

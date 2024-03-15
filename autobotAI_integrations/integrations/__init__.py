@@ -2,7 +2,7 @@ import importlib
 import platform
 import inspect
 import os
-from autobotai_integrations.autobotai_integrations import BaseService
+from autobotAI_integrations import BaseService
 
 
 class IntegrationServiceFactory:
@@ -51,7 +51,7 @@ class IntegrationServiceFactory:
 
         # import each file in each folder where the file ends with 'service.py'
         for filename in integrations_list:
-            importlib.import_module(f"autobotai_integrations.integrations.{filename[:-3]}", package=None)
+            importlib.import_module(f"autobotAI_integrations.integrations.{filename[:-3]}", package=None)
         result = []
         for x in BaseService.__subclasses__():
             module_name = inspect.getfile(x).split(sep)[-1][:-3]

@@ -3,9 +3,11 @@ import subprocess
 import sys
 from enum import Enum
 from typing import Optional, Dict, Any, List, Callable
+
+import requests
 from pydantic import BaseModel
-from autobotai_integrations.integration_schema import IntegrationSchema
-from autobotai_integrations.utils import list_of_unique_elements
+from autobotAI_integrations.integration_schema import IntegrationSchema
+from autobotAI_integrations.utils import list_of_unique_elements
 
 
 class AuthMethods(Enum):
@@ -26,7 +28,7 @@ class SteampipeCreds(BaseModel):
 class RestAPICreds(BaseModel):
     api_url: str
     token: str
-    headers: str
+    headers: dict
 
 
 class SDKCreds(BaseModel):
@@ -60,18 +62,25 @@ class BaseService:
         self.integration = integration
         self.ctx = ctx
 
-    @staticmethod
-    def filter_bots(bots: list, data: dict) -> list:
-        return bots
+    def get_forms(self):
+        raise NotImplementedError()
 
-    @staticmethod
-    def test_integration(integration: dict) -> dict:
+    def _test_integration(self, integration: dict) -> dict:
         """
         Returns a dictionary with the following keys:
         - success: bool
         - error: str
         """
         raise NotImplementedError()
+
+    def is_active(self, integration):
+        result = self._test_integration(integration)
+        if not result["success"]:
+            self.on_test_integration_failure(integration)
+        return result
+
+    def on_test_integration_failure(self, integration):
+        pass
 
     @staticmethod
     def get_schema() -> BaseSchema:
@@ -93,6 +102,32 @@ class BaseService:
             "supported_executor": "ecs",
             "compliance_supported": False
         }
+
+    @staticmethod
+    def generic_rest_api_call(api_creds: RestAPICreds, method: str, endpoint: str, data=None):
+        url = api_creds.api_url + endpoint
+        headers = api_creds.headers.copy()
+        headers["Authorization"] = f"Bearer {api_creds.token}"
+
+        try:
+            if method == "GET":
+                response = requests.get(url, headers=headers)
+            elif method == "POST":
+                response = requests.post(url, headers=headers, json=data)
+            elif method == "PUT":
+                response = requests.put(url, headers=headers, json=data)
+            elif method == "DELETE":
+                response = requests.delete(url, headers=headers)
+            else:
+                raise ValueError("Invalid HTTP method specified.")
+
+            response.raise_for_status()  # Raise exception for non-2xx responses
+
+            return response.json()
+
+        except requests.RequestException as e:
+            print(f"Error occurred during {method} request to {url}: {e}")
+            return None
 
 
     def get_credentials(self):

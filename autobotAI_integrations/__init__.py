@@ -63,6 +63,11 @@ class BaseService:
         self.ctx = ctx
 
     def get_forms(self):
+        """
+        Returns a list of Forms Represented in JSON format for UI
+        - success: bool
+        - error: str
+        """
         raise NotImplementedError()
 
     def _test_integration(self, integration: dict) -> dict:

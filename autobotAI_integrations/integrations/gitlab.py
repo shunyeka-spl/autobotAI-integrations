@@ -20,6 +20,29 @@ class GitlabService(BaseService):
         self.base_url = integration["base_url"]
         self.token = integration["token"]
 
+    def get_forms(self):
+        return {
+            "token_form": {
+                "fields": [
+                    {
+                        "name": "base_url",
+                        "type": "text",
+                        "label": "Gitlab Base URL",
+                        "default": "https://gitlab.com/",
+                        "required": True
+                    },
+                    {
+                        "name": "token",
+                        "type": "password",
+                        "label": "Gitlab Token",
+                        "placeholder": "Enter the gitlab token",
+                        "required": True
+                    }
+                ],
+                "submit_label": "Submit"
+            }
+        }
+
     @staticmethod
     def get_schema():
         return GitlabIntegration

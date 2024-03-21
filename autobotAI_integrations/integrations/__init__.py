@@ -66,4 +66,3 @@ class InvalidIntegration(Exception):
 
 
 integration_service_factory = IntegrationServiceFactory()
-print(integration_service_factory.get_services())

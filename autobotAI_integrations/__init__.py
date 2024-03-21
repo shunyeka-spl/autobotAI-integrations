@@ -17,7 +17,11 @@ class AuthMethods(Enum):
     CLI = 'cli'
 
 
-class SteampipeCreds(BaseModel):
+class BaseCreds(BaseModel):
+    pass
+
+
+class SteampipeCreds(BaseCreds):
     envs: dict
     connection_name: str
     plugin_name: str
@@ -25,13 +29,20 @@ class SteampipeCreds(BaseModel):
     tables: list = []
 
 
-class RestAPICreds(BaseModel):
+class RestAPICreds(BaseCreds):
     api_url: str
     token: str
     headers: dict
 
 
-class SDKCreds(BaseModel):
+class SDKClient(BaseModel):
+    name: str
+    code: str
+    package_names: str
+    library_names: str
+
+
+class SDKCreds(BaseCreds):
     clients: Dict[str, Any]
     library_names: List[str]
     package_names: List[str]
@@ -39,7 +50,7 @@ class SDKCreds(BaseModel):
     envs: Optional[dict] = None
 
 
-class CLICreds(BaseModel):
+class CLICreds(BaseCreds):
     envs: dict
     installer_check: str
     install_command: str
@@ -55,7 +66,7 @@ class BaseSchema(IntegrationSchema):
 
 class BaseService:
 
-    def __init__(self, ctx: dict, integration: dict):
+    def __init__(self, ctx: dict, integration: BaseSchema):
         """
         Integration should have all the data regarding the integration
         """
@@ -133,7 +144,6 @@ class BaseService:
         except requests.RequestException as e:
             print(f"Error occurred during {method} request to {url}: {e}")
             return None
-
 
     def get_credentials(self):
         raise NotImplementedError("To be implemented")

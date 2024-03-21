@@ -68,8 +68,8 @@ class GitlabService(BaseService):
             "gitlab": {
                 "name": "gitlab",
                 "code": "gitlab.Gitlab(os.getenv('GITLAB_ADDR'), private_token=os.getenv('GITLAB_TOKEN'))",
-                "package_names": ["python-gitlab"],
-                "library_names": ["gitlab"]
+                "package_names": "python-gitlab",
+                "library_names": "gitlab"
             }
         }
         return clients

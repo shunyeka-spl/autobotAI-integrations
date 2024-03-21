@@ -3,7 +3,9 @@ from typing import Type
 
 from botocore.exceptions import ClientError
 
-from autobotAI_integrations import BaseSchema, BaseService, list_of_unique_elements, SteampipeCreds
+from autobotAI_integrations import BaseSchema, BaseService, list_of_unique_elements, SteampipeCreds, RestAPICreds, \
+    SDKCreds, CLICreds
+from autobotAI_integrations.utils import boto3_helper
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 
 
@@ -24,6 +26,13 @@ class AWSIntegration(BaseSchema):
 
 
 class AWSService(BaseService):
+
+    def __init__(self, ctx: dict, integration: AWSIntegration):
+        """
+        Integration should have all the data regarding the integration
+        """
+        super().__init__(ctx, integration)
+        self.integration = integration
 
     def _test_integration(self, integration: dict) -> dict:
         try:
@@ -1349,23 +1358,48 @@ class AWSService(BaseService):
             "compliance_supported": False
         }
 
-
     def generate_steampipe_creds(self) -> SteampipeCreds:
-        steampipe_creds = SteampipeCreds()
+        creds = self._temp_credentials()
+        conf_path = "~/.steampipe/config/aws.spc"
+        return SteampipeCreds(envs=creds, plugin_name="aws", connection_name="aws",
+                              conf_path=conf_path)
 
-    def generate_rest_api_creds(self) -> RestAPICreds:
-        raise NotImplementedError()
+    def generate_python_sdk_clients(self, required_clients: [], regions: []):
+        all_clients = self.get_all_python_sdk_clients()
+        filtered_clients = []
+        for client in required_clients:
+            filtered_clients.append(next(item for item in all_clients if item["name"] == client["name"]))
+        cat_clients = {
+            "global": {},
+            "regional": {}
+        }
+        for client in filtered_clients:
+            if client["is_regional"]:
+                for region in regions:
+                    cat_clients["regional"].setdefault(region, {})
+                    cat_clients["regional"][region][client["name"]] = self.ctx.integration_context.boto3_helper.get_client(client["name"], region)
+            else:
+                cat_clients["global"][client["name"]] = self.ctx.integration_context.boto3_helper.get_client(client["name"])
+        return cat_clients
 
-    def generate_python_sdk_creds(self) -> SDKCreds:
-        raise NotImplementedError()
+    def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
+        creds = self._temp_credentials()
+        clients = self.get_all_python_sdk_clients()
+        return SDKCreds(library_names=[], clients=[], envs=creds, package_names=package_names)
 
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()
-    def get_credentials(self):
+
+    def _temp_credentials(self):
         if self.integration.role_arn:
-            def get_credentials(self):
-                return {
-                    "AWSAccessKey": self.ctx.integration_context.boto3_helper.get_access_key(),
-                    "AWSSecretKey": self.ctx.integration_context.boto3_helper.get_secret_key(),
-                    "AWSSessionToken": self.ctx.integration_context.boto3_helper.get_session_token(),
-                }
+            return {
+                "AWS_ACCESS_KEY_ID": self.ctx.integration_context.boto3_helper.get_access_key(),
+                "AWS_SECRET_ACCESS_KEY": self.ctx.integration_context.boto3_helper.get_secret_key(),
+                "AWS_SESSION_TOKEN": self.ctx.integration_context.boto3_helper.get_session_token(),
+            }
+        else:
+            return {
+                "AWS_ACCESS_KEY_ID": self.integration.access_key,
+                "AWS_SECRET_ACCESS_KEY": self.integration.secret_key,
+                "AWS_SESSION_TOKEN": self.integration.session_token,
+            }

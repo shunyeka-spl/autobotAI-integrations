@@ -60,10 +60,11 @@ class CLICreds(BaseCreds):
     install_command: str
 
 
+# Setting default to None
 class BaseSchema(IntegrationSchema):
-    name: str
-    description: str
-    logo: str
+    name: str = None
+    description: str = None
+    logo: str = None
     creds: Optional[Any] = None
 
 

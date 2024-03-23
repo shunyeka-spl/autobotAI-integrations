@@ -1,5 +1,5 @@
 import traceback
-from typing import Type, List
+from typing import Type, List, Optional
 
 from botocore.exceptions import ClientError
 
@@ -17,15 +17,16 @@ class Forms:
 
 
 class AWSIntegration(BaseSchema):
-    access_key: str
-    secret_key: str
-    session_token: str
-    account_id: str
-    role_arn: str
+    # TODO: Add validation for role_arn and access keys
+    access_key: Optional[str] = None
+    secret_key: Optional[str] = None
+    session_token: Optional[str] = None
+    account_id: str = None
+    role_arn: Optional[str] = None
 
     def __init__(self, **kwargs):
-        kwargs["accountId"] = self.account_id
         super().__init__(**kwargs)
+        self.account_id = kwargs["accountId"]
 
 
 class AWSService(BaseService):
@@ -35,7 +36,7 @@ class AWSService(BaseService):
         Integration should have all the data regarding the integration
         """
         super().__init__(ctx, integration)
-        self.integration = integration
+        self.access_key
 
 
     def _test_integration(self, integration: dict) -> dict:

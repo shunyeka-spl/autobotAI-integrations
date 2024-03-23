@@ -43,6 +43,7 @@ class PayloadTask(BaseSchema):
     params: Optional[Any] = None
     context: None
 
+
 class Payload(BaseSchema):
     job_id: str
     job_type: str
@@ -50,10 +51,10 @@ class Payload(BaseSchema):
 
 
 def generate_aws_payload():
-    integration = {
-    }
+    integration = {}
     aws_service = integration_service_factory.get_service("aws", {}, integration)
     print(aws_service)
+
 
 # generate_aws_payload()
 
@@ -73,34 +74,113 @@ def generate_aws_payload():
 #
 # print(get_steampipe_meta())
 
+
 def create_integration(json_data, integration_type):
     service_cls = integration_service_factory.get_service_cls(integration_type)
     schema = service_cls.get_schema()
 
     return schema(**json_data)
 
-print(create_integration(
-    {
-        "userId": "amit@shunyeka.com",*
-        "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",*
-        "integrationState": "INACTIVE",*
-        "cspName": "gitlab",*
-        "alias": "test-gitlab-integrationsv2",*
-        "connection_type": "DIRECT",*
-        "token": "xyz",
-        "base_url": "xyz",
-        "groups": [*
-            "gitlab",
-            "shunyeka",
-            "integrations-v2"
-        ],
-        "agent_ids": [],
-        "accessToken": "",
-        "createdAt": "2024-02-26T13:38:59.978056",*
-        "updatedAt": "2024-02-26T13:38:59.978056",*
-        "indexFailures": 0,
-        "isUnauthorized": False,
-        "lastUsed": None,
-        "resource_type": "integration",*
-        "activeRegions": None
-    }, "gitlab"))
+
+# print(create_integration(
+#     {
+#         "userId": "amit@shunyeka.com*",
+#         "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
+#         "integrationState": "INACTIVE*",
+#         "cspName": "gitlab*",
+#         "alias": "test-gitlab-integrationsv2*",
+#         "connection_type": "DIRECT*",
+#         "token": "xyz",
+#         "base_url": "xyz",
+#         "groups": [*
+#             "gitlab",
+#             "shunyeka",
+#             "integrations-v2"
+#         ],
+#         "agent_ids": [],
+#         "accessToken": "",
+#         "createdAt": "2024-02-26T13:38:59.978056*",
+#         "updatedAt": "2024-02-26T13:38:59.978056*",
+#         "indexFailures": 0,
+#         "isUnauthorized": False,
+#         "lastUsed": None,
+#         "resource_type": "integration*",
+#         "activeRegions": None
+#     }, "gitlab"))
+
+gitlab_json = {
+    "userId": "amit@shunyeka.com*",
+    "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
+    "integrationState": "INACTIVE",
+    "cspName": "gitlab*",
+    "alias": "test-gitlab-integrationsv2*",
+    "connection_type": "DIRECT",
+    "token": "xyz",
+    "base_url": "xyz",
+    "groups": ["gitlab", "shunyeka", "integrations-v2"],
+    "agent_ids": [],
+    "accessToken": "",
+    "createdAt": "2024-02-26T13:38:59.978056",
+    "updatedAt": "2024-02-26T13:38:59.978056",
+    "indexFailures": 0,
+    "isUnauthorized": False,
+    "lastUsed": None,
+    "resource_type": "integration",
+    "activeRegions": [],
+}
+
+aws_json = {
+    "userId": "amit@shunyeka.com*",
+    "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
+    "integrationState": "INACTIVE",
+    "cspName": "aws*",
+    "acccess_key": "ahudfuusdfj",
+    "secret_key": "ahudfuusdfj",
+    "session_token": "abkfhlksf",
+    "session_token": "abc",
+    "alias": "test-gitlab-integrationsv2*",
+    "connection_type": "DIRECT",
+    "groups": ["aws", "shunyeka", "integrations-v2"],
+    "agent_ids": [],
+    "accessToken": "",
+    "createdAt": "2024-02-26T13:38:59.978056",
+    "updatedAt": "2024-02-26T13:38:59.978056",
+    "indexFailures": 0,
+    "isUnauthorized": False,
+    "lastUsed": None,
+    "resource_type": "integration",
+    "activeRegions": [],
+}
+
+aws_json__with_arn = {
+    "userId": "amit@shunyeka.com*",
+    "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
+    "integrationState": "INACTIVE",
+    "cspName": "aws*",
+    "role_arn": "absolute",
+    "session_token": "abkfhlksf",
+    "alias": "test-gitlab-integrationsv2*",
+    "connection_type": "DIRECT",
+    "groups": ["aws", "shunyeka", "integrations-v2"],
+    "agent_ids": [],
+    "accessToken": "",
+    "createdAt": "2024-02-26T13:38:59.978056",
+    "updatedAt": "2024-02-26T13:38:59.978056",
+    "indexFailures": 0,
+    "isUnauthorized": False,
+    "lastUsed": None,
+    "resource_type": "integration",
+    "activeRegions": [],
+}
+
+def printSchema(schma):
+    for k, v in schma:
+        print("{}: {}".format(k, v))
+    print("--"*20)
+        
+printSchema(create_integration(gitlab_json, "gitlab"))
+
+printSchema(create_integration(aws_json, "aws"))
+
+printSchema(create_integration(aws_json__with_arn, "aws"))
+

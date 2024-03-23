@@ -1,12 +1,15 @@
 import os
 import subprocess
 import sys
+import inspect
+import platform
+import json
 from enum import Enum
 from os import path
 from typing import Optional, Dict, Any, List, Callable
 
 import requests
-from pydantic import BaseModel, json
+from pydantic import BaseModel
 from autobotAI_integrations.integration_schema import IntegrationSchema
 from autobotAI_integrations.utils import list_of_unique_elements
 
@@ -101,6 +104,25 @@ class BaseService:
 
     def on_test_integration_failure(self, integration):
         pass
+    
+    @classmethod
+    def get_integration_type(cls):
+        system_os = platform.system()
+        if system_os == "Windows":
+            sep = "\\"
+        else:
+            sep = "/"
+        integration_type = os.path.dirname(inspect.getfile(cls)).split(sep)[-1]
+        return integration_type
+
+    @classmethod
+    def get_steampipe_tables(cls) -> List[dict]:
+        base_path = os.path.dirname(inspect.getfile(cls))
+        integration_type = cls.get_integration_type()
+        with open(path.join(base_path, ".", 'inventory.json')) as f:
+            clients_data = f.read()
+            data = json.loads(clients_data)
+        return data[integration_type]
 
     @staticmethod
     def get_schema() -> BaseSchema:
@@ -172,15 +194,6 @@ class BaseService:
         pass
 
     """
-
-    @staticmethod
-    def get_steampipe_tables():
-
-        base_path = path.dirname(__file__)
-        clients_data = open(
-            path.join(base_path, ".", 'inventory.json'))
-        data = json.loads(clients_data.read())
-        return data[integration_type]
 
     @staticmethod
     def python_sdk_processor(code_exec: Callable[[Dict[str, Any], List[Dict[str, Any]]], List[Dict[str, Any]]],

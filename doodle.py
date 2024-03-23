@@ -53,8 +53,7 @@ def generate_aws_payload():
     aws_service = integration_service_factory.get_service("aws", {}, integration)
     print(aws_service)
 
-
-generate_aws_payload()
+# generate_aws_payload()
 
 
 # def integration_details():
@@ -63,11 +62,11 @@ generate_aws_payload()
 # print(json.dumps(integration_details()))
 
 
-def get_steampipe_tables():
-    integration_service = integration_service_factory.get_service_cls("aws")
+def get_steampipe_meta():
+    integration_service = integration_service_factory.get_service_cls("gitlab")
     resource_types = []
-    for rtype in integration_service.load_nocode_meta("aws"):
+    for rtype in integration_service.get_steampipe_tables():
         resource_types.append({"name": rtype["name"], "is_regional": False})
     return resource_types
 
-print(get_steampipe_tables())
+print(get_steampipe_meta())

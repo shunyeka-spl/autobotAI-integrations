@@ -8,6 +8,9 @@ from autobotAI_integrations import BaseSchema, BaseService, list_of_unique_eleme
 from autobotAI_integrations.utils import boto3_helper
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 
+import inspect
+import platform
+import os
 
 class Forms:
     pass
@@ -34,9 +37,6 @@ class AWSService(BaseService):
         super().__init__(ctx, integration)
         self.integration = integration
 
-    @classmethod
-    def get_integration_type(cls):
-        module_name = inspect.getfile(x).split(sep)[-1][:-3]
 
     def _test_integration(self, integration: dict) -> dict:
         try:
@@ -86,9 +86,6 @@ class AWSService(BaseService):
     def get_schema() -> Type[BaseSchema]:
         return AWSIntegration
 
-    @staticmethod
-    def get_steampipe_tables() -> List[dict]:
-        pass
 
     @staticmethod
     def get_all_python_sdk_clients():
@@ -1372,7 +1369,7 @@ class AWSService(BaseService):
         return SteampipeCreds(envs=creds, plugin_name="aws", connection_name="aws",
                               conf_path=conf_path)
 
-    def generate_python_sdk_clients(self, required_clients: [], regions: []):
+    def generate_python_sdk_clients(self, required_clients: list, regions: list):
         all_clients = self.get_all_python_sdk_clients()
         filtered_clients = []
         for client in required_clients:
@@ -1395,6 +1392,7 @@ class AWSService(BaseService):
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
         creds = self._temp_credentials()
         clients = self.get_all_python_sdk_clients()
+        package_names = None
         return SDKCreds(library_names=[], clients=[], envs=creds, package_names=package_names)
 
     @staticmethod

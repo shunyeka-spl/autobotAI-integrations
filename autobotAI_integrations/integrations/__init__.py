@@ -41,20 +41,25 @@ class IntegrationServiceFactory:
         # get current working directory
         directory = os.path.dirname(os.path.abspath(__file__))
         # get folder names
-        integrations_list = [f.name for f in os.scandir(directory) if f.is_file() and f.name.endswith(".py")]
+        integrations_list = [
+            f.name 
+            for f in os.scandir(directory) 
+            if f.is_dir() 
+            and not f.name.startswith(".")
+            and not f.name.startswith("__")
+        ]
 
         system_os = platform.system()
         if system_os == "Windows":
             sep = "\\"
         else:
             sep = "/"
-
-        # import each file in each folder where the file ends with 'service.py'
+        # import integration service folder
         for filename in integrations_list:
-            importlib.import_module(f"autobotAI_integrations.integrations.{filename[:-3]}", package=None)
+            importlib.import_module(f"autobotAI_integrations.integrations.{filename}", package=None)
         result = []
         for x in BaseService.__subclasses__():
-            module_name = inspect.getfile(x).split(sep)[-1][:-3]
+            module_name = os.path.dirname(inspect.getfile(x)).split(sep)[-1]
             subclass = x
             result.append({"module_name": module_name, "subclass": subclass})
         return result

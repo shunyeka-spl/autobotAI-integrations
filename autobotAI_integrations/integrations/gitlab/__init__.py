@@ -17,8 +17,8 @@ class GitlabService(BaseService):
 
     def __init__(self, ctx, integration: dict):
         super().__init__(ctx, integration)
-        self.base_url = integration["base_url"]
-        self.token = integration["token"]
+        self.base_url = integration.base_url
+        self.token = integration.token
 
     def get_forms(self):
         return {

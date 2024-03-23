@@ -36,7 +36,6 @@ class AWSService(BaseService):
         Integration should have all the data regarding the integration
         """
         super().__init__(ctx, integration)
-        self.access_key
 
 
     def _test_integration(self, integration: dict) -> dict:
@@ -47,6 +46,8 @@ class AWSService(BaseService):
         except ClientError as e:
             print(traceback.format_exc())
             return {'success': False, 'error': traceback.format_exc()}
+
+
 
     def get_forms(self):
         return {

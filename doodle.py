@@ -30,30 +30,6 @@
 # ]
 import traceback
 from http.client import HTTPException
-from typing import List, Optional, Any
-
-from autobotAI_integrations import BaseSchema, BaseCreds
-from autobotAI_integrations.integrations import integration_service_factory
-
-
-class PayloadTask(BaseSchema):
-    creds: BaseCreds
-    auth_method: str
-    executable: str
-    params: Optional[Any] = None
-    context: None
-
-
-class Payload(BaseSchema):
-    job_id: str
-    job_type: str
-    tasks: List[PayloadTask]
-
-
-def generate_aws_payload():
-    integration = {}
-    aws_service = integration_service_factory.get_service("aws", {}, integration)
-    print(aws_service)
 
 
 # generate_aws_payload()

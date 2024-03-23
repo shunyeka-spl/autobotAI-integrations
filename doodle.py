@@ -55,3 +55,19 @@ def generate_aws_payload():
 
 
 generate_aws_payload()
+
+
+# def integration_details():
+#     return integration_service_factory.get_service_details()
+# import json
+# print(json.dumps(integration_details()))
+
+
+def get_steampipe_tables():
+    integration_service = integration_service_factory.get_service_cls("aws")
+    resource_types = []
+    for rtype in integration_service.load_nocode_meta("aws"):
+        resource_types.append({"name": rtype["name"], "is_regional": False})
+    return resource_types
+
+print(get_steampipe_tables())

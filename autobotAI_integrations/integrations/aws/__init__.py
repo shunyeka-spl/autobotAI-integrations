@@ -1,10 +1,10 @@
 import traceback
-from typing import Type
+from typing import Type, List
 
 from botocore.exceptions import ClientError
 
 from autobotAI_integrations import BaseSchema, BaseService, list_of_unique_elements, SteampipeCreds, RestAPICreds, \
-    SDKCreds, CLICreds
+    SDKCreds, CLICreds, ConnectionTypes
 from autobotAI_integrations.utils import boto3_helper
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 
@@ -33,6 +33,10 @@ class AWSService(BaseService):
         """
         super().__init__(ctx, integration)
         self.integration = integration
+
+    @classmethod
+    def get_integration_type(cls):
+        module_name = inspect.getfile(x).split(sep)[-1][:-3]
 
     def _test_integration(self, integration: dict) -> dict:
         try:
@@ -81,6 +85,10 @@ class AWSService(BaseService):
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
         return AWSIntegration
+
+    @staticmethod
+    def get_steampipe_tables() -> List[dict]:
+        pass
 
     @staticmethod
     def get_all_python_sdk_clients():
@@ -1377,15 +1385,21 @@ class AWSService(BaseService):
             if client["is_regional"]:
                 for region in regions:
                     cat_clients["regional"].setdefault(region, {})
-                    cat_clients["regional"][region][client["name"]] = self.ctx.integration_context.boto3_helper.get_client(client["name"], region)
+                    cat_clients["regional"][region][
+                        client["name"]] = self.ctx.integration_context.boto3_helper.get_client(client["name"], region)
             else:
-                cat_clients["global"][client["name"]] = self.ctx.integration_context.boto3_helper.get_client(client["name"])
+                cat_clients["global"][client["name"]] = self.ctx.integration_context.boto3_helper.get_client(
+                    client["name"])
         return cat_clients
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
         creds = self._temp_credentials()
         clients = self.get_all_python_sdk_clients()
         return SDKCreds(library_names=[], clients=[], envs=creds, package_names=package_names)
+
+    @staticmethod
+    def supported_connection_types():
+        return [ConnectionTypes.REST_API, ConnectionTypes.CLI, ConnectionTypes.PYTHON_SDK, ConnectionTypes.STEAMPIPE]
 
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()

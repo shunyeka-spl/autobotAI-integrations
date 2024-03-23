@@ -1,7 +1,7 @@
 import uuid
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
-    BaseService
+    BaseService, ConnectionTypes
 
 
 class GitlabIntegration(BaseSchema):
@@ -46,6 +46,10 @@ class GitlabService(BaseService):
     @staticmethod
     def get_schema():
         return GitlabIntegration
+
+    @staticmethod
+    def supported_connection_types():
+        return [ConnectionTypes.REST_API, ConnectionTypes.CLI, ConnectionTypes.PYTHON_SDK, ConnectionTypes.STEAMPIPE]
 
     def _test_integration(self, integration: dict):
         creds = self.generate_rest_api_creds()

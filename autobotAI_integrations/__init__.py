@@ -2,15 +2,16 @@ import os
 import subprocess
 import sys
 from enum import Enum
+from os import path
 from typing import Optional, Dict, Any, List, Callable
 
 import requests
-from pydantic import BaseModel
+from pydantic import BaseModel, json
 from autobotAI_integrations.integration_schema import IntegrationSchema
 from autobotAI_integrations.utils import list_of_unique_elements
 
 
-class AuthMethods(Enum):
+class ConnectionTypes(Enum):
     STEAMPIPE = 'steampipe'
     PYTHON_SDK = 'python_sdk'
     REST_API = 'rest_api'
@@ -60,7 +61,6 @@ class BaseSchema(IntegrationSchema):
     name: str
     description: str
     logo: str
-    authentication_methods: List[AuthMethods] = []
     creds: Optional[Any] = None
 
 
@@ -72,6 +72,10 @@ class BaseService:
         """
         self.integration = integration
         self.ctx = ctx
+
+    @staticmethod
+    def supported_connection_types():
+        return [ConnectionTypes.REST_API]
 
     def get_forms(self):
         """
@@ -168,6 +172,15 @@ class BaseService:
         pass
 
     """
+
+    @staticmethod
+    def get_steampipe_tables():
+
+        base_path = path.dirname(__file__)
+        clients_data = open(
+            path.join(base_path, ".", 'inventory.json'))
+        data = json.loads(clients_data.read())
+        return data[integration_type]
 
     @staticmethod
     def python_sdk_processor(code_exec: Callable[[Dict[str, Any], List[Dict[str, Any]]], List[Dict[str, Any]]],

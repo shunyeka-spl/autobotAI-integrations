@@ -28,6 +28,8 @@
 #         "integration_type": "azure"
 #     }
 # ]
+import traceback
+from http.client import HTTPException
 from typing import List, Optional, Any
 
 from autobotAI_integrations import BaseSchema, BaseCreds
@@ -62,11 +64,43 @@ def generate_aws_payload():
 # print(json.dumps(integration_details()))
 
 
-def get_steampipe_meta():
-    integration_service = integration_service_factory.get_service_cls("gitlab")
-    resource_types = []
-    for rtype in integration_service.get_steampipe_tables():
-        resource_types.append({"name": rtype["name"], "is_regional": False})
-    return resource_types
+# def get_steampipe_meta():
+#     integration_service = integration_service_factory.get_service_cls("gitlab")
+#     resource_types = []
+#     for rtype in integration_service.get_steampipe_tables():
+#         resource_types.append({"name": rtype["name"], "is_regional": False})
+#     return resource_types
+#
+# print(get_steampipe_meta())
 
-print(get_steampipe_meta())
+def create_integration(json_data, integration_type):
+    service_cls = integration_service_factory.get_service_cls(integration_type)
+    schema = service_cls.get_schema()
+
+    return schema(**json_data)
+
+print(create_integration(
+    {
+        "userId": "amit@shunyeka.com",*
+        "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",*
+        "integrationState": "INACTIVE",*
+        "cspName": "gitlab",*
+        "alias": "test-gitlab-integrationsv2",*
+        "connection_type": "DIRECT",*
+        "token": "xyz",
+        "base_url": "xyz",
+        "groups": [*
+            "gitlab",
+            "shunyeka",
+            "integrations-v2"
+        ],
+        "agent_ids": [],
+        "accessToken": "",
+        "createdAt": "2024-02-26T13:38:59.978056",*
+        "updatedAt": "2024-02-26T13:38:59.978056",*
+        "indexFailures": 0,
+        "isUnauthorized": False,
+        "lastUsed": None,
+        "resource_type": "integration",*
+        "activeRegions": None
+    }, "gitlab"))

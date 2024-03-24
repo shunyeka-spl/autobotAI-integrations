@@ -15,6 +15,7 @@ from autobotAI_integrations.utils import list_of_unique_elements
 
 
 class ConnectionTypes(Enum):
+    # TODO: Change Name to connection interface
     STEAMPIPE = 'steampipe'
     PYTHON_SDK = 'python_sdk'
     REST_API = 'rest_api'
@@ -219,3 +220,6 @@ class BaseService:
         # Run the code and return Results
         results = code_exec(clients_to_run, resources)
         return results
+    
+    def execute_steampipe_task(task):
+        pass

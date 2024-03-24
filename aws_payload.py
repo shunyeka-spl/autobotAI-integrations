@@ -1,64 +1,43 @@
 import uuid
-from typing import List, Optional, Any, Union
 
-from pydantic import BaseModel
-
-from autobotAI_integrations import BaseCreds, ConnectionTypes, SteampipeCreds, SDKCreds, \
-    RestAPICreds, CLICreds
+from autobotAI_integrations import ConnectionTypes
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.integrations.aws import AWSIntegration
+from autobotAI_integrations.payload_schema import Payload, PayloadTask
 
-
-class PayloadTask(BaseModel):
-    taskId: Optional[str]
-    creds: Union[
-        BaseCreds,
-        SteampipeCreds,
-        RestAPICreds,
-        CLICreds
-    ]
-    connection_type: str
-    executable: str
-    params: Optional[Any] = None
-    context: Optional[dict] = None
-    interation_specific_details: Optional[dict] = None
-
-
-class Payload(BaseModel):
-    job_id: str
-    tasks: List[PayloadTask]
-
-
-def generate_aws_payload() -> Payload:
-    aws_integration = AWSIntegration(**{
-        "userId": "amit@shunyeka.com*",
-        "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
-        "integrationState": "INACTIVE",
-        "cspName": "aws*",
-        "acccess_key": "ahudfuusdfj",
-        "secret_key": "ahudfuusdfj",
-        "session_token": "abkfhlksf",
-        "session_token": "abc",
-        "alias": "test-gitlab-integrationsv2*",
-        "connection_type": "DIRECT",
-        "groups": ["aws", "shunyeka", "integrations-v2"],
-        "agent_ids": [],
-        "accessToken": "",
-        "createdAt": "2024-02-26T13:38:59.978056",
-        "updatedAt": "2024-02-26T13:38:59.978056",
-        "indexFailures": 0,
-        "isUnauthorized": False,
-        "lastUsed": None,
-        "resource_type": "integration",
-        "activeRegions": [],
-    })
+aws_json = {
+    "userId": "amit@shunyeka.com*",
+    "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",
+    "integrationState": "INACTIVE",
+    "cspName": "aws*",
+    "acccess_key": "hkags",
+    "secret_key": "hkhkjgv",
+    "session_token": "",
+    "alias": "test-aws-integrationsv2",
+    "connection_type": "DIRECT",
+    "groups": ["aws", "shunyeka", "integrations-v2"],
+    "agent_ids": [],
+    "accessToken": "",
+    "createdAt": "2024-02-26T13:38:59.978056",
+    "updatedAt": "2024-02-26T13:38:59.978056",
+    "indexFailures": 0,
+    "isUnauthorized": False,
+    "lastUsed": None,
+    "resource_type": "integration",
+    "activeRegions": [
+        'us-east-1',
+        'ap-south-1'
+    ],
+}
+def generate_aws_payload(aws_json) -> Payload:
+    aws_integration = AWSIntegration(**aws_json)
     aws_service = integration_service_factory.get_service("aws", None, aws_integration)
     creds = aws_service.generate_steampipe_creds()
     aws_task_dict = {
         "taskId": uuid.uuid4().hex,
         "creds": creds,
         "connection_type": ConnectionTypes.STEAMPIPE,
-        "executable": "select * from aws.s3_buckets",
+        "executable": "select * from aws_s3_bucket",
         "context": {},
         "interation_specific_details": {}
     }
@@ -70,6 +49,6 @@ def generate_aws_payload() -> Payload:
     return payload
 
 
-payload = generate_aws_payload()
+payload = generate_aws_payload(aws_json)
 # print(payload.tasks[0].model_dump())
-print(payload.model_dump_json(indent=2))
+# print(payload.model_dump_json(indent=2))

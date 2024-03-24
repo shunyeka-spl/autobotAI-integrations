@@ -30,7 +30,6 @@ class IntegrationSchema(BaseModel):
     isUnauthorized: bool = False
     lastUsed: Optional[str] = None
     resource_type: str = 'integration'
-    activeRegions: Optional[list] = None
 
     @classmethod
     def encryption_exclusions(self):

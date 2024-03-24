@@ -30,10 +30,10 @@ class IntegrationServiceFactory:
             details_list.append(temp)
         return details_list
 
-    def get_service(self, service, ctx, integration):
-        cls = self._services.get(service)
+    def get_service(self, ctx, integration):
+        cls = self._services.get(integration.cspName)
         if not cls:
-            raise ValueError(service)
+            raise ValueError(integration.cspName)
         return cls(ctx, integration)
 
     @staticmethod

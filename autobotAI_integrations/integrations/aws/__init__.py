@@ -2,9 +2,10 @@ import traceback
 from typing import Type, List, Optional
 
 from botocore.exceptions import ClientError
+from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, BaseService, list_of_unique_elements, SteampipeCreds, RestAPICreds, \
-    SDKCreds, CLICreds, ConnectionTypes
+    SDKCreds, CLICreds, ConnectionTypes, SDKClient
 from autobotAI_integrations.utils import boto3_helper
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 
@@ -12,15 +13,20 @@ import inspect
 import platform
 import os
 
+
 class Forms:
     pass
 
 
+class AWSSDKClient(SDKClient):
+    is_regional: bool
+
+
 class AWSIntegration(BaseSchema):
     # TODO: Add validation for role_arn and access keys
-    access_key: Optional[str] = None
-    secret_key: Optional[str] = None
-    session_token: Optional[str] = None
+    access_key: Optional[str] = Field(default=None, exclude=True)
+    secret_key: Optional[str] = Field(default=None, exclude=True)
+    session_token: Optional[str] = Field(default=None, exclude=True)
     account_id: str = None
     role_arn: Optional[str] = None
 
@@ -37,7 +43,6 @@ class AWSService(BaseService):
         """
         super().__init__(ctx, integration)
 
-
     def _test_integration(self, integration: dict) -> dict:
         try:
             boto3_helper = Boto3Helper(self.ctx, integration=integration)
@@ -47,7 +52,14 @@ class AWSService(BaseService):
             print(traceback.format_exc())
             return {'success': False, 'error': traceback.format_exc()}
 
+    def get_runtime_clients(self, required_clients) -> List[AWSSDKClient]:
+        all_clients = self.get_all_python_sdk_clients()
+        client_details = []
+        for client in required_clients:
+            clnt = next(item for item in all_clients if item["name"] == client)
+            client_details.append(AWSSDKClient(name=client, pip_package_names=["boto3"], import_library_names=["boto3"], is_regional=clnt["is_regional"]))
 
+        return client_details
 
     def get_forms(self):
         return {
@@ -87,7 +99,6 @@ class AWSService(BaseService):
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
         return AWSIntegration
-
 
     @staticmethod
     def get_all_python_sdk_clients():
@@ -1371,7 +1382,7 @@ class AWSService(BaseService):
         return SteampipeCreds(envs=creds, plugin_name="aws", connection_name="aws",
                               conf_path=conf_path)
 
-    def generate_python_sdk_clients(self, required_clients: list, regions: list):
+    def build_python_sdk_client_definitions(self, required_clients: list, regions: list):
         all_clients = self.get_all_python_sdk_clients()
         filtered_clients = []
         for client in required_clients:

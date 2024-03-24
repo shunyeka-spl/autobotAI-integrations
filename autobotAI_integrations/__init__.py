@@ -39,11 +39,14 @@ class RestAPICreds(BaseCreds):
     headers: dict
 
 
-class SDKClient(BaseModel):
+class Client(BaseModel):
     name: str
-    code: str
-    package_names: str
-    library_names: str
+
+
+class SDKClient(Client):
+    pip_package_names: Optional[List[str]] = None
+    import_library_names: Optional[List[str]] = None
+    client_object: Any
 
 
 class SDKCreds(BaseCreds):
@@ -65,7 +68,6 @@ class BaseSchema(IntegrationSchema):
     name: str = None
     description: str = None
     logo: str = None
-    creds: Optional[Any] = None
 
 
 class BaseService:
@@ -105,7 +107,7 @@ class BaseService:
 
     def on_test_integration_failure(self, integration):
         pass
-    
+
     @classmethod
     def get_integration_type(cls):
         system_os = platform.system()
@@ -172,6 +174,11 @@ class BaseService:
             print(f"Error occurred during {method} request to {url}: {e}")
             return None
 
+    def get_integration_specific_details(self):
+        return {
+            "regions": self.integration.activeRegions
+        }
+
     def get_credentials(self):
         raise NotImplementedError("To be implemented")
 
@@ -196,20 +203,22 @@ class BaseService:
 
     """
 
-    @staticmethod
-    def python_sdk_processor(code_exec: Callable[[Dict[str, Any], List[Dict[str, Any]]], List[Dict[str, Any]]],
+    def get_runtime_clients(self, client_name_list) -> List[SDKClient]:
+        raise NotImplementedError()
+
+    def python_sdk_processor(self, code_exec: Callable[[Dict[str, Any], List[Dict[str, Any]]], List[Dict[str, Any]]],
                              resources: list, clients: list, creds: SDKCreds):
+
+        required_clients = self.get_runtime_clients(clients)
         # Setup Environment Variables
         for key, value in creds.envs.items():
             os.environ[key] = value
 
         # Install Packages
-        for package_name in creds.package_names:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', package_name])
-
-        # Import Packages
-        for library_name in creds.library_names:
-            exec(f"import {library_name}")
+        for client in required_clients:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', " ".join(client.pip_package_names)])
+            for library in client.import_library_names:
+                exec(f"import {library}")
 
         # Create Clients
         clients_to_run = {}

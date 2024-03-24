@@ -1,11 +1,9 @@
 import uuid
-from typing import List, Optional, Any, Union
 
-from autobotAI_integrations import BaseCreds, ConnectionTypes, SteampipeCreds, SDKCreds, \
-    RestAPICreds, CLICreds
+from autobotAI_integrations import ConnectionTypes
 from autobotAI_integrations.integrations.gitlab import GitlabIntegration
 from autobotAI_integrations.integrations import integration_service_factory
-from pydantic import BaseModel
+from autobotAI_integrations.payload_schema import Payload, PayloadTask
 
 
 gitlab_json = {
@@ -28,26 +26,6 @@ gitlab_json = {
     "resource_type": "integration",
     "activeRegions": [],
 }
-
-
-class PayloadTask(BaseModel):
-    taskId: Optional[str]
-    creds: Union[
-        BaseCreds,
-        SteampipeCreds,
-        RestAPICreds,
-        CLICreds
-    ]
-    connection_type: str
-    executable: str
-    params: Optional[Any] = None
-    context: Optional[dict] = None
-    interation_specific_details: Optional[dict] = None
-
-
-class Payload(BaseModel):
-    job_id: str
-    tasks: List[PayloadTask]
 
 
 def generate_gitlab_payload() -> Payload:

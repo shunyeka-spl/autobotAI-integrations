@@ -1,12 +1,9 @@
 import uuid
-from typing import List, Optional, Any, Union
 
-from pydantic import BaseModel, SerializeAsAny
-
-from autobotAI_integrations import BaseCreds, ConnectionTypes, SteampipeCreds, SDKCreds, \
-    RestAPICreds, CLICreds, IntegrationSchema, SDKClient, Client
+from autobotAI_integrations import ConnectionTypes
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.integrations.aws import AWSIntegration
+from autobotAI_integrations.payload_schema import Payload, PayloadTask, PayloadTaskContext
 
 code = """
 import traceback
@@ -32,23 +29,32 @@ def fetch(clients, test=False):
 """
 
 
-class PayloadTaskContext(BaseModel):
-    integration: SerializeAsAny[IntegrationSchema]
-
-
-class PayloadTask(BaseModel):
-    taskId: Optional[str]
-    creds: SerializeAsAny[BaseCreds]
-    connection_type: str
-    executable: str
-    clients: Optional[List[str]] = None
-    params: Optional[Any] = None
-    context: PayloadTaskContext
-
-
-class Payload(BaseModel):
-    job_id: str
-    tasks: List[PayloadTask]
+aws_json = {
+    "userId": "amit@shunyeka.com*",
+    "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",
+    "integrationState": "INACTIVE",
+    "cspName": "aws*",
+    "acccess_key": "hkags",
+    "secret_key": "hkhkjgv",
+    "session_token": "",
+    "alias": "test-aws-integrationsv2",
+    "connection_type": "DIRECT",
+    "groups": ["aws", "shunyeka", "integrations-v2"],
+    "agent_ids": [],
+    "accessToken": "",
+    "createdAt": "2024-02-26T13:38:59.978056",
+    "updatedAt": "2024-02-26T13:38:59.978056",
+    "indexFailures": 0,
+    "isUnauthorized": False,
+    "lastUsed": None,
+    "resource_type": "integration",
+    "activeRegions": [
+        'us-east-1',
+        'ap-south-1'
+    ],
+}
+def generate_aws_payload(aws_json) -> Payload:
+    aws_integration = AWSIntegration(**aws_json)
 
 
 def generate_aws_steampipe_payload() -> Payload:
@@ -80,6 +86,8 @@ def generate_aws_steampipe_payload() -> Payload:
         "taskId": uuid.uuid4().hex,
         "creds": creds,
         "connection_type": ConnectionTypes.STEAMPIPE,
+        "executable": "select * from aws_s3_bucket",
+        "context": {},
         "executable": "select * from aws.s3_buckets",
         "context": PayloadTaskContext(integration=aws_integration),
     }

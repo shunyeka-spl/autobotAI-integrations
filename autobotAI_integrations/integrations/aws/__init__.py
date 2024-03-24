@@ -29,6 +29,7 @@ class AWSIntegration(BaseSchema):
     session_token: Optional[str] = Field(default=None, exclude=True)
     account_id: str = None
     role_arn: Optional[str] = None
+    activeRegions: Optional[list] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

@@ -4,71 +4,18 @@ import sys
 import inspect
 import platform
 import json
+from copy import deepcopy
 from enum import Enum
 from os import path
 from typing import Optional, Dict, Any, List, Callable
 
 import requests
+import yaml
 from pydantic import BaseModel
 from autobotAI_integrations.integration_schema import IntegrationSchema
-from autobotAI_integrations.utils import list_of_unique_elements
-
-
-class ConnectionTypes(Enum):
-    # TODO: Change Name to connection interface
-    STEAMPIPE = 'steampipe'
-    PYTHON_SDK = 'python_sdk'
-    REST_API = 'rest_api'
-    CLI = 'cli'
-
-
-class BaseCreds(BaseModel):
-    pass
-
-
-class SteampipeCreds(BaseCreds):
-    envs: dict
-    connection_name: str
-    plugin_name: str
-    conf_path: Optional[str] = str
-    tables: list = []
-
-
-class RestAPICreds(BaseCreds):
-    api_url: str
-    token: str
-    headers: dict
-
-
-class Client(BaseModel):
-    name: str
-
-
-class SDKClient(Client):
-    pip_package_names: Optional[List[str]] = None
-    import_library_names: Optional[List[str]] = None
-    client_object: Any
-
-
-class SDKCreds(BaseCreds):
-    clients: Dict[str, Any]
-    library_names: List[str]
-    package_names: List[str]
-    creds: Optional[dict] = None
-    envs: Optional[dict] = None
-
-
-class CLICreds(BaseCreds):
-    envs: dict
-    installer_check: str
-    install_command: str
-
-
-# Setting default to None
-class BaseSchema(IntegrationSchema):
-    name: str = None
-    description: str = None
-    logo: str = None
+from autobotAI_integrations.models import *
+from autobotAI_integrations.payload_schema import PayloadTask
+from autobotAI_integrations.utils import list_of_unique_elements, load_mod_from_string, run_mod_func
 
 
 class BaseService:
@@ -128,12 +75,14 @@ class BaseService:
             data = json.loads(clients_data)
         return data[integration_type]
 
-    @staticmethod
-    def get_schema() -> BaseSchema:
-        raise NotImplementedError()
+    @classmethod
+    def get_all_python_sdk_clients(cls):
+        base_path = os.path.dirname(inspect.getfile(cls))
+        with open(path.join(base_path, ".", 'python_sdk_clients.yml')) as f:
+            return yaml.safe_load(f)
 
     @staticmethod
-    def get_all_python_sdk_clients():
+    def get_schema() -> BaseSchema:
         raise NotImplementedError()
 
     @classmethod
@@ -204,31 +153,53 @@ class BaseService:
 
     """
 
-    def get_runtime_clients(self, client_name_list) -> List[SDKClient]:
+    def build_python_exec_combinations_hook(self, payload_task: PayloadTask, client_definitions: List[SDKClient]) -> list:
         raise NotImplementedError()
 
-    def python_sdk_processor(self, code_exec: Callable[[Dict[str, Any], List[Dict[str, Any]]], List[Dict[str, Any]]],
-                             resources: list, clients: list, creds: SDKCreds):
+    def build_python_exec_combinations(self, payload_task: PayloadTask):
+        client_definitions = self.find_client_definitions(payload_task.clients)
+        for client in client_definitions:
+            if client.pip_package_names:
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', " ".join(client.pip_package_names)])
+            if client.import_library_names:
+                for library in client.import_library_names:
+                    try:
+                        __import__(library)
+                    except ImportError:
+                        print(f"Failed to import library: {library}")
 
-        required_clients = self.get_runtime_clients(clients)
-        # Setup Environment Variables
-        for key, value in creds.envs.items():
-            os.environ[key] = value
+        return self.build_python_exec_combinations_hook(payload_task, client_definitions)
 
-        # Install Packages
-        for client in required_clients:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', " ".join(client.pip_package_names)])
-            for library in client.import_library_names:
-                exec(f"import {library}")
+    def find_client_definitions(self, client_name_list) -> List[SDKClient]:
+        all_clients = self.get_all_python_sdk_clients()
+        client_details = []
+        for client in client_name_list:
+            client_def = next(item for item in all_clients if item["name"] == client)
+            client_details.append(SDKClient(**client_def))
+        return client_details
 
-        # Create Clients
-        clients_to_run = {}
-        for client in clients:
-            clients_to_run[client] = eval(creds.clients[client]["code"])
+    def python_sdk_processor(self, payload_task: PayloadTask):
 
-        # Run the code and return Results
-        results = code_exec(clients_to_run, resources)
+        if payload_task.creds and payload_task.creds.envs:
+            for key, value in payload_task.creds.envs.items():
+                os.environ[key] = value
+
+        results = []
+        combinations = self.build_python_exec_combinations(payload_task)
+        for combo in combinations:
+            results.extend(self.execute_python_sdk_code(combo, payload_task))
+
         return results
-    
+
+    def execute_python_sdk_code(self, combination, payload_task: PayloadTask):
+        mod = load_mod_from_string(payload_task.executable)
+        context = {**payload_task.context.model_dump(), **combination}
+        result = run_mod_func(mod.execute, context=context)
+        resources = []
+        if result:
+            for r in result:
+                resources.append({**r, **combination["metadata"]})
+        return resources
+
     def execute_steampipe_task(task):
         pass

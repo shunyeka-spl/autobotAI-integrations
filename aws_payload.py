@@ -1,5 +1,7 @@
 import uuid
 
+import yaml
+
 from autobotAI_integrations import ConnectionTypes
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.integrations.aws import AWSIntegration
@@ -8,8 +10,8 @@ from autobotAI_integrations.payload_schema import Payload, PayloadTask, PayloadT
 code = """
 import traceback
 
-def fetch(clients, test=False):
-    s3_client = clients['s3']
+def execute(context):
+    s3_client = context["clients"]['s3']
     aws_response = s3_client.list_buckets()
 
     return_list = []
@@ -105,9 +107,9 @@ def generate_aws_python_sdk_payload() -> Payload:
         "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
         "integrationState": "INACTIVE",
         "cspName": "aws",
-        "access_key": "ASIAW74SAWUEOHOU35ST",
-        "secret_key": "iWiBSg6GY9AL1WW0GMWV+qFU+yBHNiBXQrpDP6UT",
-        "session_token": "IQoJb3JpZ2luX2VjEFcaCXVzLWVhc3QtMSJHMEUCIGHM/XjP7SqgvL+nEFzAipk4AppxAO/KbXVo276Fpp5NAiEA+93lJhIXm3t4nrslrsXiNvTHJc6Pq6oBNuP/uuFYqVYqgAMIbxAEGgw0ODA4MDU2OTY3NzYiDL10Oqaj5ZKodJf//yrdAgqGB+c1QttBDrZTMSRzQQXPtrSiY1qp8RaDLHxW2fTueVNiIihKMgeKzFYaK7rnbf8iD9JJhso5Gi4+m58qR8onHAoUmckXQMIYCilocrTaYusQ/EhepX4H3cewbNUgceymXbKsD+Bbwb6sAGSRTwBpCdIoBryJgjh/wgQslZgNzNdZwlO4A1WXIO/yHYGiEVG90lpjE2dAUuewgwn3lgXzRS2r4EVeww4LijuEYs9Hzo5jYvwe8/THO8ALowKoSg7evKFxAIpBEbsjTCkh1kDUtNj72NjcEIBaSu7RHODJ9JexkoB/rmAktie1g+gh52GkUn5eh2RTiPUDPqKs2S4IqzZOSgbwrcP8PT2HV/OcJV961nabwDbm07+gqFg0uMZtiyJN81Jg/nJacDkuwpcpZTmKmDFvBlEK5Rgldt2D412hXVBEmnesIPMtLNliuG9WiTxIAp2+CaLwpwYw9Ir/rwY6pgHP8uFLwwwo+MfZpIKKzd3BbPdJI2ou0lrtQYBbEe2V+sJoTR8aXj3l0fv3+6+ckQWJVd/eV/CQiV2erYzBCJEGMoIcl8JVX4YaxnrYvKW21Qxw+6o7sIdjNxu9O/FwqbAGisbNitm3M9XUUzYoR0/+YZ8bw6fLkYuz6yeEmECt7M2ZK3l5gvK6aGThJct6Z6Yg57yeinFYGRnYSmnF3xnW72DqmNPy",
+        "access_key": "ASIAW74SAWUEJKES5QAJ",
+        "secret_key": "6DAcFeLTS1ETwkFrMmv7GllCXnSx/X3iD7bxR4VD",
+        "session_token": "IQoJb3JpZ2luX2VjEF8aCXVzLWVhc3QtMSJHMEUCIDYPU0Q8UHyUNv+1Ja4yEwk9fTiUa4i8g42h8IqS4RFbAiEAjPK4XOTjVDl3wxwVDtsYyi+wskF7wiHWXnoJPlZeIYgqgAMIeBAEGgw0ODA4MDU2OTY3NzYiDHTsJetOdQ5/3iv8TCrdAjYGhoJ2dckhlhYEbA/jd8vjLhvKASt4U61RmMSncpnZST6tYDngFBOKZnjzSpTySKIxQ+AU1OU0mul2ayu11HHJQjfyG+JgxmD7RC/VyVbiHaKbv376DMXWEOmY+GBJOtGDeK2THMfpq1AVcfE+h3mexmCizbtMzHxg0JWxJnV+67FtXXH6ot0IeIlrOurfxmTX1d0I90yuex2JPisTnMqZMjQLaXygNrHqVPibC1hayikMTYhab2RH9gYi53Z0nGj/0QBVta1N5H9ZsQnCGl44FNFOHB8j8ypXw4HBXgVNeUaTex3wwk07PF5+/lg1yKYLHqfjCVvRKfOszuKOd+16ECi2yIjLOCTHks1OoNW5EEIF97sI5EvJwjPprlnLS309W1rPPEzwH5TuyMWpOPtCFC+ZgeW8IrPAzMYRyTbpLBgau9qMjS4UgmbBKx2uVVPlFvg9YwlKfMG7F0AwoPWAsAY6pgEMlAhdQug1PjVRKGgo+NSFvhh5+PPnRuAqbZ/h6/w+f70FwSeO+diH3m+PI2yKVukdK9fxYq8GtD6dWiax82FXSz62W9sWanzmIfny7FUrZC5OImjcG/3r3dHzHjMoL9xLL9rjjzjW1wumDcWmIMgvE1KfRQDf+GspX9nvt6aanucpgt2fzi7pg4t8bHk+0ySACY6to7SKGs24J4aXjUtYFFEjZmWt",
         "alias": "test-gitlab-integrationsv2*",
         "connection_type": "DIRECT",
         "groups": ["aws", "shunyeka", "integrations-v2"],
@@ -135,12 +137,17 @@ def generate_aws_python_sdk_payload() -> Payload:
     }
     payload_dict = {
         "job_id": uuid.uuid4().hex,
-        "tasks": [PayloadTask(**aws_task_dict)]
+        "tasks": [PayloadTask(**aws_task_dict, node_details={
+            "filter_resources": True
+        }, resources=[{
+            "id": "1",
+            "name": "amit"
+        }])]
     }
     payload = Payload(**payload_dict)
     return payload
 
 
-payload = generate_aws_python_sdk_payload()
+payload_output = generate_aws_python_sdk_payload()
 # print(payload.tasks[0].model_dump())
 # print(payload.model_dump_json(indent=2))

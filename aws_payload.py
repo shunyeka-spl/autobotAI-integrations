@@ -124,7 +124,7 @@ def generate_aws_python_sdk_payload() -> Payload:
         "activeRegions": ["ap-south-1", "us-east-1"],
     })
     aws_service = integration_service_factory.get_service(None, aws_integration)
-    creds = aws_service.generate_steampipe_creds()
+    creds = aws_service.generate_python_sdk_creds()
     aws_task_dict = {
         "taskId": uuid.uuid4().hex,
         "creds": creds,

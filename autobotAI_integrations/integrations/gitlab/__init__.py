@@ -1,12 +1,17 @@
+import importlib
+import os
 import uuid
+from typing import List
+
+from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
-    BaseService, ConnectionTypes
+    BaseService, ConnectionTypes, PayloadTask, SDKClient
 
 
 class GitlabIntegration(BaseSchema):
     base_url: str
-    token: str
+    token: str = Field(default=None, exclude=True)
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
@@ -66,17 +71,17 @@ class GitlabService(BaseService):
             "token": self.token
         }
 
-    @staticmethod
-    def get_all_python_sdk_clients():
-        clients = {
-            "gitlab": {
-                "name": "gitlab",
-                "code": "gitlab.Gitlab(os.getenv('GITLAB_ADDR'), private_token=os.getenv('GITLAB_TOKEN'))",
-                "package_names": "python-gitlab",
-                "library_names": "gitlab"
+    def build_python_exec_combinations_hook(self, payload_task: PayloadTask,
+                                            client_definitions: List[SDKClient]) -> list:
+        gitlab = importlib.import_module(client_definitions[0].import_library_names[0], package=None)
+
+        return [
+            {
+                "clients": {
+                    "gitlab": gitlab.Gitlab(os.getenv('GITLAB_ADDR'), private_token=os.getenv('GITLAB_TOKEN'))
+                }
             }
-        }
-        return clients
+        ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         envs = {
@@ -101,8 +106,7 @@ class GitlabService(BaseService):
             "GITLAB_ADDR": self.base_url,
             "GITLAB_TOKEN": self.token,
         }
-        clients = self.get_all_python_sdk_clients()
-        return SDKCreds(library_names=library_names, clients=clients, envs=envs, package_names=package_names)
+        return SDKCreds(library_names=library_names, envs=envs, package_names=package_names)
 
     def generate_cli_creds(self) -> CLICreds:
         installer_check = "brew"

@@ -43,9 +43,6 @@ class SDKClient(Client):
 
 
 class SDKCreds(BaseCreds):
-    clients: Dict[str, Any]
-    library_names: List[str]
-    package_names: List[str]
     creds: Optional[dict] = None
     envs: Optional[dict] = None
 

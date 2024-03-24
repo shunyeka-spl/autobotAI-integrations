@@ -1,3 +1,4 @@
+import importlib
 import os
 import subprocess
 import sys
@@ -158,15 +159,16 @@ class BaseService:
 
     def build_python_exec_combinations(self, payload_task: PayloadTask):
         client_definitions = self.find_client_definitions(payload_task.clients)
+        print(client_definitions)
         for client in client_definitions:
             if client.pip_package_names:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', " ".join(client.pip_package_names)])
-            if client.import_library_names:
-                for library in client.import_library_names:
-                    try:
-                        __import__(library)
-                    except ImportError:
-                        print(f"Failed to import library: {library}")
+            # if client.import_library_names:
+            #     for library in client.import_library_names:
+            #         try:
+            #             globals()[library] = importlib.import_module(library, package=None)
+            #         except ImportError:
+            #             print(f"Failed to import library: {library}")
 
         return self.build_python_exec_combinations_hook(payload_task, client_definitions)
 
@@ -198,7 +200,7 @@ class BaseService:
         resources = []
         if result:
             for r in result:
-                resources.append({**r, **combination["metadata"]})
+                resources.append({**r, **combination.get("metadata", {})})
         return resources
 
     def execute_steampipe_task(task):

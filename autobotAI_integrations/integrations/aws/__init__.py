@@ -169,7 +169,7 @@ class AWSService(BaseService):
         raise NotImplementedError()
 
     def _temp_credentials(self):
-        if self.integration.roleArn:
+        if self.integration.role_arn:
             return {
                 "AWS_ACCESS_KEY_ID": self.ctx.integration_context.boto3_helper.get_access_key(),
                 "AWS_SECRET_ACCESS_KEY": self.ctx.integration_context.boto3_helper.get_secret_key(),

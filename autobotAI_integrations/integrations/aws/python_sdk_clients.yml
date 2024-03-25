@@ -1,0 +1,5 @@
+- name: aws
+  import_library_names:
+    - boto3
+  pip_package_names:
+    - boto3

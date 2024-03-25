@@ -201,7 +201,7 @@ class BaseService:
         conf_path = creds.conf_path
         regions = task.context.integration.activeRegions
         
-        os.putenv('AWS_REGION','ap-south-1')
+        # os.putenv('AWS_REGION','ap-south-1')
         # os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
         # Install plugin if it's not installed
         subprocess.run(
@@ -224,12 +224,14 @@ class BaseService:
         if stderr:
             raise Exception(stderr)
 
+
         if output_path:
             with open(output_path, 'w') as f:
                 f.write(stdout)
 
         try:
             stdout = json.loads(stdout)
+
             return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":

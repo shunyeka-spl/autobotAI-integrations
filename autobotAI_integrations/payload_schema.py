@@ -2,8 +2,8 @@ from typing import List, Optional, Any
 
 from pydantic import BaseModel, SerializeAsAny
 
-from autobotAI_integrations import BaseCreds, SteampipeCreds, SDKCreds, \
-    RestAPICreds, CLICreds, IntegrationSchema
+from autobotAI_integrations import IntegrationSchema
+from autobotAI_integrations.models import BaseCreds
 
 
 class PayloadTaskContext(BaseModel):
@@ -17,7 +17,9 @@ class PayloadTask(BaseModel):
     executable: str
     clients: Optional[List[str]] = None
     params: Optional[Any] = None
+    node_details: Optional[Any] = None
     context: PayloadTaskContext
+    resources: Optional[List] = None
 
 
 class Payload(BaseModel):

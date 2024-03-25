@@ -1,20 +1,20 @@
-# Use right credentials
-# to run the aws payload in realtime
-# create function which runs the payload tasks
-from aws_payload import generate_aws_payload
-import os
-from dotenv import load_dotenv
-import subprocess
+from autobotAI_integrations import IntegrationSchema
+from autobotAI_integrations.integrations import integration_service_factory
+from aws_payload import generate_aws_steampipe_payload
 
+import os
+
+from dotenv import load_dotenv
 load_dotenv()
 
 access_key = os.getenv("access_key")
 secret_key = os.getenv("secret_key")
+
 aws_json = {
     "userId": "amit@shunyeka.com*",
     "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",
     "integrationState": "INACTIVE",
-    "cspName": "aws*",
+    "cspName": "aws",
     "access_key": access_key,
     "secret_key": secret_key,
     "session_token": "",
@@ -29,22 +29,17 @@ aws_json = {
     "isUnauthorized": False,
     "lastUsed": None,
     "resource_type": "integration",
-    "activeRegions": [],
+    "activeRegions": [
+        'us-east-1',
+        'ap-south-1'
+    ],
 }
 
+steampipe_payload = generate_aws_steampipe_payload(aws_json)
 
-def run_payload(aws_json):
-    payload = generate_aws_payload(aws_json)
-    for task in payload.tasks:
-        query = task.executable
-        creds = task.creds
-        envs = creds.envs
-        print(creds, envs)
-        with open("steampipe_output.json", "w") as jsonfile:
-            process = subprocess.Popen(["steampipe", "query", query, "--output", "json"], stdout=jsonfile)
-            process.communicate()
+output_path = os.path.join(os.getcwd(), "aws_s3_buckets.json")
 
-run_payload(aws_json)
-# Main Task: Create a function in BaseService to execute steampipe task
-# def execute_steampipe_task(payload: Payload) -> None:
-#     pass
+for task in steampipe_payload.tasks:
+    integration = IntegrationSchema.model_validate(task.context.integration)
+    service = integration_service_factory.get_service(None, integration)
+    service.execute_steampipe_task(task, job_type="query", output_path=output_path)

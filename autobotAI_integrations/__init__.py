@@ -4,6 +4,7 @@ import sys
 import inspect
 import platform
 import json
+import traceback
 from enum import Enum
 from os import path
 from typing import Optional, Dict, Any, List, Callable
@@ -230,5 +231,57 @@ class BaseService:
         results = code_exec(clients_to_run, resources)
         return results
     
-    def execute_steampipe_task(task):
-        pass
+
+    def execute_steampipe_task(self, task, job_type="query", output_path=None):
+        """
+        Executes a Steampipe Task
+        """
+        # TODO(ME): Implement job type functionality like complinces for check and query for query data,
+        # config file or env for region annd other variables
+        creds = task.creds
+        envs = creds.envs
+        query = task.executable
+        plugin_name = creds.plugin_name
+        conf_path = creds.conf_path
+        regions = task.context.integration.activeRegions
+        
+        os.putenv('AWS_REGION','ap-south-1')
+        # os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
+        # Install plugin if it's not installed
+        subprocess.run(
+            "steampipe plugin install {}".format(plugin_name),
+            shell=True
+        )
+
+        process = subprocess.Popen(
+            "steampipe query \"{}\" --output json".format(query),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            env={**envs, **os.environ}
+        )
+        stdout, stderr = process.communicate()
+
+        stdout = stdout.decode()
+        stderr = stderr.decode()
+        
+        if stderr:
+            raise Exception(stderr)
+
+        if output_path:
+            with open(output_path, 'w') as f:
+                f.write(stdout)
+
+        try:
+            stdout = json.loads(stdout)
+            return {"success": True, "resources": stdout}
+        except json.decoder.JSONDecodeError:
+            if stdout == "None" or not stdout or stdout == "null":
+                return {"success": True, "resources": []}
+            raise
+        except BaseException as e:
+            stdout = {
+                "non_json_output": stdout,
+                "message": traceback.format_exc()
+            }
+        return {"success": False, "output": stdout}

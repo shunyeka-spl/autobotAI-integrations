@@ -125,14 +125,6 @@ class BaseService:
             print(f"Error occurred during {method} request to {url}: {e}")
             return None
 
-    def get_integration_specific_details(self):
-        return {
-            "regions": self.integration.activeRegions
-        }
-
-    def get_credentials(self):
-        raise NotImplementedError("To be implemented")
-
     def generate_steampipe_creds(self) -> SteampipeCreds:
         raise NotImplementedError()
 
@@ -144,15 +136,6 @@ class BaseService:
 
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()
-
-    """
-    Callable in python_sdk_processor means this ->
-
-    @staticmethod
-    def exec(clients: Dict[str, Any], resources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        pass
-
-    """
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask, client_definitions: List[SDKClient]) -> list:
         raise NotImplementedError()
@@ -193,7 +176,8 @@ class BaseService:
 
         return results
 
-    def execute_python_sdk_code(self, combination, payload_task: PayloadTask):
+    @staticmethod
+    def execute_python_sdk_code(combination, payload_task: PayloadTask):
         mod = load_mod_from_string(payload_task.executable)
         context = {**payload_task.context.model_dump(), **combination}
         result = run_mod_func(mod.execute, context=context)

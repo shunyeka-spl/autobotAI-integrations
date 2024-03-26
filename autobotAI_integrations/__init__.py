@@ -188,44 +188,30 @@ class BaseService:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources
 
-    def execute_steampipe_task(self, task, job_type="query"):
+    def execute_steampipe_task(self, task: Payload, job_type="query"):
         """
         Executes a Steampipe Task
         """
-        # TODO(ME): Implement job type functionality like complinces for check and query for query data,
-        # config file or env for region annd other variables
-        creds = task.creds
-        envs = creds.envs
-        query = task.executable
-        plugin_name = creds.plugin_name
-        conf_path = creds.conf_path
-        regions = task.context.integration.activeRegions
-        
         subprocess.run(
-            "steampipe plugin install {}".format(plugin_name),
+            "steampipe plugin install {}".format(task.creds.plugin_name),
             shell=True
         )
 
         process = subprocess.run(
-            ["steampipe" ,"query", "\"{}\"".format(query), "--output", "json"],
+            "steampipe query \"{}\" --output json".format(task.executable),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
-            env={**envs, **os.environ}
+            env={**task.creds.envs, **os.environ}
         )
         
         stdout = process.stdout.decode("utf-8")
         stderr = process.stderr.decode("utf-8")
-        # stdout, stderr = process.communicate()
-
-        # stdout = stdout.decode()
-        # stderr = stderr.decode()
 
         if stderr:
             print(stderr)
         try:
             stdout = json.loads(stdout)
-            print(len(stdout))
             return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":
@@ -235,5 +221,4 @@ class BaseService:
                 "non_json_output": stdout,
                 "message": traceback.format_exc()
             }
-        print(len(stdout))
         return {"success": False, "output": stdout}

@@ -38,4 +38,4 @@ RUN pip3 install --upgrade requests
 ENV STEAMPIPE_DATABASE_START_TIMEOUT=300
 
 # Replace with actual entrypoint later
-# ENTRYPOINT ["python", "run_aws_steampipe.py"]
+ENTRYPOINT ["python", "run_aws_steampipe.py"]

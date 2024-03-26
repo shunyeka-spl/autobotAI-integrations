@@ -9,6 +9,7 @@ from copy import deepcopy
 import traceback
 from enum import Enum
 from os import path
+from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable
 
 import requests
@@ -180,8 +181,30 @@ class BaseService:
             for r in result:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources
+    
+    def _get_steampipe_config_path(self):
+        home_dir = Path.home()
+        config_path = os.path.join(
+            home_dir,
+            ".steampipe/config/",
+            "{}.spc".format(self.integration.cspName)
+        )
+        return config_path
+        
+    def set_steampipe_spc_config(self, config_str):
+        config_path = self._get_steampipe_config_path()
+        with open(config_path, 'w') as f:
+            f.write(config_str)
 
-    def execute_steampipe_task(self, task: Payload, job_type="query"):
+    def clear_steampipe_spc_config(self):
+        config_path = self._get_steampipe_config_path()
+        try:
+            os.remove(config_path)
+            print("file removed successfully!")
+        except FileNotFoundError:
+            print("File Not Found on path {}".format(config_path))
+
+    def execute_steampipe_task(self, task: PayloadTask, job_type="query"):
         """
         Executes a Steampipe Task
         """
@@ -191,6 +214,9 @@ class BaseService:
         )
         
         # Save the configuration in the creds.config_path with value creds.config
+        self.set_spc_config(
+            config_str=task.creds.config,
+        )
 
         process = subprocess.run(
             "steampipe query \"{}\" --output json".format(task.executable),
@@ -200,11 +226,16 @@ class BaseService:
             env={**task.creds.envs, **os.environ}
         )
         
+        # clear config file
+        self.clear_spc_config()
+
         stdout = process.stdout.decode("utf-8")
         stderr = process.stderr.decode("utf-8")
 
         if stderr:
+            print(stdout)
             print(stderr)
+
         try:
             stdout = json.loads(stdout)
             return {"success": True, "resources": stdout}

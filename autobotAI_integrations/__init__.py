@@ -202,6 +202,8 @@ class BaseService:
             shell=True
         )
 
+        # Save the configuration in the creds.config_path with value creds.config
+
         process = subprocess.Popen(
             "steampipe query \"{}\" --output json".format(query),
             stdout=subprocess.PIPE,

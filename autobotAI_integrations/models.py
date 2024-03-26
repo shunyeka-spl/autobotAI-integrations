@@ -23,6 +23,7 @@ class SteampipeCreds(BaseCreds):
     connection_name: str
     plugin_name: str
     conf_path: Optional[str] = str
+    config: Optional[str] = None
     tables: list = []
 
 

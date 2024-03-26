@@ -37,9 +37,7 @@ aws_json = {
 
 steampipe_payload = generate_aws_steampipe_payload(aws_json)
 
-output_path = os.path.join(os.getcwd(), "aws_s3_buckets.json")
-
 for task in steampipe_payload.tasks:
     integration = IntegrationSchema.model_validate(task.context.integration)
     service = integration_service_factory.get_service(None, integration)
-    service.execute_steampipe_task(task, job_type="query", output_path=output_path)
+    service.execute_steampipe_task(task, job_type="query")

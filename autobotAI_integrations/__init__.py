@@ -16,7 +16,7 @@ import yaml
 from pydantic import BaseModel
 from autobotAI_integrations.integration_schema import IntegrationSchema
 from autobotAI_integrations.models import *
-from autobotAI_integrations.payload_schema import PayloadTask
+from autobotAI_integrations.payload_schema import PayloadTask, Payload
 from autobotAI_integrations.utils import list_of_unique_elements, load_mod_from_string, run_mod_func
 
 
@@ -188,7 +188,7 @@ class BaseService:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources
 
-    def execute_steampipe_task(self, task, job_type="query", output_path=None):
+    def execute_steampipe_task(self, task, job_type="query"):
         """
         Executes a Steampipe Task
         """
@@ -201,45 +201,39 @@ class BaseService:
         conf_path = creds.conf_path
         regions = task.context.integration.activeRegions
         
-        # os.putenv('AWS_REGION','ap-south-1')
-        # os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
-        # Install plugin if it's not installed
         subprocess.run(
             "steampipe plugin install {}".format(plugin_name),
             shell=True
         )
 
-        process = subprocess.Popen(
-            "steampipe query \"{}\" --output json".format(query),
+        process = subprocess.run(
+            ["steampipe" ,"query", "\"{}\"".format(query), "--output", "json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
             env={**envs, **os.environ}
         )
-        stdout, stderr = process.communicate()
-
-        stdout = stdout.decode()
-        stderr = stderr.decode()
         
+        stdout = process.stdout.decode("utf-8")
+        stderr = process.stderr.decode("utf-8")
+        # stdout, stderr = process.communicate()
+
+        # stdout = stdout.decode()
+        # stderr = stderr.decode()
+
         if stderr:
-            raise Exception(stderr)
-
-
-        if output_path:
-            with open(output_path, 'w') as f:
-                f.write(stdout)
-
+            print(stderr)
         try:
             stdout = json.loads(stdout)
-
+            print(len(stdout))
             return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":
                 return {"success": True, "resources": []}
-            raise
         except BaseException as e:
             stdout = {
                 "non_json_output": stdout,
                 "message": traceback.format_exc()
             }
+        print(len(stdout))
         return {"success": False, "output": stdout}

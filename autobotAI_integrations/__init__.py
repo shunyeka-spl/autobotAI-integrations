@@ -30,8 +30,8 @@ class BaseService:
         self.ctx = ctx
 
     @staticmethod
-    def supported_connection_types():
-        return [ConnectionTypes.REST_API]
+    def supported_connection_interfaces():
+        return [ConnectionInterfaces.REST_API]
 
     def get_forms(self):
         """
@@ -143,16 +143,9 @@ class BaseService:
 
     def build_python_exec_combinations(self, payload_task: PayloadTask):
         client_definitions = self.find_client_definitions(payload_task.clients)
-        print(client_definitions)
         for client in client_definitions:
             if client.pip_package_names:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', " ".join(client.pip_package_names)])
-            # if client.import_library_names:
-            #     for library in client.import_library_names:
-            #         try:
-            #             globals()[library] = importlib.import_module(library, package=None)
-            #         except ImportError:
-            #             print(f"Failed to import library: {library}")
 
         return self.build_python_exec_combinations_hook(payload_task, client_definitions)
 
@@ -196,6 +189,8 @@ class BaseService:
             "steampipe plugin install {}".format(task.creds.plugin_name),
             shell=True
         )
+        
+        # Save the configuration in the creds.config_path with value creds.config
 
         process = subprocess.run(
             "steampipe query \"{}\" --output json".format(task.executable),

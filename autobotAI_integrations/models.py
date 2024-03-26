@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Extra
 from autobotAI_integrations import IntegrationSchema
 
 
-class ConnectionTypes(Enum):
+class ConnectionInterfaces(Enum):
     # TODO: Change Name to connection interface
     STEAMPIPE = 'steampipe'
     PYTHON_SDK = 'python_sdk'
@@ -23,6 +23,7 @@ class SteampipeCreds(BaseCreds):
     connection_name: str
     plugin_name: str
     conf_path: Optional[str] = str
+    config: Optional[str] = None
     tables: list = []
 
 

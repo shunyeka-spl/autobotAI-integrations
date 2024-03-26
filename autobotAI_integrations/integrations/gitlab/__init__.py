@@ -6,7 +6,7 @@ from typing import List
 from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
-    BaseService, ConnectionTypes, PayloadTask, SDKClient
+    BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 
 
 class GitlabIntegration(BaseSchema):
@@ -51,8 +51,8 @@ class GitlabService(BaseService):
         return GitlabIntegration
 
     @staticmethod
-    def supported_connection_types():
-        return [ConnectionTypes.REST_API, ConnectionTypes.CLI, ConnectionTypes.PYTHON_SDK, ConnectionTypes.STEAMPIPE]
+    def supported_connection_interfaces():
+        return [ConnectionInterfaces.REST_API, ConnectionInterfaces.CLI, ConnectionInterfaces.PYTHON_SDK, ConnectionInterfaces.STEAMPIPE]
 
     def _test_integration(self, integration: dict):
         creds = self.generate_rest_api_creds()
@@ -81,6 +81,17 @@ class GitlabService(BaseService):
             "GITLAB_TOKEN": self.integration.token,
         }
         conf_path = "~/.steampipe/config/gitlab.spc"
+        conf_dict = """
+            connection "gitlab" {
+              plugin = "theapsgroup/gitlab"
+            
+              # The baseUrl of your GitLab Instance API (ignore if set in GITLAB_ADDR env var)
+              # baseurl = "https://gitlab.company.com/api/v4"
+            
+              # Access Token for which to use for the API (ignore if set in GITLAB_TOKEN env var)
+              token = {self.integration.token}
+            }
+        """
 
         return SteampipeCreds(envs=envs, plugin_name="theapsgroup/gitlab", connection_name="gitlab",
                               conf_path=conf_path)

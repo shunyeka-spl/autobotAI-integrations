@@ -145,8 +145,6 @@ class AWSService(BaseService):
                         if resource.get("integration_type") == self.get_integration_type():
                             if resource.get("region") == region:
                                 resources.append(resource)
-                            else:
-                                resources.append(resource)
                 else:
                     resources = payload_task.resources
                 combo["resources"] = resources
@@ -162,8 +160,8 @@ class AWSService(BaseService):
         return SDKCreds(library_names=[], clients=[], envs=creds, package_names=package_names)
 
     @staticmethod
-    def supported_connection_types():
-        return [ConnectionTypes.REST_API, ConnectionTypes.CLI, ConnectionTypes.PYTHON_SDK, ConnectionTypes.STEAMPIPE]
+    def supported_connection_interfaces():
+        return [ConnectionInterfaces.REST_API, ConnectionInterfaces.CLI, ConnectionInterfaces.PYTHON_SDK, ConnectionInterfaces.STEAMPIPE]
 
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()

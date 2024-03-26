@@ -6,20 +6,14 @@ from autobotAI_integrations.payload_schema import Payload, PayloadTask, PayloadT
     ExecutionDetails, Caller
 import os, uuid
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-access_key = os.getenv("access_key")
-secret_key = os.getenv("secret_key")
-
 aws_json = {
     "userId": "amit@shunyeka.com*",
     "accountId": "175c0fa813244bc5a1aa6264e7ba20cc",
     "integrationState": "INACTIVE",
     "cspName": "aws",
-    "access_key": access_key,
-    "secret_key": secret_key,
+    # don't commit your keys
+    "access_key": "your_access_key_id",
+    "secret_key": "your_secret_key_id",
     "session_token": "",
     "alias": "test-aws-integrationsv2",
     "connection_type": "DIRECT",
@@ -41,7 +35,10 @@ aws_json = {
 aws_config_str = """
 connection "aws" {
   plugin = "aws"
-  #default_region = "eu-west-2"
+
+  regions = ["ap-south-1"]
+
+  default_region = "us-east-1"
 
   #profile = "myprofile"
 
@@ -121,16 +118,16 @@ def generate_aws_python_payload():
     return payload
 
 
-# steampipe_payload = generate_aws_steampipe_payload()
-# for task in steampipe_payload.tasks:
-#     integration = IntegrationSchema.model_validate(task.context.integration)
-#     service = integration_service_factory.get_service(None, integration)
-#     output = service.execute_steampipe_task(task, job_type="query")
-#     # print(output)
-
-python_payload = generate_aws_python_payload()
-for task in python_payload.tasks:
+steampipe_payload = generate_aws_steampipe_payload()
+for task in steampipe_payload.tasks:
     integration = IntegrationSchema.model_validate(task.context.integration)
     service = integration_service_factory.get_service(None, integration)
-    output = service.python_sdk_processor(payload_task=task)
+    output = service.execute_steampipe_task(task, job_type="query")
     print(output)
+
+# python_payload = generate_aws_python_payload()
+# for task in python_payload.tasks:
+#     integration = IntegrationSchema.model_validate(task.context.integration)
+#     service = integration_service_factory.get_service(None, integration)
+#     output = service.python_sdk_processor(payload_task=task)
+#     print(output)

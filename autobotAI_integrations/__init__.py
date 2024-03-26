@@ -181,7 +181,7 @@ class BaseService:
             for r in result:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources
-    
+
     def _get_steampipe_config_path(self):
         home_dir = Path.home()
         config_path = os.path.join(
@@ -190,7 +190,7 @@ class BaseService:
             "{}.spc".format(self.integration.cspName)
         )
         return config_path
-        
+
     def set_steampipe_spc_config(self, config_str):
         config_path = self._get_steampipe_config_path()
         with open(config_path, 'w') as f:
@@ -209,8 +209,7 @@ class BaseService:
         Executes a Steampipe Task
         """
         subprocess.run(
-            "steampipe plugin install {}".format(task.creds.plugin_name),
-            shell=True
+            ["steampipe", "plugin", "install", task.creds.plugin_name]
         )
         
         # Save the configuration in the creds.config_path with value creds.config
@@ -219,13 +218,12 @@ class BaseService:
         )
 
         process = subprocess.run(
-            "steampipe query \"{}\" --output json".format(task.executable),
+            ["steampipe", "query", "{}".format(task.executable), "--output", "json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
             env={**task.creds.envs, **os.environ}
         )
-        
+
         # clear config file
         self.clear_steampipe_spc_config()
 

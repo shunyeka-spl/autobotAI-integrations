@@ -214,7 +214,7 @@ class BaseService:
         )
         
         # Save the configuration in the creds.config_path with value creds.config
-        self.set_spc_config(
+        self.set_steampipe_spc_config(
             config_str=task.creds.config,
         )
 
@@ -227,7 +227,7 @@ class BaseService:
         )
         
         # clear config file
-        self.clear_spc_config()
+        self.clear_steampipe_spc_config()
 
         stdout = process.stdout.decode("utf-8")
         stderr = process.stderr.decode("utf-8")

@@ -6,7 +6,7 @@ from typing import List
 from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
-    BaseService, ConnectionTypes, PayloadTask, SDKClient
+    BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 
 
 class GitlabIntegration(BaseSchema):
@@ -51,8 +51,8 @@ class GitlabService(BaseService):
         return GitlabIntegration
 
     @staticmethod
-    def supported_connection_types():
-        return [ConnectionTypes.REST_API, ConnectionTypes.CLI, ConnectionTypes.PYTHON_SDK, ConnectionTypes.STEAMPIPE]
+    def supported_connection_interfaces():
+        return [ConnectionInterfaces.REST_API, ConnectionInterfaces.CLI, ConnectionInterfaces.PYTHON_SDK, ConnectionInterfaces.STEAMPIPE]
 
     def _test_integration(self, integration: dict):
         creds = self.generate_rest_api_creds()

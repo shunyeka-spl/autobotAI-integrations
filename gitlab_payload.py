@@ -1,7 +1,7 @@
 import os
 import uuid
 
-from autobotAI_integrations import ConnectionTypes
+from autobotAI_integrations import ConnectionInterfaces
 from autobotAI_integrations.integrations.gitlab import GitlabIntegration
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.payload_schema import Payload, PayloadTask
@@ -52,7 +52,7 @@ def generate_gitlab_payload() -> Payload:
     task_dict = {
         "taskId": uuid.uuid4().hex,
         "creds": creds,
-        "connection_type": ConnectionTypes.PYTHON_SDK,
+        "connection_interface": ConnectionInterfaces.PYTHON_SDK,
         "executable": code,
         "clients": ["gitlab"],
         "context": {

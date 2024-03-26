@@ -2,7 +2,7 @@ import uuid
 
 import yaml
 
-from autobotAI_integrations import ConnectionTypes
+from autobotAI_integrations import ConnectionInterfaces
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.integrations.aws import AWSIntegration
 from autobotAI_integrations.payload_schema import Payload, PayloadTask, PayloadTaskContext
@@ -88,7 +88,7 @@ def generate_aws_steampipe_payload(aws_json) -> Payload:
     aws_task_dict = {
         "taskId": uuid.uuid4().hex,
         "creds": creds,
-        "connection_type": ConnectionTypes.STEAMPIPE,
+        "connection_interface": ConnectionInterfaces.STEAMPIPE,
         "executable": "select * from aws_s3_bucket",
         "context": PayloadTaskContext(integration=aws_integration),
     }
@@ -127,7 +127,7 @@ def generate_aws_python_sdk_payload() -> Payload:
     aws_task_dict = {
         "taskId": uuid.uuid4().hex,
         "creds": creds,
-        "connection_type": ConnectionTypes.PYTHON_SDK,
+        "connection_interface": ConnectionInterfaces.PYTHON_SDK,
         "executable": code,
         "clients": ["s3"],
         "context": {

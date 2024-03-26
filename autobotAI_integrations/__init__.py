@@ -167,15 +167,15 @@ class BaseService:
         results = []
         combinations = self.build_python_exec_combinations(payload_task)
         for combo in combinations:
-            results.extend(self.execute_python_sdk_code(combo, payload_task))
+            results.extend(self._execute_python_sdk_code(combo, payload_task))
 
         return results
 
     @staticmethod
-    def execute_python_sdk_code(combination, payload_task: PayloadTask):
+    def _execute_python_sdk_code(combination, payload_task: PayloadTask):
         mod = load_mod_from_string(payload_task.executable)
         context = {**payload_task.context.model_dump(), **combination}
-        result = run_mod_func(mod.execute, context=context)
+        result = run_mod_func(mod.executor, context=context)
         resources = []
         if result:
             for r in result:

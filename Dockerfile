@@ -4,8 +4,8 @@ USER root
 
 RUN apt update -y
 RUN apt install curl -y
-RUN /bin/sh -c "$(curl -fsSL https://steampipe.io/install/steampipe.sh)"
 
+RUN /bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/turbot/steampipe/main/scripts/install.sh)"
 
 ARG user=steampipe
 ARG group=steampipe
@@ -17,7 +17,7 @@ RUN useradd -u ${uid} -g ${group} -s /bin/sh -m ${user}
 
 USER ${uid}:${gid}
     
-RUN steampipe plugin install steampipe aws azure gcp azuread kubernetes gitlab
+RUN steampipe plugin install steampipe aws # azure gcp azuread kubernetes gitlab
 
 RUN steampipe plugin update --all
 

@@ -21,10 +21,10 @@ class ExecutionDetails(BaseModel):
 
 class PayloadTaskContext(BaseModel):
     integration: SerializeAsAny[IntegrationSchema]
-    global_variables: dict  # Global Variables defined by User, this will be store in secret manager
-    integration_variables: dict  # Secret manager variables stored for the specific Integration.
-    integration_group_vars: dict  # Secret manager variables stored for the specific Integration Group.
-    execute_details: ExecutionDetails
+    global_variables: dict = {}  # Global Variables defined by User, this will be store in secret manager
+    integration_variables: dict = {}  # Secret manager variables stored for the specific Integration.
+    integration_group_vars: dict = {}  # Secret manager variables stored for the specific Integration Group.
+    execution_details: ExecutionDetails
     node_steps: dict
 
 

@@ -9,6 +9,7 @@ from copy import deepcopy
 import traceback
 from enum import Enum
 from os import path
+from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable
 
 import requests
@@ -16,7 +17,7 @@ import yaml
 from pydantic import BaseModel
 from autobotAI_integrations.integration_schema import IntegrationSchema
 from autobotAI_integrations.models import *
-from autobotAI_integrations.payload_schema import PayloadTask
+from autobotAI_integrations.payload_schema import PayloadTask, Payload
 from autobotAI_integrations.utils import list_of_unique_elements, load_mod_from_string, run_mod_func
 
 
@@ -166,72 +167,79 @@ class BaseService:
         results = []
         combinations = self.build_python_exec_combinations(payload_task)
         for combo in combinations:
-            results.extend(self.execute_python_sdk_code(combo, payload_task))
+            results.extend(self._execute_python_sdk_code(combo, payload_task))
 
         return results
 
     @staticmethod
-    def execute_python_sdk_code(combination, payload_task: PayloadTask):
+    def _execute_python_sdk_code(combination, payload_task: PayloadTask):
         mod = load_mod_from_string(payload_task.executable)
         context = {**payload_task.context.model_dump(), **combination}
-        result = run_mod_func(mod.execute, context=context)
+        result = run_mod_func(mod.executor, context=context)
         resources = []
         if result:
             for r in result:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources
 
-    def execute_steampipe_task(self, task, job_type="query", output_path=None):
+    def _get_steampipe_config_path(self):
+        home_dir = Path.home()
+        config_path = os.path.join(
+            home_dir,
+            ".steampipe/config/",
+            "{}.spc".format(self.integration.cspName)
+        )
+        return config_path
+
+    def set_steampipe_spc_config(self, config_str):
+        config_path = self._get_steampipe_config_path()
+        with open(config_path, 'w') as f:
+            f.write(config_str)
+
+    def clear_steampipe_spc_config(self):
+        config_path = self._get_steampipe_config_path()
+        try:
+            os.remove(config_path)
+            print("file removed successfully!")
+        except FileNotFoundError:
+            print("File Not Found on path {}".format(config_path))
+
+    def execute_steampipe_task(self, task: PayloadTask, job_type="query"):
         """
         Executes a Steampipe Task
         """
-        # TODO(ME): Implement job type functionality like complinces for check and query for query data,
-        # config file or env for region annd other variables
-        creds = task.creds
-        envs = creds.envs
-        query = task.executable
-        plugin_name = creds.plugin_name
-        conf_path = creds.conf_path
-        regions = task.context.integration.activeRegions
-        
-        # os.putenv('AWS_REGION','ap-south-1')
-        # os.environ['AWS_DEFAULT_REGION'] = 'ap-south-1'
-        # Install plugin if it's not installed
         subprocess.run(
-            "steampipe plugin install {}".format(plugin_name),
-            shell=True
+            ["steampipe", "plugin", "install", task.creds.plugin_name]
+        )
+        
+        # Save the configuration in the creds.config_path with value creds.config
+        self.set_steampipe_spc_config(
+            config_str=task.creds.config,
         )
 
-        # Save the configuration in the creds.config_path with value creds.config
-
-        process = subprocess.Popen(
-            "steampipe query \"{}\" --output json".format(query),
+        process = subprocess.run(
+            ["steampipe", "query", "{}".format(task.executable), "--output", "json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
-            env={**envs, **os.environ}
+            env={**task.creds.envs, **os.environ}
         )
-        stdout, stderr = process.communicate()
 
-        stdout = stdout.decode()
-        stderr = stderr.decode()
-        
+        # clear config file
+        self.clear_steampipe_spc_config()
+
+        stdout = process.stdout.decode("utf-8")
+        stderr = process.stderr.decode("utf-8")
+
         if stderr:
-            raise Exception(stderr)
-
-
-        if output_path:
-            with open(output_path, 'w') as f:
-                f.write(stdout)
+            print(stdout)
+            print(stderr)
 
         try:
             stdout = json.loads(stdout)
-
             return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":
                 return {"success": True, "resources": []}
-            raise
         except BaseException as e:
             stdout = {
                 "non_json_output": stdout,

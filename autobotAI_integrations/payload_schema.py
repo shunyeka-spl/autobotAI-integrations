@@ -3,7 +3,7 @@ from typing import List, Optional, Any
 from pydantic import BaseModel, SerializeAsAny
 
 from autobotAI_integrations import IntegrationSchema
-from autobotAI_integrations.models import BaseCreds
+from autobotAI_integrations.models import BaseCreds, ConnectionInterfaces
 
 
 class Caller(BaseModel):
@@ -31,7 +31,7 @@ class PayloadTaskContext(BaseModel):
 class PayloadTask(BaseModel):
     task_id: Optional[str]
     creds: SerializeAsAny[BaseCreds]
-    connection_interface: str
+    connection_interface: ConnectionInterfaces
     executable: str
     clients: Optional[List[str]] = None
     params: Optional[Any] = None

@@ -1,21 +1,37 @@
 # read the argument task_id
 import json
+import argparse
+import ast
 
-from autobotAI_integrations import PayloadTask, ConnectionInterfaces, IntegrationSchema
+from autobotAI_integrations import IntegrationSchema
 from autobotAI_integrations.integrations import integration_service_factory
+from autobotAI_integrations.models import ConnectionInterfaces
+from autobotAI_integrations.payload_schema import PayloadTask
 
-task_id = "xyz"
-with open(f"/tmp/{task_id}.json") as task_file:
-    task_details = task_file.read()
-    task = PayloadTask.model_validate(task_details)
-    # condition to check what is the connection interface.
+parser = argparse.ArgumentParser(description="Task Executer File For Given Task Id")
+parser.add_argument(
+    "--task_id", "-tid", required=True, help="Provide unique taskId as an argument"
+)
+
+args = parser.parse_args()
+
+task_id = str(args.task_id)
+
+with open(f"temp/{task_id}.json") as task_file:
+    # TODO: Parse the json data string and store the object in task
+    task_details = json.loads(task_file.read())
+    task = PayloadTask(**task_details)
+    
+    integration = IntegrationSchema.model_validate(task.context.integration)
+    service = integration_service_factory.get_service(None, integration)
+
     result = None
     if task.connection_interface == ConnectionInterfaces.PYTHON_SDK:
-        integration = IntegrationSchema.model_validate(task.context.integration)
-        service = integration_service_factory.get_service(None, integration)
         result = service.python_sdk_processor(task)
     elif task.connection_interface == ConnectionInterfaces.STEAMPIPE:
-        pass
+        result = service.execute_steampipe_task(task)
+    else:
+        print("Method is not implemented yet.")
 
-    with open(f"/tmp/{task_id}-output.json") as output:
-        output.write(json.dumps(result, default=str))
+    with open(f"temp/{task_id}-output.json", "w") as output:
+        output.write(json.dumps(result))

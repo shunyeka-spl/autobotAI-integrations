@@ -7,7 +7,6 @@ from autobotAI_integrations import IntegrationSchema
 
 
 class ConnectionInterfaces(Enum):
-    # TODO: Change Name to connection interface
     STEAMPIPE = 'steampipe'
     PYTHON_SDK = 'python_sdk'
     REST_API = 'rest_api'

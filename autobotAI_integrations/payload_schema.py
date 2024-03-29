@@ -31,7 +31,7 @@ class PayloadTaskContext(BaseModel):
     integration_group_vars: dict = {}  # Secret manager variables stored for the specific Integration Group.
     execution_details: ExecutionDetails
     node_steps: dict
-    
+
     @field_validator('integration', mode='before')
     @classmethod
     def validate_integration(cls, integration):
@@ -54,7 +54,7 @@ class PayloadTask(BaseModel):
     node_details: Optional[Any] = None
     context: PayloadTaskContext
     resources: Optional[List] = None
-    
+
     @field_validator('creds', mode='before')
     @classmethod
     def validate_creds(cls, creds: dict):
@@ -64,6 +64,8 @@ class PayloadTask(BaseModel):
                     return sub_cls(**creds)
         return creds
 
+
 class Payload(BaseModel):
     job_id: str
+    state: Optional[dict] = None
     tasks: List[PayloadTask]

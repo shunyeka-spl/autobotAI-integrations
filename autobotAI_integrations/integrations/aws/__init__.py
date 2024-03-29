@@ -1,5 +1,5 @@
 import traceback
-from typing import Type, List, Optional
+from typing import Type, Union
 
 import boto3
 import pydash
@@ -8,12 +8,7 @@ from pydantic import Field
 
 from autobotAI_integrations import BaseService, list_of_unique_elements,PayloadTask
 from autobotAI_integrations.models import *
-from autobotAI_integrations.utils import boto3_helper
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
-
-import inspect
-import platform
-import os
 
 
 class Forms:
@@ -30,7 +25,8 @@ class AWSIntegration(BaseSchema):
     secret_key: Optional[str] = Field(default=None, exclude=True)
     session_token: Optional[str] = Field(default=None, exclude=True)
     account_id: str = None
-    role_arn: Optional[str] = None
+    roleArn: Optional[str] = None
+    externalId: Optional[str] = None
     activeRegions: Optional[list] = None
 
     def __init__(self, **kwargs):
@@ -39,10 +35,12 @@ class AWSIntegration(BaseSchema):
 
 class AWSService(BaseService):
 
-    def __init__(self, ctx: dict, integration: AWSIntegration):
+    def __init__(self, ctx: dict, integration: Union[AWSIntegration, dict]):
         """
         Integration should have all the data regarding the integration
         """
+        if not isinstance(integration, AWSIntegration):
+            integration = AWSIntegration(**integration)
         super().__init__(ctx, integration)
 
     def _test_integration(self, integration: dict) -> dict:
@@ -122,7 +120,10 @@ class AWSService(BaseService):
         if global_clients:
             for client in global_clients:
                 built_clients["global"].append(boto3.client(client.name))
-        for region in self.integration.activeRegions:
+        active_regions = self.integration.activeRegions
+        if not active_regions:
+            active_regions = ["us-east-1"]
+        for region in active_regions:
             built_clients["regional"].setdefault(region, {})
             for client in regional_clients:
                 try:
@@ -166,11 +167,12 @@ class AWSService(BaseService):
         raise NotImplementedError()
 
     def _temp_credentials(self):
-        if self.integration.role_arn:
+        if self.integration.roleArn:
+            boto3_helper = Boto3Helper(self.ctx, integration=self.integration.model_dump())
             return {
-                "AWS_ACCESS_KEY_ID": self.ctx.integration_context.boto3_helper.get_access_key(),
-                "AWS_SECRET_ACCESS_KEY": self.ctx.integration_context.boto3_helper.get_secret_key(),
-                "AWS_SESSION_TOKEN": self.ctx.integration_context.boto3_helper.get_session_token(),
+                "AWS_ACCESS_KEY_ID": boto3_helper.get_access_key(),
+                "AWS_SECRET_ACCESS_KEY": boto3_helper.get_secret_key(),
+                "AWS_SESSION_TOKEN": boto3_helper.get_session_token(),
             }
         else:
             return {

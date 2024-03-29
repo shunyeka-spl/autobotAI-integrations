@@ -2,6 +2,9 @@ import importlib
 import platform
 import inspect
 import os
+
+from pydantic import BaseModel
+
 from autobotAI_integrations import BaseService
 
 
@@ -34,7 +37,10 @@ class IntegrationServiceFactory:
         cls = self._services.get(integration.cspName)
         if not cls:
             raise ValueError(integration.cspName)
+        if isinstance(integration, BaseModel) and not isinstance(integration, cls.get_schema()):
+            return cls(ctx, integration.model_dump())
         return cls(ctx, integration)
+
 
     @staticmethod
     def _get_subclasses():

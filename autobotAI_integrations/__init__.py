@@ -158,18 +158,27 @@ class BaseService:
             client_details.append(SDKClient(**client_def))
         return client_details
 
-    def python_sdk_processor(self, payload_task: PayloadTask):
+    def python_sdk_processor(self, payload_task: PayloadTask) -> (List[Dict[str, Any]], List[str]):
 
         if payload_task.creds and payload_task.creds.envs:
             for key, value in payload_task.creds.envs.items():
                 os.environ[key] = value
 
         results = []
+        errors = []
         combinations = self.build_python_exec_combinations(payload_task)
         for combo in combinations:
-            results.extend(self._execute_python_sdk_code(combo, payload_task))
+            try:
+                results.extend(self._execute_python_sdk_code(combo, payload_task))
+            except:
+                errors.append({
+                    "message": traceback.format_exc(chain=True, limit=1),
+                    "other_details": {
+                        "execution_details": payload_task.context.execution_details
+                    }
+                })
 
-        return results
+        return results, errors
 
     @staticmethod
     def _execute_python_sdk_code(combination, payload_task: PayloadTask):
@@ -211,7 +220,7 @@ class BaseService:
         subprocess.run(
             ["steampipe", "plugin", "install", task.creds.plugin_name]
         )
-        
+
         # Save the configuration in the creds.config_path with value creds.config
         self.set_steampipe_spc_config(
             config_str=task.creds.config,

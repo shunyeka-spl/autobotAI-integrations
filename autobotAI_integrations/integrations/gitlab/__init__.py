@@ -81,17 +81,6 @@ class GitlabService(BaseService):
             "GITLAB_TOKEN": self.integration.token,
         }
         conf_path = "~/.steampipe/config/gitlab.spc"
-        conf_dict = """
-            connection "gitlab" {
-              plugin = "theapsgroup/gitlab"
-            
-              # The baseUrl of your GitLab Instance API (ignore if set in GITLAB_ADDR env var)
-              # baseurl = "https://gitlab.company.com/api/v4"
-            
-              # Access Token for which to use for the API (ignore if set in GITLAB_TOKEN env var)
-              token = {self.integration.token}
-            }
-        """
 
         return SteampipeCreds(envs=envs, plugin_name="theapsgroup/gitlab", connection_name="gitlab",
                               conf_path=conf_path)

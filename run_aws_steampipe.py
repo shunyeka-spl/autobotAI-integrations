@@ -42,9 +42,9 @@ aws_config_str = """
 connection "aws" {
   plugin = "aws"
 
-  regions = ["ap-south-1"]
+  #regions = ["ap-south-1"]
 
-  default_region = "us-east-1"
+  #default_region = "us-east-1"
 
   #profile = "myprofile"
 
@@ -123,7 +123,7 @@ def generate_aws_python_payload():
 #     output = service.execute_steampipe_task(task, job_type="query")
 #     print(output)
 
-python_payload = generate_aws_python_payload()
+# python_payload = generate_aws_python_payload()
 # for task in python_payload.tasks:
 #     integration = IntegrationSchema.model_validate(task.context.integration)
 #     service = integration_service_factory.get_service(None, integration)

@@ -35,7 +35,6 @@ class AWSIntegration(BaseSchema):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.account_id = kwargs["accountId"]
 
 
 class AWSService(BaseService):

@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Optional, List, Any, Dict
+from typing import Optional, List, Any, Dict, ClassVar
 
-from pydantic import BaseModel, ConfigDict, Extra
+from pydantic import BaseModel, ConfigDict
 
 from autobotAI_integrations import IntegrationSchema
 
@@ -18,6 +18,8 @@ class BaseCreds(BaseModel):
 
 
 class SteampipeCreds(BaseCreds):
+    connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.STEAMPIPE
+    creds_type: str = ConnectionInterfaces.STEAMPIPE.value
     envs: dict
     connection_name: str
     plugin_name: str
@@ -27,6 +29,8 @@ class SteampipeCreds(BaseCreds):
 
 
 class RestAPICreds(BaseCreds):
+    connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.REST_API
+    creds_type: str = ConnectionInterfaces.REST_API.value
     api_url: str
     token: str
     headers: dict
@@ -37,17 +41,22 @@ class Client(BaseModel):
 
 
 class SDKClient(Client):
-    model_config = ConfigDict(extra=Extra.allow)
+    model_config = ConfigDict(extra='allow')
     pip_package_names: Optional[List[str]] = None
     import_library_names: Optional[List[str]] = None
 
 
 class SDKCreds(BaseCreds):
+    connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.PYTHON_SDK
+    creds_type: str = ConnectionInterfaces.PYTHON_SDK.value
     creds: Optional[dict] = None
     envs: Optional[dict] = None
 
 
+
 class CLICreds(BaseCreds):
+    connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.CLI
+    creds_type: str = ConnectionInterfaces.CLI.value
     envs: dict
     installer_check: str
     install_command: str

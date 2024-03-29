@@ -1,7 +1,6 @@
 # read the argument task_id
 import json
 import argparse
-import ast
 
 from autobotAI_integrations import IntegrationSchema
 from autobotAI_integrations.integrations import integration_service_factory
@@ -17,14 +16,13 @@ args = parser.parse_args()
 
 task_id = str(args.task_id)
 
+
 with open(f"temp/{task_id}.json") as task_file:
-    # TODO: Parse the json data string and store the object in task
-    task_details = json.loads(task_file.read())
-    task = PayloadTask(**task_details)
+    task = PayloadTask.model_validate_json(task_file.read(), strict=False)
     
     integration = IntegrationSchema.model_validate(task.context.integration)
     service = integration_service_factory.get_service(None, integration)
-
+    
     result = None
     if task.connection_interface == ConnectionInterfaces.PYTHON_SDK:
         result = service.python_sdk_processor(task)
@@ -34,4 +32,4 @@ with open(f"temp/{task_id}.json") as task_file:
         print("Method is not implemented yet.")
 
     with open(f"temp/{task_id}-output.json", "w") as output:
-        output.write(json.dumps(result))
+        output.write(json.dumps(result, default=str))

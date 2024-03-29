@@ -1,9 +1,14 @@
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 
-from pydantic import BaseModel, SerializeAsAny
+from pydantic import BaseModel, SerializeAsAny, field_validator, ValidationError
 
 from autobotAI_integrations import IntegrationSchema
-from autobotAI_integrations.models import BaseCreds, ConnectionInterfaces
+from autobotAI_integrations.models import (
+    BaseCreds,
+    ConnectionInterfaces,
+)
+import inspect
+import os
 
 
 class Caller(BaseModel):
@@ -26,6 +31,17 @@ class PayloadTaskContext(BaseModel):
     integration_group_vars: dict = {}  # Secret manager variables stored for the specific Integration Group.
     execution_details: ExecutionDetails
     node_steps: dict
+    
+    @field_validator('integration', mode='before')
+    @classmethod
+    def validate_integration(cls, integration):
+        if isinstance(integration, dict):
+            for base_schema in IntegrationSchema.__subclasses__():
+                for subclass in base_schema.__subclasses__():
+                    dir_name = os.path.dirname(inspect.getfile(subclass)).split('/')[-1]
+                    if dir_name == integration['cspName']:
+                        return subclass.model_construct(**integration)
+        return integration
 
 
 class PayloadTask(BaseModel):
@@ -38,7 +54,15 @@ class PayloadTask(BaseModel):
     node_details: Optional[Any] = None
     context: PayloadTaskContext
     resources: Optional[List] = None
-
+    
+    @field_validator('creds', mode='before')
+    @classmethod
+    def validate_creds(cls, creds: dict):
+        if isinstance(creds, dict):
+            for sub_cls in BaseCreds.__subclasses__():
+                if sub_cls.connection_interface.value == creds['creds_type']:
+                    return sub_cls(**creds)
+        return creds
 
 class Payload(BaseModel):
     job_id: str

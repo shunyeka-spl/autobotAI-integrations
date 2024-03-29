@@ -221,7 +221,7 @@ class BaseService:
             ["steampipe", "query", "{}".format(task.executable), "--output", "json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env={**task.creds.envs, **os.environ}
+            env={**os.environ, **task.creds.envs}
         )
 
         # clear config file

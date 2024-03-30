@@ -5,10 +5,6 @@ from tempfile import TemporaryDirectory
 
 from autobotAI_integrations.payload_schema import Payload
 
-# custom comments
-# check all four integrations is working
-# check with differnt set of credentials of aws either if it is isolated
-
 # run_env = os.environ.get('RUN_ENV', app_env)
 # run_env = os.environ.get('RUN_ENV', "non-local")
 # If run_env = app_env

@@ -76,7 +76,7 @@ context = {
 }
 
 
-def generate_aws_steampipe_payload() -> Payload:
+def generate_aws_steampipe_payload(aws_json=aws_json) -> Payload:
     aws_integration = AWSIntegration(**aws_json)
     aws_service = integration_service_factory.get_service(None, aws_integration)
     creds = aws_service.generate_steampipe_creds()
@@ -93,7 +93,7 @@ def generate_aws_steampipe_payload() -> Payload:
     return payload
 
 
-def generate_aws_python_payload():
+def generate_aws_python_payload(aws_json=aws_json):
     aws_integration = AWSIntegration(**aws_json)
     aws_service = integration_service_factory.get_service(None, aws_integration)
     creds = aws_service.generate_python_sdk_creds()
@@ -115,17 +115,17 @@ def generate_aws_python_payload():
     payload = Payload(**payload_dict)
     return payload
 
+if __name__ == '__main__':
+    aws_steampipe_payload = generate_aws_steampipe_payload(aws_json)
+    # for task in steampipe_payload.tasks:
+    #     integration = IntegrationSchema.model_validate(task.context.integration)
+    #     service = integration_service_factory.get_service(None, integration)
+    #     output = service.execute_steampipe_task(task, job_type="query")
+    #     print(output)
 
-aws_steampipe_payload = generate_aws_steampipe_payload()
-# for task in steampipe_payload.tasks:
-#     integration = IntegrationSchema.model_validate(task.context.integration)
-#     service = integration_service_factory.get_service(None, integration)
-#     output = service.execute_steampipe_task(task, job_type="query")
-#     print(output)
-
-aws_python_payload = generate_aws_python_payload()
-# for task in python_payload.tasks:
-#     integration = IntegrationSchema.model_validate(task.context.integration)
-#     service = integration_service_factory.get_service(None, integration)
-#     output = service.python_sdk_processor(payload_task=task)
-#     print(output)
+    aws_python_payload = generate_aws_python_payload(aws_json)
+    # for task in python_payload.tasks:
+    #     integration = IntegrationSchema.model_validate(task.context.integration)
+    #     service = integration_service_factory.get_service(None, integration)
+    #     output = service.python_sdk_processor(payload_task=task)
+    #     print(output)

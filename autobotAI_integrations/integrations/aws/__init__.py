@@ -24,7 +24,7 @@ class AWSIntegration(BaseSchema):
     access_key: Optional[str] = Field(default=None, exclude=True)
     secret_key: Optional[str] = Field(default=None, exclude=True)
     session_token: Optional[str] = Field(default=None, exclude=True)
-    account_id: str = None
+    account_id: Optional[str] = None
     roleArn: Optional[str] = None
     externalId: Optional[str] = None
     activeRegions: Optional[list] = None

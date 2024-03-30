@@ -64,6 +64,6 @@ class CLICreds(BaseCreds):
 
 # Setting default to None
 class BaseSchema(IntegrationSchema):
-    name: str = None
-    description: str = None
-    logo: str = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    logo: Optional[str] = None

@@ -40,7 +40,7 @@ class PayloadTaskContext(BaseModel):
                 for subclass in base_schema.__subclasses__():
                     dir_name = os.path.dirname(inspect.getfile(subclass)).split('/')[-1]
                     if dir_name == integration['cspName']:
-                        return subclass.model_construct(**integration)
+                        return subclass(**integration)
         return integration
 
 

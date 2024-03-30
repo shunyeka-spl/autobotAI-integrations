@@ -71,7 +71,7 @@ context = {
     "global_variables": {},
 }
 
-def generate_gitlab_python_payload() -> Payload:
+def generate_gitlab_python_payload(gitlab_json=gitlab_json) -> Payload:
     integration = GitlabIntegration(**gitlab_json)
     service = integration_service_factory.get_service(None, integration)
     creds = service.generate_python_sdk_creds()
@@ -90,7 +90,7 @@ def generate_gitlab_python_payload() -> Payload:
     payload = Payload(**payload_dict)
     return payload
 
-def generate_gitlab_steampipe_payload():
+def generate_gitlab_steampipe_payload(gitlab_json=gitlab_json):
     integration = GitlabIntegration(**gitlab_json)
     service = integration_service_factory.get_service(None, integration)
     creds = service.generate_steampipe_creds()
@@ -106,16 +106,17 @@ def generate_gitlab_steampipe_payload():
     payload = Payload(**payload_dict)
     return payload
 
-gitlab_python_payload = generate_gitlab_python_payload()
-# for task in gitlab_python_payload.tasks:
-#     integration = IntegrationSchema.model_validate(task.context.integration)
-#     service = integration_service_factory.get_service(None, integration)
-#     print(service.python_sdk_processor(task))
+if __name__ == "__main__":
+    gitlab_python_payload = generate_gitlab_python_payload()
+    # for task in gitlab_python_payload.tasks:
+    #     integration = IntegrationSchema.model_validate(task.context.integration)
+    #     service = integration_service_factory.get_service(None, integration)
+    #     print(service.python_sdk_processor(task))
 
 
-gitlab_steampipe_payload = generate_gitlab_steampipe_payload()
-# for task in gitlab_steampipe_payload.tasks:
-#     integration = IntegrationSchema.model_validate(task.context.integration)
-#     service = integration_service_factory.get_service(None, integration)
-#     print(service.execute_steampipe_task(task, job_type="query"))
+    gitlab_steampipe_payload = generate_gitlab_steampipe_payload()
+    # for task in gitlab_steampipe_payload.tasks:
+    #     integration = IntegrationSchema.model_validate(task.context.integration)
+    #     service = integration_service_factory.get_service(None, integration)
+    #     print(service.execute_steampipe_task(task, job_type="query"))
 

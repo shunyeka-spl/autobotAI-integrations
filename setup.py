@@ -7,10 +7,13 @@ setup(
     author_email='hello@shunyeka.com',
     description='A python package that contains all the integrations for autobotAI',
     packages=find_packages(),
+    package_data={'': ['integrations/*/inventory.json', 'integrations/*/python_sdk_clients.yml']},
     classifiers=[
         'License :: Other/Proprietary License'
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.11'
     ],
     python_requires='>=3.11',
+    include_package_data=True
+
 )

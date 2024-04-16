@@ -215,8 +215,26 @@ class BaseService:
             print("file removed successfully!")
         except FileNotFoundError:
             print("File Not Found on path {}".format(config_path))
+            
+    def _execute_steampipe_compliance(self, payload_task:PayloadTask, compliance_name):
+        path = os.path.join(
+            os.getcwd(),
+            "compliances/steampipe-mod-{}-compliance".format(compliance_name)
+        )
+        if not os.path.exists(path):
+            subprocess.run(
+                ["git", "clone", "--depth", "1", f"https://github.com/turbot/steampipe-mod-{compliance_name}-compliance.git", f"compliances/steampipe-mod-{compliance_name}-compliance"]
+            )
+        process = subprocess.run(
+            ["steampipe", "check", "{}".format(payload_task.executable), "--output", "json"],
+            cwd=path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, **payload_task.creds.envs}
+        )
+        return process
 
-    def execute_steampipe_task(self, payload_task:PayloadTask, job_type="query"):
+    def execute_steampipe_task(self, payload_task:PayloadTask, job_type="query", compliance_name=None):
         """
         Executes a Steampipe Task
         """
@@ -229,12 +247,18 @@ class BaseService:
             config_str=payload_task.creds.config,
         )
 
-        process = subprocess.run(
-            ["steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={**os.environ, **payload_task.creds.envs}
-        )
+        if job_type == "compliance":
+            if not compliance_name:
+                raise ValueError("compliance_name is required")
+            process = self._execute_steampipe_compliance(payload_task, compliance_name)
+
+        elif job_type == "query":
+            process = subprocess.run(
+                ["steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={**os.environ, **payload_task.creds.envs}
+            )
 
         # clear config file
         self.clear_steampipe_spc_config()

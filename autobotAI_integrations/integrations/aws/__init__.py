@@ -106,8 +106,8 @@ class AWSService(BaseService):
             "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
             "supported_executor": "ecs",
             "compliance_supported": False,
-        "supported_interfaces": cls.supported_connection_interfaces()
-    }
+            "supported_interfaces": cls.supported_connection_interfaces()
+        }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = self._temp_credentials()

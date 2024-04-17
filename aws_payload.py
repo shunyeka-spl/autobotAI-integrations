@@ -103,7 +103,7 @@ def generate_aws_python_payload(aws_json=aws_json):
         "connection_interface": ConnectionInterfaces.PYTHON_SDK,
         "executable": '\ndef executor(context):\n    clients = context[\'clients\']\n    exec_details = context[\'execution_details\']\n    resources = context[\'resources\']\n    integration_details = context[\'integration\']  ### AccountId, ProjectName, SubscriptionId etc\n    s3_client = context[\'clients\']["s3"]\n    buckets = s3_client.list_buckets()["Buckets"]\n    for bucket in buckets:\n        bucket["name"] = bucket.pop("Name")\n        bucket["id"] = bucket["name"]\n    return buckets\n',
         "clients": ["s3"],
-        "params": {},
+        "params": [],
         "node_details": {"filter_resources": False},
         "context": PayloadTaskContext(**context, **{"integration": aws_integration}),
     }

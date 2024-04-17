@@ -61,7 +61,7 @@ class PayloadTask(BaseModel):
     connection_interface: ConnectionInterfaces
     executable: str
     clients: Optional[List[str]] = None
-    params: Optional[List[Param]] = None
+    params: Optional[List[Param]] = []
     node_details: Optional[Any] = None
     context: PayloadTaskContext
 

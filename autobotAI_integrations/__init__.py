@@ -189,7 +189,7 @@ class BaseService:
     def prepare_params(cls, params: List[Param]):
         flattened_params = {}
         for param in params:
-            flattened_params[param.name] = param.values
+            flattened_params[param["name"]] = param["values"]
         return flattened_params
 
     @classmethod

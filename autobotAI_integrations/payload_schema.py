@@ -1,6 +1,6 @@
 from typing import List, Optional, Any, Union
 
-from pydantic import BaseModel, SerializeAsAny, field_validator, ValidationError
+from pydantic import BaseModel, SerializeAsAny, field_validator, ValidationError, Field
 
 from autobotAI_integrations import IntegrationSchema
 from autobotAI_integrations.models import (
@@ -44,16 +44,26 @@ class PayloadTaskContext(BaseModel):
         return integration
 
 
+class Param(BaseModel):
+    params_type: str = Field(alias="type")
+    name: str
+    values: Optional[Any] = None
+    filter_relevant_resources: bool
+    
+    def model_dump_json(self, *args, **kwargs) -> str:
+        kwargs["by_alias"] = True
+        return super().model_dump_json(*args, **kwargs)
+
+
 class PayloadTask(BaseModel):
     task_id: Optional[str]
     creds: SerializeAsAny[BaseCreds]
     connection_interface: ConnectionInterfaces
     executable: str
     clients: Optional[List[str]] = None
-    params: Optional[Any] = None
+    params: Optional[List[Param]] = None
     node_details: Optional[Any] = None
     context: PayloadTaskContext
-    resources: Optional[List] = None
 
     @field_validator('creds', mode='before')
     @classmethod

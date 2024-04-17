@@ -18,8 +18,8 @@ class KubernetesHelper:
         Determines and loads the appropriate Kubernetes configuration based on the environment.
         """
 
-        in_cluster = os.getenv("KUBERNETES_SERVICE_ACCOUNT_TOKEN", "")  # Default to empty string
-        if in_cluster:
+        in_cluster = os.getenv("RUN_ENV", "non_local")  # Default non_local environment
+        if in_cluster == "non_local":
             config.load_incluster_config()
             print("Loaded configuration from in-cluster service account.")
         else:

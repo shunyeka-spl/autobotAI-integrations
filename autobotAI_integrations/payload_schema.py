@@ -61,7 +61,7 @@ class PayloadTask(BaseModel):
     connection_interface: ConnectionInterfaces
     executable: str
     clients: Optional[List[str]] = None
-    params: Optional[List[Param]] = None
+    params: Optional[List[Param]] = []
     node_details: Optional[Any] = None
     context: PayloadTaskContext
 
@@ -79,6 +79,7 @@ class Payload(BaseModel):
     job_id: str
     state: Optional[dict] = None
     tasks: List[PayloadTask]
+    output_url: Optional[dict] = None
 
 
 class ResponseError(BaseModel):

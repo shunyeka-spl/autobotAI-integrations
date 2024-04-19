@@ -64,12 +64,6 @@ class AzureService(BaseService):
                             "label": "Subscription ID",
                             "placeholder": "Enter your Azure subscription ID",
                             "required": True
-                        },
-                        {
-                            "name": "client_secret",
-                            "type": "text",
-                            "label": "Client Secret",
-                            "placeholder": "Enter your Azure Application Client Seceret",
                         }
                     ]
                 }

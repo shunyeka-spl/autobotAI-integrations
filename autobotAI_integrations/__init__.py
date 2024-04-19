@@ -74,7 +74,7 @@ class BaseService:
     def get_steampipe_tables(cls) -> List[dict]:
         base_path = os.path.dirname(inspect.getfile(cls))
         integration_type = cls.get_integration_type()
-        with open(path.join(base_path, ".", 'inventory.json')) as f:
+        with open(path.join(base_path,'inventory.json')) as f:
             clients_data = f.read()
             data = json.loads(clients_data)
         return data[integration_type]

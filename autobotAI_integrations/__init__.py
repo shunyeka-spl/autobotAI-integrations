@@ -251,21 +251,20 @@ class BaseService:
         self.clear_steampipe_spc_config()
 
         stdout = process.stdout.decode("utf-8")
-        stderr = process.stderr.decode("utf-8")
-
-        if stderr:
-            print(stdout)
-            print(stderr)
+        stderr = [{
+                "message": process.stderr.decode("utf-8")
+        }]
 
         try:
             stdout = json.loads(stdout)
-            return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":
-                return {"success": True, "resources": []}
+                stdout = []
         except BaseException as e:
-            stdout = {
-                "non_json_output": stdout,
-                "message": traceback.format_exc()
-            }
-        return {"success": False, "output": stdout}
+            stderr = [{
+                "message": traceback.format_exc(),
+                "other_details": {
+                    "non_json_output": stdout,
+                }
+            }]
+        return stdout, stderr

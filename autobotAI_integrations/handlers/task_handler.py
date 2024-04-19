@@ -14,8 +14,7 @@ def handle_task(task: PayloadTask) -> TaskResult:
 
     result_json = {
         "task_id": task.task_id,
-        # Check if using the integrationn_id and Integration_type
-        "integration_id": task.context.integration.userId,
+        "integration_id": task.context.integration.accountId,
         "integration_type": task.context.integration.cspName,
         "resources": None,
         "errors": None,

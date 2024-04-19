@@ -22,7 +22,25 @@ class KubernetesService(BaseService):
 
     @staticmethod
     def get_forms():
-        pass
+        return  {
+            "label": "Kubernetes",
+            "type": "form",
+            "children": [
+                {
+                    "label": "Cluster Connection",
+                    "type": "form",
+                    "children": [
+                        {
+                            "name": "Agent Ids",
+                            "type": "select",
+                            "label": "Kubernetes Agent Ids",
+                            "placeholder": "",
+                        }
+                    ]
+                }
+            ]
+        }
+
 
     @staticmethod
     def get_schema():
@@ -90,4 +108,3 @@ class KubernetesService(BaseService):
         return {
             "KUBECONFIG": "~/.kube/config"
         }
-

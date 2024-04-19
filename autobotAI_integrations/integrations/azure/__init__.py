@@ -33,7 +33,40 @@ class AzureService(BaseService):
 
     @staticmethod
     def get_forms():
-        return {}
+        return {
+            "label": "Azure",
+            "type": "form",
+            "children": [
+                {
+                    "label": "Service Principal Credentials",
+                    "type": "form",
+                    "children": [
+                        {
+                            "name": "tenant_id",
+                            "type": "text",
+                            "label": "Tenant ID",
+                            "placeholder": "Enter your Azure tenant ID",
+                            "required": True
+                        },
+                        {
+                            "name": "client_id",
+                            "type": "text",
+                            "label": "Client ID",
+                            "placeholder": "Enter your Azure application client ID",
+                            "required": True
+                        },
+                        {
+                            "name": "subscription_id",
+                            "type": "text",
+                            "label": "Subscription ID",
+                            "placeholder": "Enter your Azure subscription ID",
+                            "required": True
+                        }
+                    ]
+                }
+            ]
+        }
+
 
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
@@ -42,8 +75,6 @@ class AzureService(BaseService):
     @classmethod
     def get_details(cls):
         return {
-            "automation_code": "",
-            "fetcher_code": "",
             "automation_supported": ["communication", 'mutation'],
             "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
             "supported_executor": "ecs",

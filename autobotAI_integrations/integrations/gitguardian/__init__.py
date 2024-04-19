@@ -77,8 +77,12 @@ class GitGuardianService(BaseService):
             "GITGUARDIAN_TOKEN": self.integration.token,
         }
         conf_path = "~/.steampipe/config/gitguardian.spc"
+        config = """connection "gitguardian" {
+  plugin = "francois2metz/gitguardian"
+}
+"""
         return SteampipeCreds(envs=envs, plugin_name="francois2metz/gitguardian", connection_name="gitguardian",
-                              conf_path=conf_path)
+                              conf_path=conf_path, config=config)
 
     def generate_rest_api_creds(self) -> RestAPICreds:
         headers = {

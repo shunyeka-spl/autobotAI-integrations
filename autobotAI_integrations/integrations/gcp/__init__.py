@@ -1,10 +1,8 @@
 import uuid
 from typing import Dict, List, Type, Union
-import json
 import os
 from pydantic import Field
 from functools import wraps
-import importlib
 
 from autobotAI_integrations import list_of_unique_elements
 from autobotAI_integrations.utils import GCPHelper
@@ -90,8 +88,6 @@ class GCPService(BaseService):
     @classmethod
     def get_details(cls):
         return {
-            "automation_code": "",
-            "fetcher_code": "",
             "automation_supported": ["communication", "mutation"],
             "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
             "supported_executor": "ecs",
@@ -101,8 +97,14 @@ class GCPService(BaseService):
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = self._temp_credentials()
         conf_path = "~/.steampipe/config/gcp.spc"
+        config = """connection "gcp" {
+  plugin    = "gcp"
+
+  ignore_error_codes = ["401", "403"]
+}
+"""
         return SteampipeCreds(
-            envs=creds, plugin_name="gcp", connection_name="gcp", conf_path=conf_path
+            envs=creds, plugin_name="gcp", connection_name="gcp", conf_path=conf_path, config=config,
         )
 
     def build_python_exec_combinations_hook(
@@ -166,5 +168,5 @@ class GCPService(BaseService):
         return super().python_sdk_processor(payload_task)
 
     @manage_creds_path
-    def execute_steampipe_task(self, payload_task: PayloadTask, job_type="query"):
-        return super().execute_steampipe_task(payload_task, job_type)
+    def execute_steampipe_task(self, payload_task: PayloadTask):
+        return super().execute_steampipe_task(payload_task)

@@ -1,5 +1,4 @@
 import os
-import json
 from autobotAI_integrations import IntegrationSchema
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.models import ConnectionInterfaces
@@ -22,7 +21,7 @@ def handle_task(task: PayloadTask) -> TaskResult:
             "executable": task.executable,
             "job_type": "job_type_here",
             "resource_type": "",
-            "environs": None,
+            "environs": {**os.environ},
         }),
     }
 

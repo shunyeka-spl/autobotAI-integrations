@@ -30,7 +30,7 @@ def handle_payload(
         )
         result_file.close()
 
-        if response.status_code == 200:
+        if response.status_code == 204:
             print("File uploaded successfully!")
         else:
             print(f"Error uploading file: {response.status_code}")

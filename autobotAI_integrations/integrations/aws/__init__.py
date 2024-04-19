@@ -101,12 +101,11 @@ class AWSService(BaseService):
     @classmethod
     def get_details(cls):
         return {
-            "automation_code": "",
-            "fetcher_code": "",
             "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
             "supported_executor": "ecs",
             "compliance_supported": False,
-        "supported_interfaces": cls.supported_connection_interfaces()
+            "supported_interfaces": cls.supported_connection_interfaces(),
+            "python_code_sample": "print('hello world')"
     }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -161,12 +160,11 @@ class AWSService(BaseService):
             if not param.filter_relevant_resources or not param.values:
                 filtered_params.append(param)
             else:
-                if param.values:
-                    filtered_values = []
-                    for value in param.values:
-                        if value.get("region") == region:
-                            filtered_values.append(value)
-                    filtered_params.append({"name": param.name, "values": filtered_values})
+                filtered_values = []
+                for value in param.values:
+                    if value.get("region") == region:
+                        filtered_values.append(value)
+                filtered_params.append({"name": param.name, "values": filtered_values})
         return filtered_params
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:

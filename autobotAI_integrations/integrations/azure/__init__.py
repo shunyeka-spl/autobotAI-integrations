@@ -5,6 +5,9 @@ from autobotAI_integrations import BaseService, list_of_unique_elements,PayloadT
 from autobotAI_integrations.models import *
 
 import uuid
+import importlib
+
+from azure.identity import ClientSecretCredential
 
 class AzureIntegration(BaseSchema):
     account_id: Optional[str] = uuid.uuid4().hex
@@ -61,6 +64,12 @@ class AzureService(BaseService):
                             "label": "Subscription ID",
                             "placeholder": "Enter your Azure subscription ID",
                             "required": True
+                        },
+                        {
+                            "name": "client_secret",
+                            "type": "text",
+                            "label": "Client Secret",
+                            "placeholder": "Enter your Azure Application Client Seceret",
                         }
                     ]
                 }
@@ -84,11 +93,38 @@ class AzureService(BaseService):
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = self._temp_credentials()
         conf_path = "~/.steampipe/config/azure.spc"
+        config = """connection "azure" {
+  plugin = "azure"
+
+  subscription_id = "azure_01"
+
+  ignore_error_codes = ["NoAuthenticationInformation", "InvalidAuthenticationInfo", "AccountIsDisabled", "UnauthorizedOperation", "UnrecognizedClientException", "AuthorizationError", "AuthenticationFailed", "InsufficientAccountPermissions"]
+}"""
         return SteampipeCreds(envs=creds, plugin_name="azure", connection_name="azure",
-                              conf_path=conf_path)
+                              conf_path=conf_path, config=config)
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask, client_definitions: List[SDKClient]) -> list:
-        pass
+        clients_classes = dict()
+        credential = ClientSecretCredential(
+            tenant=self.integration.tenant_id,
+            client_id=self.integration.client_id,
+            client_secret=self.integration.client_secret
+        )
+        for client in client_definitions:
+            try:
+                client_module = importlib.import_module(client.module, package=None)
+                if hasattr(client_module, client.class_name):
+                    cls = getattr(client_module, client.class_name)
+                    clients_classes[client.class_name] = cls(credential)
+            except BaseException as e:
+                print(e)
+                continue
+        
+        return [
+            {
+                "clients": clients_classes
+            }
+        ]
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
         creds = self._temp_credentials()
@@ -107,4 +143,9 @@ class AzureService(BaseService):
         raise NotImplementedError()
 
     def _temp_credentials(self):
-        pass
+        return {
+            "AZURE_TENANT_ID": self.integration.tenant_id,
+            "AZURE_CLIENT_ID": self.integration.client_id,
+            "AZURE_CLIENT_SECRET":self.integration.client_secret,
+            "AZURE_SUBSCRIPTION_ID": self.integration.subscription_id,
+        }

@@ -109,7 +109,6 @@ def generate_gcp_python_payload(gcp_json=gcp_json):
         "connection_interface": ConnectionInterfaces.PYTHON_SDK,
         "executable": gcp_code,
         "clients": ["ProjectsClient"],
-        "params": {},
         "node_details": {"filter_resources": False},
         "context": PayloadTaskContext(**context, **{"integration": gcp_integration}),
         "resources": [],

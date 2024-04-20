@@ -119,10 +119,11 @@ class AzureService(BaseService):
             except BaseException as e:
                 print(e)
                 continue
-        
         return [
             {
-                "clients": clients_classes
+                "clients": clients_classes,
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context
             }
         ]
 

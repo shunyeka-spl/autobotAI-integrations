@@ -81,7 +81,9 @@ class KubernetesService(BaseService):
             {
                 "clients": {
                     "kubernetes": kubernetes,
-                }
+                },
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context
             }
         ]
 

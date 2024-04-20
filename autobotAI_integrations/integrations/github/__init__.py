@@ -83,7 +83,9 @@ class GithubService(BaseService):
             {
                 "clients": {
                     "github": github_client,
-                }
+                },
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context
             }
         ]
 

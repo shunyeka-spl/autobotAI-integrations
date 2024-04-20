@@ -202,6 +202,8 @@ class BaseService:
         result = run_mod_func(mod.executor, context=context)
         resources = []
         if result:
+            if not isinstance(result, list):
+                result = [result]
             for r in result:
                 resources.append({**r, **combination.get("metadata", {})})
         return resources

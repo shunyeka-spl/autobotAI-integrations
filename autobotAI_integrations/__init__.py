@@ -205,7 +205,13 @@ class BaseService:
             if not isinstance(result, list):
                 result = [result]
             for r in result:
-                resources.append({**r, **combination.get("metadata", {})})
+                if isinstance(r, dict):
+                    resources.append({**r, **combination.get("metadata", {})})
+                else:
+                    resources.append({
+                        "result": r,
+                        **combination.get("metadata", {})
+                    })
         return resources
 
     def _get_steampipe_config_path(self):

@@ -3,11 +3,6 @@
         {
             "name": "github_actions_artifact",
             "all_columns": [
-              "Name",
-              "Type",
-              "Operators",
-              "Description",
-              "_ctx",
               "archive_download_url",
               "created_at",
               "expired",
@@ -26,11 +21,6 @@
         {
             "name": "github_audit_log",
             "all_columns": [
-              "Name",
-              "Type",
-              "Operators",
-              "Description",
-              "_ctx",
               "action",
               "actor",
               "actor_location",
@@ -52,11 +42,6 @@
         {
             "name": "github_branch",
             "all_columns": [
-              "Name",
-              "Type",
-              "Operators",
-              "Description",
-              "_ctx",
               "branch_protection_rule",
               "commit",
               "name",

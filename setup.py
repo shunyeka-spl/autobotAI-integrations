@@ -10,6 +10,8 @@ setup(
     install_requires=[
         "boto3",
         "botocore",
+        "python-dotenv",
+        "azure-identity",
         "pydantic",
         "PyYAML",
         "pydash",

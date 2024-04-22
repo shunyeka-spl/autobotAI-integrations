@@ -36,4 +36,6 @@ wrapt==1.16.0
 PyYAML
 pydash
 PyGithub
+python-dotenv
+azure-identity
 kubernetes

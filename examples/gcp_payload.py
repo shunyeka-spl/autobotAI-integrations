@@ -126,7 +126,7 @@ if __name__ == '__main__':
     for task in gcp_steampipe_payload.tasks:
         integration = IntegrationSchema.model_validate(task.context.integration)
         service = integration_service_factory.get_service(None, integration)
-        output = service.execute_steampipe_task(task, job_type="query")
+        output = service.execute_steampipe_task(task)
         print(output)
 
     gcp_python_payload = generate_gcp_python_payload(gcp_json)

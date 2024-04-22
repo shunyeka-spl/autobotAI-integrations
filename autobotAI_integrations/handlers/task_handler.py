@@ -40,7 +40,7 @@ def handle_task(task: PayloadTask) -> TaskResult:
         formated_result = json.dumps(output[0], default=str)
         result.resources = formated_result
     else:
-        result.resources = output[0]
+        result.resources = formated_result
 
     result.errors = [ ResponseError(**error) for error in output[1] ]
     

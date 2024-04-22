@@ -113,7 +113,7 @@ class GCPService(BaseService):
                 client_module = importlib.import_module(client.module, package=None)
                 if hasattr(client_module, client.class_name):
                     cls = getattr(client_module, client.class_name)
-                    clients_classes[client.class_name] = cls()
+                    clients_classes[client.name] = cls()
             except BaseException as e:
                 print(e)
                 continue

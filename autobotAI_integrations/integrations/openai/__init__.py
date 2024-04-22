@@ -29,7 +29,7 @@ class OpenAIService(BaseService):
             "type": "form",
             "children": [
                 {
-                    "label": "Open AI Integration",
+                    "label": "API Key Integration",
                     "type": "form",
                     "children": [
                         {

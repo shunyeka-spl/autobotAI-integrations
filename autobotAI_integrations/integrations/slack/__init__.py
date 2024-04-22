@@ -29,7 +29,7 @@ class SlackService(BaseService):
             "type": "form",
             "children": [
                 {
-                    "label": "Slack Integration",
+                    "label": "Bot Token Integration",
                     "type": "form",
                     "children": [
                         {

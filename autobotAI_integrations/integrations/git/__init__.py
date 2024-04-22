@@ -17,7 +17,7 @@ class GitIntegration(BaseSchema):
         super().__init__(**kwargs)
 
 
-class GCPService(BaseService):
+class GitService(BaseService):
 
     def __init__(self, ctx: dict, integration: Union[GitIntegration, dict]):
         """
@@ -54,7 +54,7 @@ class GCPService(BaseService):
             "supported_executor": "ecs",
         }
         
-    def is_git_installed():
+    def _is_git_installed(self):
         """Checks if Git is installed on the system."""
         try:
             # Attempt to run the git version command
@@ -63,7 +63,7 @@ class GCPService(BaseService):
         except subprocess.CalledProcessError:
             return False
 
-    def install_git_with_python():
+    def _install_git_with_python(self):
         """Installs Git using the appropriate package manager based on OS."""
         os_name = platform.system()
         if os_name == "Linux":
@@ -93,7 +93,9 @@ class GCPService(BaseService):
     def build_python_exec_combinations_hook(
             self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        
+        if not self._is_git_installed():
+            self._install_git_with_python()
+
         client = importlib.import_module(client_definitions[0].import_library_names[0], package=None)
         return [
             {

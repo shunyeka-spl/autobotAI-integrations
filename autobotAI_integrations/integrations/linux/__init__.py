@@ -19,7 +19,7 @@ class LinuxIntegration(BaseSchema):
         super().__init__(**kwargs)
 
 
-class GCPService(BaseService):
+class LinuxService(BaseService):
 
     def __init__(self, ctx: dict, integration: Union[LinuxIntegration, dict]):
         """

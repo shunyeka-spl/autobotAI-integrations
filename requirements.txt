@@ -39,3 +39,4 @@ PyGithub
 python-dotenv
 azure-identity
 kubernetes
+pymsteams

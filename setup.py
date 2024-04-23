@@ -17,7 +17,8 @@ setup(
         "kubernetes",
         "google-auth",
         "azure-identity",
-        "python-dotenv"
+        "python-dotenv",
+        "pymsteams"
     ],
     package_data={'': ['integrations/*/inventory.json', 'integrations/*/python_sdk_clients.yml']},
     classifiers=[

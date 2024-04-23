@@ -16,6 +16,8 @@ setup(
         "PyGithub",
         "kubernetes",
         "google-auth",
+        "azure-identity",
+        "python-dotenv"
     ],
     package_data={'': ['integrations/*/inventory.json', 'integrations/*/python_sdk_clients.yml']},
     classifiers=[

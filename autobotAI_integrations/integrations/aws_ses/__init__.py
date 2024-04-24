@@ -12,7 +12,11 @@ from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 
 class AwsSesIntegration(BaseSchema):
     region: str
-    roleArn: Optional[str] = Field(default=None, exclude=True)
+    access_key: Optional[str] = Field(default=None, exclude=True)
+    secret_key: Optional[str] = Field(default=None, exclude=True)
+    session_token: Optional[str] = Field(default=None, exclude=True)
+    account_id: Optional[str] = None
+    roleArn: Optional[str] = None
     externalId: Optional[str] = None
 
     def __init__(self, **kwargs):
@@ -75,50 +79,11 @@ class AwsSesService(BaseService):
     @classmethod
     def get_details(cls):
         return {
-            "listener_supported": False,
-            "clients": list_of_unique_elements(AwsSesService.get_clients()),
-            "supported_executor": "lambda",
-            "approval_automation_details": {
-                "title": "Send Approval Request to AWS SES",
-                "name": "Send Approval Request to AWS SES",
-                "clients": ["ses"],
-                "type": "communication",
-                "approval_required": False,
-                "batch_supported": False,
-                "required_payload": [
-                    {
-                        "type": "string",
-                        "name": "automation_title",
-                        "values": "sample automation",
-                        "description": "Title of the Automation being executed"
-                    },
-                    {
-                        "type": "string",
-                        "name": "admin_email",
-                        "values": "admin@email.com",
-                        "description": "Administrator's email"
-                    },
-                    {
-                        "type": "list",
-                        "name": "links",
-                        "values": [{"name": "button1", "link": "some.link"}],
-                        "description": "Links to show in the approval"
-                    },
-                    {
-                        "type": "list",
-                        "name": "approvers",
-                        "values": ["email1@yopmail.com"],
-                        "description": "List of approver emails"
-                    },
-                    {
-                        "type": "json",
-                        "name": "bot",
-                        "values": {},
-                        "description": "Bot details"
-                    }
-                ],
-                "code": ""
-            }
+            "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
+            "supported_executor": "ecs",
+            "compliance_supported": False,
+            "supported_interfaces": cls.supported_connection_interfaces(),
+            "python_code_sample": "print('hello world')"
         }
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask,

@@ -1,5 +1,6 @@
 import importlib
 import os
+from typing_extensions import Literal
 import uuid
 from typing import List
 
@@ -60,7 +61,7 @@ class GitGuardianService(BaseService):
 
     def _test_integration(self, integration: dict):
         try:
-            client = GGClient(api_key=integration.token)
+            client = GGClient(api_key=integration.get("token", ""))
             if client.health_check().success:
                 return {"success": True}
             else:

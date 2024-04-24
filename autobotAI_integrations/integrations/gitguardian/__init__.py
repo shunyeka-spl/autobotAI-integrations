@@ -7,7 +7,7 @@ from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
-
+from pygitguardian.client import GGClient
 
 class GitGuardianIntegration(BaseSchema):
     base_url: str = "https://api.gitguardian.com/v1/"
@@ -59,7 +59,14 @@ class GitGuardianService(BaseService):
         ]
 
     def _test_integration(self, integration: dict):
-        pass
+        try:
+            client = GGClient(api_key=integration.token)
+            if client.health_check().success:
+                return {"success": True}
+            else:
+                return {"success": False, "error": "Invalid API Key"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask,
                                             client_definitions: List[SDKClient]) -> list:

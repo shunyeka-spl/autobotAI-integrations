@@ -16,6 +16,12 @@ setup(
         "PyGithub",
         "kubernetes",
         "google-auth",
+        "google-cloud-resource-manager",
+        "pygitguardian",
+        "azure-mgmt-resource",
+        "python-gitlab",
+        "openai",
+        "slack-sdk"
     ],
     package_data={'': ['integrations/*/inventory.json', 'integrations/*/python_sdk_clients.yml']},
     classifiers=[

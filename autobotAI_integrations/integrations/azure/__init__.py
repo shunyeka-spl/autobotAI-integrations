@@ -15,7 +15,7 @@ class AzureIntegration(BaseSchema):
     tenant_id: Optional[str] = Field(default=None, exclude=True)
     client_id: Optional[str] = Field(default=None, exclude=True)
     subscription_id: Optional[str] = Field(default=None, exclude=True)
-    client_secret: Optional[str] = None
+    client_secret: Optional[str] = Field(default=None, exclude=True)
     
     def __init__(self, **kwargs):
         kwargs["accountId"] = kwargs["subscription_id"]
@@ -75,6 +75,12 @@ class AzureService(BaseService):
                             "label": "Subscription ID",
                             "placeholder": "Enter your Azure subscription ID",
                             "required": True
+                        },
+                        {
+                            "name": "client_secret",
+                            "type": "text",
+                            "label": "Client Secret",
+                            "placeholder": "Enter your Azure Application Client Seceret",
                         }
                     ]
                 }

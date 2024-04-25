@@ -46,11 +46,11 @@ class MsTeamsService(BaseService):
     @staticmethod
     def get_forms():
         return {
-            "label": "Azure",
+            "label": "MS Teams",
             "type": "form",
             "children": [
                 {
-                    "label": "MS Teams",
+                    "label": "Channel Webhook Integration",
                     "type": "form",
                     "children": [
                         {
@@ -76,7 +76,7 @@ class MsTeamsService(BaseService):
             "fetcher_supported": [],
             "listener_supported": False,
             "automation_supported": ['communication'],
-            "clients": list_of_unique_elements(MsTeamsService.get_clients()),
+            "clients": list_of_unique_elements(cls.get_all_python_sdk_clients()),
             "supported_executor": "lambda",
             "approval_automation_details": {
                 "title": "Send Approval Request to Teams",

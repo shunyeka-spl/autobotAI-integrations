@@ -43,9 +43,9 @@ class AWSService(BaseService):
             integration = AWSIntegration(**integration)
         super().__init__(ctx, integration)
 
-    def _test_integration(self, integration: dict) -> dict:
+    def _test_integration(self) -> dict:
         try:
-            boto3_helper = Boto3Helper(self.ctx, integration=integration)
+            boto3_helper = Boto3Helper(self.ctx, integration=self.integration)
             boto3_helper.get_client("ec2")
             return {'success': True}
         except ClientError as e:

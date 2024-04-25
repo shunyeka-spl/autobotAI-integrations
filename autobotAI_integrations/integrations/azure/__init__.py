@@ -8,16 +8,17 @@ import uuid
 import importlib
 
 from azure.identity import ClientSecretCredential
+from azure.mgmt.resource import ResourceManagementClient
+
 
 class AzureIntegration(BaseSchema):
-    account_id: Optional[str] = uuid.uuid4().hex
     tenant_id: Optional[str] = Field(default=None, exclude=True)
     client_id: Optional[str] = Field(default=None, exclude=True)
     subscription_id: Optional[str] = Field(default=None, exclude=True)
     client_secret: Optional[str] = None
     
     def __init__(self, **kwargs):
-        kwargs["accountId"] = self.account_id
+        kwargs["accountId"] = kwargs["subscription_id"]
         super().__init__(**kwargs)
 
 
@@ -31,8 +32,18 @@ class AzureService(BaseService):
             integration = AzureIntegration(**integration)
         super().__init__(ctx, integration)
 
-    def _test_integration(self, integration: dict) -> dict:
-        pass
+    def _test_integration(self) -> dict:
+        credentials = ClientSecretCredential(
+            tenant_id=self.integration.tenant_id,
+            client_id=self.integration.client_id,
+            client_secret=self.integration.client_secret
+        )
+        client = ResourceManagementClient(credential=credentials, subscription_id=self.integration.subscription_id)
+        try:
+            resources = list(client.resources.list())
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     @staticmethod
     def get_forms():
@@ -64,12 +75,6 @@ class AzureService(BaseService):
                             "label": "Subscription ID",
                             "placeholder": "Enter your Azure subscription ID",
                             "required": True
-                        },
-                        {
-                            "name": "client_secret",
-                            "type": "text",
-                            "label": "Client Secret",
-                            "placeholder": "Enter your Azure Application Client Seceret",
                         }
                     ]
                 }
@@ -96,8 +101,6 @@ class AzureService(BaseService):
         config = """connection "azure" {
   plugin = "azure"
 
-  subscription_id = "azure_01"
-
   ignore_error_codes = ["NoAuthenticationInformation", "InvalidAuthenticationInfo", "AccountIsDisabled", "UnauthorizedOperation", "UnrecognizedClientException", "AuthorizationError", "AuthenticationFailed", "InsufficientAccountPermissions"]
 }"""
         return SteampipeCreds(envs=creds, plugin_name="azure", connection_name="azure",
@@ -115,7 +118,7 @@ class AzureService(BaseService):
                 client_module = importlib.import_module(client.module, package=None)
                 if hasattr(client_module, client.class_name):
                     cls = getattr(client_module, client.class_name)
-                    clients_classes[client.class_name] = cls(credential)
+                    clients_classes[client.class_name] = cls(credential=credential, subscription_id=self.integration.subscription_id)
             except BaseException as e:
                 print(e)
                 continue

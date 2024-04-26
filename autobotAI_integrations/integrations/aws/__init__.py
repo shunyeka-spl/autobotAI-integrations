@@ -97,13 +97,6 @@ class AWSService(BaseService):
                             "label": "IAM Role ARN",
                             "placeholder": "Enter IAM role ARN",
                             "required": True
-                        },
-                        {
-                            "name": "region",
-                            "type": "select",
-                            "label": "Region",
-                            "placeholder": "Select Region",
-                            "required": True
                         }
                     ]
                 }

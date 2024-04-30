@@ -52,6 +52,7 @@ class AwsSesService(BaseService):
 
     @staticmethod
     def get_forms():
+        # TODO: Add regions adn return themm in options variable containing two values value label
         return {
             "label": "AWS SES",
             "type": "form",

@@ -32,11 +32,11 @@ class LinuxService(BaseService):
     def _test_integration(self) -> dict:
         try:
             import platform
-            linux_version = platform.linux_distribution()
-            print(f"Linux Distribution: {linux_version[0]} {linux_version[1]}")
+            linux_version = platform.platform()
+            print(f"Linux Distribution: {linux_version}")
             return {"success": True}
-        except:
-            return {"success": False}
+        except Exception as e:
+            return {"success": False, "error": str(e) }
 
     @staticmethod
     def get_forms():

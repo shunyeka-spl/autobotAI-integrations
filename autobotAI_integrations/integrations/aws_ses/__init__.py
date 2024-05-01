@@ -39,16 +39,23 @@ class AwsSesService(BaseService):
         super().__init__(ctx, integration)
 
     def _test_integration(self, integration: dict) -> dict:
-        res = None
         try:
-            boto3_helper = Boto3Helper(integration=integration)
-            boto3_helper.get_client("ses")
-            res = {'success': True}
+            if self.integration.roleArn:
+                boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
+                boto3_helper.get_client("ses")
+            else:
+                ses_client = boto3.client(
+                    "ses",
+                    aws_access_key_id=self.integration.access_key,
+                    aws_secret_access_key=self.integration.secret_key,
+                    aws_session_token=self.integration.session_token
+                )
+                response = ses_client.list_identities()
+            return {'success': True}
         except ClientError as e:
             print(traceback.format_exc())
-            if 'AccessDenied' in str(e):
-                res = {'success': False, 'error': repr(e)}
-        return res
+            return {'success': False, 'error': traceback.format_exc()}
+
 
     @staticmethod
     def get_forms():
@@ -73,7 +80,108 @@ class AwsSesService(BaseService):
                             "type": "select",
                             "label": "Region",
                             "placeholder": "Select Region",
-                            "options": ['ap-south-2', 'ap-south-1', 'eu-north-1', 'eu-west-3', 'eu-west-2', 'eu-west-1', 'ap-northeast-3', 'ap-northeast-2', 'ap-northeast-1', 'ca-central-1', 'sa-east-1', 'ap-southeast-1', 'ap-southeast-2', 'eu-central-1', 'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2'],
+                            "options": [
+                                {
+                                    "label": "US East (N. Virginia)",
+                                    "value": "us-east-1" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Mumbai)",
+                                    "value": "ap-south-1" 
+                                },
+                                {
+                                    "label": "US West (N. California)",
+                                    "value": "us-west-1" 
+                                },
+                                {
+                                    "label": "US East (Ohio)",
+                                    "value": "us-east-2" 
+                                },
+                                {
+                                    "label": "US West (Oregon)",
+                                    "value": "us-west-2" 
+                                },
+                                {
+                                    "label": "Africa (Cape Town)",
+                                    "value": "af-south-1" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Hong Kong)",
+                                    "value": "ap-east-1" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Jakarta)",
+                                    "value": "ap-southeast-3" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Osaka)",
+                                    "value": "ap-northeast-3" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Seoul)",
+                                    "value": "ap-northeast-2"
+                                },
+                                {
+                                    "label": "Asia Pacific (Singapore)",
+                                    "value": "ap-southeast-1"
+                                },
+                                {
+                                    "label": "Asia Pacific (Sydney)",
+                                    "value": "ap-southeast-2" 
+                                },
+                                {
+                                    "label": "Asia Pacific (Tokyo)",
+                                    "value": "ap-northeast-1"
+                                },
+                                {
+                                    "label": "Canada (Central)",
+                                    "value": "ca-central-1" 
+                                },
+                                {
+                                    "label": "Europe (Frankfurt)",
+                                    "value": "eu-central-1" 
+                                },
+                                {
+                                    "label": "Europe (Ireland)",
+                                    "value": "eu-west-1"
+                                },
+                                {
+                                    "label": "Europe (London)",
+                                    "value": "eu-west-2"
+                                },
+                                {
+                                    "label": "Europe (Milan)",
+                                    "value": "eu-south-1"
+                                },
+                                {
+                                    "label": "Europe (Paris)",
+                                    "value": "eu-west-3"
+                                },
+                                {
+                                    "label": "Europe (Spain)",
+                                    "value": "eu-south-2"
+                                },
+                                {
+                                    "label": "Europe (Stockholm)",
+                                    "value": "eu-north-1"
+                                },
+                                {
+                                    "label": "Europe (Zurich)",
+                                    "value": "eu-central-2"
+                                },
+                                {
+                                    "label": "Middle East (Bahrain)",
+                                    "value": "me-south-1"
+                                },
+                                {
+                                    "label": "Middle East (UAE)",
+                                    "value": "me-central-1"
+                                },
+                                {
+                                    "label": "South America (São Paulo)",
+                                    "value": "sa-east-1"
+                                },
+                            ],
                             "required": True
                         }
                     ]

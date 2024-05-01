@@ -1,6 +1,7 @@
 import traceback
 from typing import Type, Union
 
+import uuid
 import boto3
 import pydash
 from botocore.exceptions import ClientError
@@ -30,6 +31,7 @@ class AWSIntegration(BaseSchema):
     activeRegions: Optional[list] = None
 
     def __init__(self, **kwargs):
+        kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)
 
 

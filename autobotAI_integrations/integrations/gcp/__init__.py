@@ -2,7 +2,8 @@ import uuid
 from typing import Dict, List, Type, Union
 import os
 import importlib
-from pydantic import Field
+import json
+from pydantic import Field, field_validator
 from functools import wraps
 
 from autobotAI_integrations import list_of_unique_elements
@@ -42,7 +43,16 @@ class GCPIntegration(BaseSchema):
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)
-
+        
+    @field_validator('credentials', mode='before')
+    @classmethod
+    def validate_credentials(cls, credentials) -> GCPCredentials:
+        if isinstance(credentials, str):
+            try:
+                return GCPCredentials(**json.loads(credentials))  # Parse JSON string
+            except (json.JSONDecodeError, ValueError) as e:
+                raise ValueError(f"Invalid JSON format in 'credentials': {e}")
+        return credentials
 
 class GCPService(BaseService):
 

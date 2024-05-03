@@ -70,6 +70,19 @@ class AWSService(BaseService):
             "type": "form",
             "children": [
                 {
+                    "label": "IAM Role Integration",
+                    "type": "form",
+                    "children": [
+                        {
+                            "name": "roleArn",
+                            "type": "text",
+                            "label": "IAM Role ARN",
+                            "placeholder": "Enter IAM role ARN",
+                            "required": True
+                        }
+                    ]
+                },
+                {
                     "label": "AccessKey / SecretKey Integration",
                     "type": "form",
                     "children": [
@@ -85,19 +98,6 @@ class AWSService(BaseService):
                             "type": "text/password",
                             "label": "Secret Key",
                             "placeholder": "Enter your AWS secret key",
-                            "required": True
-                        }
-                    ]
-                },
-                {
-                    "label": "IAM Role Integration",
-                    "type": "form",
-                    "children": [
-                        {
-                            "name": "roleArn",
-                            "type": "text",
-                            "label": "IAM Role ARN",
-                            "placeholder": "Enter IAM role ARN",
                             "required": True
                         }
                     ]

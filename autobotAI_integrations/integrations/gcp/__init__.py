@@ -43,6 +43,10 @@ class GCPIntegration(BaseSchema):
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)
+    
+    @property
+    def credentials(self) -> dict:
+        return self.credentials.model_dump(by_alias=True)
         
     @field_validator('credentials', mode='before')
     @classmethod

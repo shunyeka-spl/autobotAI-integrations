@@ -10,6 +10,7 @@ from autobotAI_integrations.models import *
 from autobotAI_integrations.models import List
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
+from autobotAI_integrations.integration_schema import ConnectionTypes
 
 
 class LinuxIntegration(BaseSchema):
@@ -22,6 +23,7 @@ class LinuxIntegration(BaseSchema):
 class LinuxService(BaseService):
 
     def __init__(self, ctx: dict, integration: Union[LinuxIntegration, dict]):
+        connection_type: ConnectionTypes = ConnectionTypes.AGENT.value
         """
         Integration should have all the data regarding the integration
         """

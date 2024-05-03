@@ -47,7 +47,11 @@ class GCPIntegration(BaseSchema):
     @property
     def credentials(self) -> dict:
         return self.credentials.model_dump(by_alias=True)
-        
+    
+    def model_dump(self, *args, **kwargs) -> str:
+        kwargs["by_alias"] = True
+        return super().model_dump(*args, **kwargs)
+    
     @field_validator('credentials', mode='before')
     @classmethod
     def validate_credentials(cls, credentials) -> GCPCredentials:

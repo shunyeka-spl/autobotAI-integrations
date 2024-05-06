@@ -33,7 +33,7 @@ class OllamaService(BaseService):
         try:
             response = requests.get(self.integration.base_url)
             assert response.ok
-            return {"succcess": True}
+            return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}
 

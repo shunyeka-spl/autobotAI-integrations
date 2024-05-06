@@ -239,47 +239,87 @@ class BaseService:
         except FileNotFoundError:
             print("File Not Found on path {}".format(config_path))
 
-    def execute_steampipe_task(self, payload_task: PayloadTask):
-        """
-        Executes a Steampipe Task
-        """
-        subprocess.run(
-            ["steampipe", "plugin", "install", payload_task.creds.plugin_name]
+    def _execute_steampipe_compliance(self, payload_task:PayloadTask, plugin_name):
+        mods_dir = "/tmp/mods/compliances"
+        if not os.path.exists(mods_dir):
+            os.makedirs(mods_dir)
+
+        path = os.path.join(
+            mods_dir,
+            "steampipe-mod-{}-compliance".format(plugin_name)
         )
+        
+        if os.path.exists(path):
+            print("Mod already exists, Trying to fetch latest version.")
+            subprocess.run(
+                ["git", "pull"],
+                cwd=path
+            )
+        else:  
+            subprocess.run(
+                ["git", "clone", "--depth", "1", f"https://github.com/turbot/steampipe-mod-{plugin_name}-compliance.git"],
+                cwd=mods_dir
+            )
+            
+        process = subprocess.run(
+            ["powerpipe", "benchmark", "run", "{}".format(payload_task.executable), "--output", "json"],
+            cwd=path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={**os.environ, **payload_task.creds.envs}
+        )
+        return process
+
+
+    def execute_steampipe_task(self, payload_task:PayloadTask):
+
+        subprocess.run(" && ".join([
+            f"steampipe plugin install {payload_task.creds.plugin_name}",
+            "steampipe service start"
+        ]), shell=True)
 
         # Save the configuration in the creds.config_path with value creds.config
         self.set_steampipe_spc_config(
             config_str=payload_task.creds.config,
         )
 
-        process = subprocess.run(
-            ["steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={**os.environ, **payload_task.creds.envs}
-        )
+        if payload_task.executable.startswith(f"{payload_task.creds.plugin_name}_compliance"):
+            print(f"Running compliance benchmark: '{payload_task.executable}'")
+            plugin_name = payload_task.creds.plugin_name
+            if not plugin_name:
+                raise ValueError("plugin name is required")
+            process = self._execute_steampipe_compliance(payload_task, plugin_name)
+            
 
+        elif  payload_task.executable.startswith("select"):
+            print(f"Running query: '{payload_task.executable}'")
+            process = subprocess.run(
+                ["steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={**os.environ, **payload_task.creds.envs}
+            )
+        else:
+            raise ValueError("Execution mode is not supported.")
+        
         # clear config file
         self.clear_steampipe_spc_config()
 
         stdout = process.stdout.decode("utf-8")
-        stderr = [{
-            "message": process.stderr.decode("utf-8")
-        }]
-
+        stderr = process.stderr.decode("utf-8")
         try:
             stdout = json.loads(stdout)
+            return {"success": True, "resources": stdout}
         except json.decoder.JSONDecodeError:
             if stdout == "None" or not stdout or stdout == "null":
-                stdout = []
+                return {"success": True, "resources": []}
+            raise
         except BaseException as e:
-            stderr = [{
-                "message": traceback.format_exc(),
-                "other_details": {
-                    "non_json_output": stdout,
-                }
-            }]
-        return stdout, stderr
+            stdout = {
+                "non_json_output": stdout,
+                "message": traceback.format_exc()
+            }
+        return {"success": False, "output": stdout}
 
 
 class AIBaseService(BaseService):

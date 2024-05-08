@@ -83,7 +83,6 @@ def transform_inventory_resources(response: dict, agent_id=None):
         return []
 
     resources = []
-    errors = []
 
     if 'resources' in response and 'rows' in response['resources']:
         for resource in response['resources']['rows']:
@@ -93,11 +92,7 @@ def transform_inventory_resources(response: dict, agent_id=None):
             resource["agent_id"] = agent_id
             resources.append(change_keys(resource))
 
-    if 'errors' in response:
-        errors.extend(response['errors'])
-
     response['resources'] = resources
-    response['errors'] = errors
 
     return response
 

@@ -24,6 +24,7 @@ from autobotAI_integrations.utils import (
     run_mod_func,
     oscf_based_steampipe_json,
     transform_steampipe_compliance_resources,
+    transform_inventory_resources
 )
 
 class BaseService:
@@ -270,12 +271,7 @@ class BaseService:
                 ],
                 cwd=mods_dir,
             )
-        subprocess.run(
-            ["steampipe service start"],
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+
         process = subprocess.run(
             ["powerpipe", "benchmark", "run", "{}".format(payload_task.executable), "--output", "json"],
             cwd=path,
@@ -283,17 +279,18 @@ class BaseService:
             stderr=subprocess.PIPE,
             env={**os.environ, **payload_task.creds.envs}
         )
-        subprocess.run(
-            ["steampipe service stop"],
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+
         return process
 
     def execute_steampipe_task(self, payload_task:PayloadTask):
         subprocess.run(
             ["steampipe", "plugin", "install", payload_task.creds.plugin_name],
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
+            ["steampipe service start"],
             shell=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -321,6 +318,12 @@ class BaseService:
 
         # clear config file
         # self.clear_steampipe_spc_config()
+        subprocess.run(
+            ["steampipe service stop"],
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
         stdout = process.stdout.decode("utf-8")
         stderr = [{
@@ -348,6 +351,8 @@ class BaseService:
                 integration_id=payload_task.context.integration.accountId,
                 query=payload_task.executable,
             )
+        else:
+            stdout = transform_inventory_resources(stdout, agent_id=payload_task.context.integration.agent_ids)
         return stdout, stderr
 
 

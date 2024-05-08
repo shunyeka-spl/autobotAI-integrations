@@ -3,7 +3,7 @@ from typing import Type, Union
 import uuid
 from pydantic import Field
 
-from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask, Param
+from autobotAI_integrations import AIBaseService, PayloadTask
 from autobotAI_integrations.models import *
 import importlib
 import requests
@@ -20,7 +20,7 @@ class OllamaIntegration(BaseSchema):
         super().__init__(**kwargs)
 
 
-class OllamaService(BaseService):
+class OllamaService(AIBaseService):
     def __init__(self, ctx: dict, integration: Union[OllamaIntegration, dict]):
         """
         Integration should have all the data regarding the integration
@@ -85,7 +85,7 @@ class OllamaService(BaseService):
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
         creds = {}
         return SDKCreds(envs=creds)
-    
+
     def generate_rest_api_creds(self) -> RestAPICreds:
         pass
 

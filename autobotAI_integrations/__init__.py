@@ -311,7 +311,7 @@ class BaseService:
         elif payload_task.executable.startswith("select"):
             print(f"Running query: '{payload_task.executable}'")
             process = subprocess.run(
-                ["steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
+                ["powerpipe", "query", "run", "{}".format(payload_task.executable), "--output", "json"], #Run with powerpipe
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env={**os.environ, **payload_task.creds.envs}
@@ -320,7 +320,7 @@ class BaseService:
             raise ValueError("Execution mode is not supported.")
 
         # clear config file
-        self.clear_steampipe_spc_config()
+        # self.clear_steampipe_spc_config()
 
         stdout = process.stdout.decode("utf-8")
         stderr = [{

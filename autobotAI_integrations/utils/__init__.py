@@ -60,9 +60,49 @@ def list_of_unique_elements(list_to_verify: list) -> list:
 
     return unique_list
 
+# Inventory Utils
+
+def change_keys(obj, convert=lambda key: key.replace('.', '_').replace('$', '-')):
+    """
+    Recursively goes through the dictionary obj and replaces keys with the convert function.
+    """
+    if isinstance(obj, (str, int, float)):
+        return obj
+    if isinstance(obj, dict):
+        new = obj.__class__()
+        for k, v in obj.items():
+            new[convert(k)] = change_keys(v, convert)
+    elif isinstance(obj, (list, set, tuple)):
+        new = obj.__class__(change_keys(v, convert) for v in obj)
+    else:
+        return obj
+    return new
+
+def transform_inventory_resources(response: dict, agent_id=None):
+    if not response:
+        return []
+
+    resources = []
+    errors = []
+
+    if 'resources' in response and 'rows' in response['resources']:
+        for resource in response['resources']['rows']:
+            resource["integration_id"] = response['debug_info']['integration_id']
+            resource["integration_type"] = response['debug_info']['integration_type']
+            resource["resource_type"] = response['debug_info']['resource_type']
+            resource["agent_id"] = agent_id
+            resources.append(change_keys(resource))
+
+    if 'errors' in response:
+        errors.extend(response['errors'])
+
+    response['resources'] = resources
+    response['errors'] = errors
+
+    return response
+
 
 # transform steampipe compliance data
-
 
 def transform_steampipe_compliance_resources(data):
     result = []

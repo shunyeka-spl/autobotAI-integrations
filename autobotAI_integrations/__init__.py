@@ -290,6 +290,12 @@ class BaseService:
             stderr=subprocess.DEVNULL,
         )
         subprocess.run(
+            ["steampipe", "plugin", "update", payload_task.creds.plugin_name],
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        subprocess.run(
             ["steampipe service start"],
             shell=True,
             stdout=subprocess.DEVNULL,
@@ -316,14 +322,14 @@ class BaseService:
         else:
             raise ValueError("Execution mode is not supported.")
 
-        # clear config file
-        # self.clear_steampipe_spc_config()
         subprocess.run(
             ["steampipe service stop"],
             shell=True,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        # clear config file
+        self.clear_steampipe_spc_config()
 
         stdout = process.stdout.decode("utf-8")
         stderr = [{

@@ -283,6 +283,11 @@ class BaseService:
         return process
 
     def execute_steampipe_task(self, payload_task:PayloadTask):
+        # Save the configuration in the creds.config_path with value creds.config
+        self.set_steampipe_spc_config(
+            config_str=payload_task.creds.config,
+        )
+
         subprocess.run(
             ["steampipe", "plugin", "install", payload_task.creds.plugin_name],
             shell=True,
@@ -302,25 +307,26 @@ class BaseService:
             stderr=subprocess.DEVNULL,
         )
 
-        # Save the configuration in the creds.config_path with value creds.config
-        self.set_steampipe_spc_config(
-            config_str=payload_task.creds.config,
-        )
-
+        execution_mode = None
         if payload_task.executable.startswith(f"{payload_task.creds.plugin_name}_compliance"):
+            execution_mode = "compliance"
+        elif payload_task.executable.startswith("select"):
+            execution_mode = "query"
+        else:
+            raise ValueError("Execution mode is not supported.")
+
+        if execution_mode == "compliance":
             print(f"Running compliance benchmark: '{payload_task.executable}'")
             process = self._execute_steampipe_compliance(payload_task)
 
-        elif payload_task.executable.startswith("select"):
+        else:
             print(f"Running query: '{payload_task.executable}'")
             process = subprocess.run(
-                ["powerpipe", "query", "run", "{}".format(payload_task.executable), "--output", "json"], #Run with powerpipe
+                ["powerpipe", "query", "run", "{}".format(payload_task.executable), "--output", "json"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env={**os.environ, **payload_task.creds.envs}
             )
-        else:
-            raise ValueError("Execution mode is not supported.")
 
         subprocess.run(
             ["steampipe service stop"],
@@ -349,7 +355,7 @@ class BaseService:
                 }
             }]
 
-        if payload_task.executable.startswith(f"{payload_task.creds.plugin_name}_compliance"):
+        if execution_mode == "compliance":
             stdout = transform_steampipe_compliance_resources(stdout)
             stdout = oscf_based_steampipe_json(
                 stdout,

@@ -50,19 +50,20 @@ class GitlabService(BaseService):
                             "name": "base_url",
                             "type": "text/url",
                             "label": "Gitlab Base URL",
+                            "placeholder": "Enter the gitlab base url if using enterprise version",
                             "default_value": "https://gitlab.com/",
-                            "required": True
+                            "required": False,
                         },
                         {
                             "name": "token",
                             "type": "text/password",
                             "label": "Gitlab Token",
                             "placeholder": "Enter the Gitlab Token",
-                            "required": True
-                        }
-                    ]
+                            "required": True,
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
     @staticmethod

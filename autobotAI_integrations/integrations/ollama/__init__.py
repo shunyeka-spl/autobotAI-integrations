@@ -64,19 +64,20 @@ class OllamaService(AIBaseService):
                             "name": "base_url",
                             "type": "text/url",
                             "label": "Host Url",
+                            "placeholder": "Ollama Host Base Url",
                             "description": "Your Ollama Host Api Url",
-                            "required": True
+                            "required": True,
                         },
                         {
                             "name": "timeout",
                             "type": "number",
                             "label": "Request Timeout",
                             "placeholder": "Request timeout (Optional)",
-                            "required": False
-                        }
-                    ]
+                            "required": False,
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
     @staticmethod

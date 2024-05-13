@@ -41,17 +41,20 @@ class GCPIntegration(BaseSchema):
     )  # Credentials Json of service account
 
     def __init__(self, **kwargs):
-        kwargs["accountId"] = str(uuid.uuid4().hex)
+        creds = kwargs.get("credentials")
+        if isinstance(kwargs.get('credentials'), str):
+            creds = json.loads(creds)
+        kwargs["accountId"] = str(creds.get("project_id"))
         super().__init__(**kwargs)
-    
+
     @property
     def credentials(self) -> dict:
         return self.credentials.model_dump(by_alias=True)
-    
+
     def model_dump(self, *args, **kwargs) -> str:
         kwargs["by_alias"] = True
         return super().model_dump(*args, **kwargs)
-    
+
     @field_validator('credentials', mode='before')
     @classmethod
     def validate_credentials(cls, credentials) -> GCPCredentials:
@@ -77,7 +80,8 @@ class GCPService(BaseService):
             gcp_creds = self.integration.credentials.model_dump()
             credential = Credentials.from_service_account_info(gcp_creds)
             client = ProjectsClient(credentials=credential)
-            client.common_project_path(project=gcp_creds['project_id'])
+            res = client.common_project_path(project=gcp_creds['project_id'])
+            print(res)
             return {"success": True}
         except Exception as e:
             return {"success": False, "error":str(e)}

@@ -81,5 +81,10 @@ class CLICreds(BaseCreds):
 class BaseSchema(IntegrationSchema):
     name: Optional[str] = None
     description: Optional[str] = None
-    logo: Optional[dict] = None
+    logo: Optional[dict] = Field(
+        default={
+            "light-theme": "light.svg",
+            "dark-theme": "dark.svg",
+        }
+    )
     category: Optional[IntegrationCategory] = None

@@ -33,10 +33,7 @@ class IntegrationServiceFactory:
             temp = srvic_cls.get_details()
 
             temp["name"] = integration_type
-            temp["logo"] = {
-                "light": "light.png",
-                "dark": "dark.png"
-            }
+            temp["logo"] = integration_schema.model_fields.get("logo").default
             temp["description"] = integration_schema.model_fields.get("description").default
             temp["category"] = integration_schema.model_fields.get("category").default
 

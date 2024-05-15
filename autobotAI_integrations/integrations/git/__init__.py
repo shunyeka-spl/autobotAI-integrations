@@ -11,7 +11,8 @@ from autobotAI_integrations import BaseSchema, SDKCreds, CLICreds, \
 
 
 class GitIntegration(BaseSchema):
-    
+    category: str = IntegrationCategory.CODE_REPOSITORY.value
+
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)

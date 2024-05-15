@@ -9,10 +9,14 @@ from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDK
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 from github import Auth, Github
 
+from autobotAI_integrations.models import IntegrationCategory
+
 
 class GithubIntegration(BaseSchema):
     base_url: Optional[str] =  None# If enterprice version of gihub
     token: str = Field(default=None, exclude=True)
+
+    category: str = IntegrationCategory.CODE_REPOSITORY.value
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

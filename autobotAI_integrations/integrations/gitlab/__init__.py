@@ -9,10 +9,14 @@ from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDK
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 from gitlab import Gitlab
 
+from autobotAI_integrations.models import IntegrationCategory
+
 
 class GitlabIntegration(BaseSchema):
     base_url: str = "https://gitlab.com/"
     token: str = Field(default=None, exclude=True)
+
+    category: str = IntegrationCategory.CODE_REPOSITORY.value
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

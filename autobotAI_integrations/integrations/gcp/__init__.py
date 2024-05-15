@@ -35,10 +35,13 @@ class GCPCredentials(BaseModel):
 
 
 class GCPIntegration(BaseSchema):
+    # TODO: Integration Credential Field Optimization
     account_id: Optional[str] = uuid.uuid4().hex
     credentials: GCPCredentials = Field(
         default=None, exclude=True
-    )  # Credentials Json of service account
+    )
+
+    category: str = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
 
     def __init__(self, **kwargs):
         creds = kwargs.get("credentials")

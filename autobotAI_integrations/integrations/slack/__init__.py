@@ -8,9 +8,13 @@ from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDK
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 from slack_sdk import WebClient
 
+from autobotAI_integrations.models import IntegrationCategory
+
 class SlackIntegration(BaseSchema):
     workspace: Optional[str] = None
     bot_token: str = Field(default=None, exclude=True)
+
+    category: str = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

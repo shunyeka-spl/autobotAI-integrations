@@ -16,7 +16,9 @@ class AzureIntegration(BaseSchema):
     client_id: Optional[str] = Field(default=None, exclude=True)
     subscription_id: Optional[str] = Field(default=None, exclude=True)
     client_secret: Optional[str] = Field(default=None, exclude=True)
-    
+
+    category: str = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
+
     def __init__(self, **kwargs):
         kwargs["accountId"] = kwargs["subscription_id"]
         super().__init__(**kwargs)

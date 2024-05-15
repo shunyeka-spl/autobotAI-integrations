@@ -12,6 +12,8 @@ class MsTeamsIntegration(BaseSchema):
     webhook: str
     accountId: Optional[str] = None
 
+    category: str = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
+
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)

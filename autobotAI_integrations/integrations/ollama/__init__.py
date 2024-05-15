@@ -15,6 +15,8 @@ class OllamaIntegration(BaseSchema):
     base_url: str = Field(default="http://127.0.0.1:11434", exclude=None)
     timeout: Optional[str] = None
 
+    category: str = IntegrationCategory.AI.value
+
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)

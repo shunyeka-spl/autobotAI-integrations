@@ -42,6 +42,9 @@ class GCPIntegration(BaseSchema):
     )
 
     category: str = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
+    description: str = (
+        "GCP is Google Cloud Platform, a suite of cloud computing services offered by Google."
+    )
 
     def __init__(self, **kwargs):
         creds = kwargs.get("credentials")

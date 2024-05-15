@@ -16,6 +16,9 @@ class GitGuardianIntegration(BaseSchema):
     token: str = Field(default=None, exclude=True)
 
     category: str = IntegrationCategory.SECURITY_TOOLS.value
+    description: str = (
+        "GitGuardian is a security platform specifically designed to protect code repositories. "
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

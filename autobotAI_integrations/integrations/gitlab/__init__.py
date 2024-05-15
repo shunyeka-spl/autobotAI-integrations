@@ -17,6 +17,9 @@ class GitlabIntegration(BaseSchema):
     token: str = Field(default=None, exclude=True)
 
     category: str = IntegrationCategory.CODE_REPOSITORY.value
+    description: str = (
+        " Version control platform similar to GitHub, offering additional features like project management and CI/CD pipelines."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

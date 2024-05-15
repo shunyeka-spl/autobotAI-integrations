@@ -13,6 +13,9 @@ class KubernetesIntegration(BaseSchema):
     connection_type: ConnectionTypes = ConnectionTypes.AGENT.value
 
     category: str = IntegrationCategory.AGENT_BASED.value
+    description: str = (
+        "An orchestration system for managing containerized applications. It automates deployment, scaling, and management of containerized workloads."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

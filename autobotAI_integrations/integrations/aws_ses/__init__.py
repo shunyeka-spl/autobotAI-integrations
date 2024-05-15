@@ -20,6 +20,9 @@ class AwsSesIntegration(BaseSchema):
     externalId: Optional[str] = None
 
     category: str = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
+    description: str = (
+        "Amazon Web Services Simple Email Service is a cost-effective and reliable platform for sending transactional and marketing emails at scale within the AWS cloud environment."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

@@ -16,6 +16,9 @@ class OllamaIntegration(BaseSchema):
     timeout: Optional[str] = None
 
     category: str = IntegrationCategory.AI.value
+    description: str = (
+        "A platform for running and integrating large language models, including compatibility with OpenAI's API."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

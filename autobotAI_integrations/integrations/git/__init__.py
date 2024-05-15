@@ -12,6 +12,9 @@ from autobotAI_integrations import BaseSchema, SDKCreds, CLICreds, \
 
 class GitIntegration(BaseSchema):
     category: str = IntegrationCategory.CODE_REPOSITORY.value
+    description: str = (
+        "Git is a free and open-source distributed version control system (DVCS) for tracking changes in computer code and other projects."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

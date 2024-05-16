@@ -37,7 +37,6 @@ class GithubService(BaseService):
             else:
                 github = Github(self.integration.token)
             user = github.get_user()
-            print(f"Github Username: {user.login}")
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}

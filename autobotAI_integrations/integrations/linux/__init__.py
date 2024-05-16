@@ -15,8 +15,8 @@ from autobotAI_integrations.integration_schema import ConnectionTypes
 
 class LinuxIntegration(BaseSchema):
     connection_type: ConnectionTypes = ConnectionTypes.AGENT.value
-    category: str = IntegrationCategory.AGENT_BASED.value
-    description: str = (
+    category: Optional[str] = IntegrationCategory.AGENT_BASED.value
+    description: Optional[str] = (
         "A free and open-source operating system widely used for servers, desktops, and embedded devices."
     )
 

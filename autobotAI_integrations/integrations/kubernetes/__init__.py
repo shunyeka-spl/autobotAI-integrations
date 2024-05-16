@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, Optional
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient, list_of_unique_elements
 from autobotAI_integrations.integration_schema import ConnectionTypes
@@ -12,8 +12,8 @@ class KubernetesIntegration(BaseSchema):
     agent_ids: list = []
     connection_type: ConnectionTypes = ConnectionTypes.AGENT.value
 
-    category: str = IntegrationCategory.AGENT_BASED.value
-    description: str = (
+    category: Optional[str] = IntegrationCategory.AGENT_BASED.value
+    description: Optional[str] = (
         "An orchestration system for managing containerized applications. It automates deployment, scaling, and management of containerized workloads."
     )
 

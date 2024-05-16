@@ -12,8 +12,8 @@ class MsTeamsIntegration(BaseSchema):
     webhook: str
     accountId: Optional[str] = None
 
-    category: str = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
-    description: str = (
+    category: Optional[str] = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
+    description: Optional[str] = (
         "A collaboration platform from Microsoft, enabling communication, file sharing, and video conferencing within teams."
     )
 

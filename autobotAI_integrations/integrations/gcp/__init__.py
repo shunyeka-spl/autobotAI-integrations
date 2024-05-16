@@ -41,8 +41,8 @@ class GCPIntegration(BaseSchema):
         default=None, exclude=True
     )
 
-    category: str = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
-    description: str = (
+    category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
+    description: Optional[str] = (
         "GCP is Google Cloud Platform, a suite of cloud computing services offered by Google."
     )
 

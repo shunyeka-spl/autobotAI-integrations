@@ -11,8 +11,8 @@ from autobotAI_integrations import BaseSchema, SDKCreds, CLICreds, \
 
 
 class GitIntegration(BaseSchema):
-    category: str = IntegrationCategory.CODE_REPOSITORY.value
-    description: str = (
+    category: Optional[str] = IntegrationCategory.CODE_REPOSITORY.value
+    description: Optional[str] = (
         "Git is a free and open-source distributed version control system (DVCS) for tracking changes in computer code and other projects."
     )
 

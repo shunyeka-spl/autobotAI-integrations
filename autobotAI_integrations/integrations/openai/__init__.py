@@ -1,7 +1,7 @@
 import importlib
 import os
 import uuid
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
@@ -9,9 +9,16 @@ from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDK
     AIBaseService, ConnectionInterfaces, PayloadTask, SDKClient, list_of_unique_elements
 from openai import OpenAI
 
+from autobotAI_integrations.models import IntegrationCategory
+
 
 class OpenAIIntegration(BaseSchema):
     api_key: str = Field(default=None, exclude=True)
+
+    category: Optional[str] = IntegrationCategory.AI.value
+    description: Optional[str] = (
+        "A research company developing and providing access to powerful large language models."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
@@ -42,6 +49,21 @@ class OpenAIService(AIBaseService):
         except BaseException as e:
             return {'success': False, "error": str(e)}
 
+    def get_integration_specific_details(self) -> dict:
+        try:
+            client = OpenAI(api_key=self.integration.api_key)
+            models = client.models.list().data
+            model_names = []
+            for model in models:
+                model_names.append(model.id)
+            return {
+                "integration_id": self.integration.accountId,
+                "models": model_names,
+            }
+        except Exception as e:
+            return {
+                "error": "Details can not be fetched"
+            }
     @staticmethod
     def ai_prompt_python_template():
         return {

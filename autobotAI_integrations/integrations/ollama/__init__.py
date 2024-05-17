@@ -3,17 +3,23 @@ from typing import Type, Union
 import uuid
 from pydantic import Field
 
-from autobotAI_integrations import AIBaseService, PayloadTask
+
+from autobotAI_integrations import list_of_unique_elements, PayloadTask, Param, AIBaseService
 from autobotAI_integrations.models import *
 import importlib
+import ollama
 import requests
 
 from autobotAI_integrations.models import RestAPICreds
 
-
 class OllamaIntegration(BaseSchema):
     base_url: str = Field(default="http://127.0.0.1:11434", exclude=None)
     timeout: Optional[str] = None
+
+    category: Optional[str] = IntegrationCategory.AI.value
+    description: Optional[str] = (
+        "A platform for running and integrating large language models, including compatibility with OpenAI's API."
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
@@ -37,6 +43,19 @@ class OllamaService(AIBaseService):
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def get_integration_specific_details(self) -> dict:
+        try:
+            client = ollama.Client(self.integration.base_url)
+            models = client.list()["models"]
+            return {
+                "integration_id": self.integration.accountId,
+                "models": models,
+            }
+        except Exception as e:
+            return {
+                "error": "Details can not be fetched"
+            }
+
     @staticmethod
     def get_forms():
         return {
@@ -51,21 +70,66 @@ class OllamaService(AIBaseService):
                             "name": "base_url",
                             "type": "text/url",
                             "label": "Host Url",
+                            "placeholder": "Ollama Host Base Url",
                             "description": "Your Ollama Host Api Url",
-                            "required": True
+                            "required": True,
                         },
                         {
                             "name": "timeout",
                             "type": "number",
                             "label": "Request Timeout",
                             "placeholder": "Request timeout (Optional)",
-                            "required": False
-                        }
-                    ]
+                            "required": False,
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
+    @staticmethod
+    def ai_prompt_python_template():
+        return {
+            "param_definitions": [
+                {"name": "prompt",
+                 "type": "str",
+                 "description": "The prompt to use for the AI model",
+                 "required": True},
+                {"name": "model",
+                 "type": "str",
+                 "description": "The model to use for the AI model",
+                 "required": True},
+                {"name": "resources",
+                 "type": "list",
+                 "description": "The resources to use for the AI model",
+                 "required": True}
+            ],
+            "code": """import json
+def executor(context):
+    ollama = context['clients']['ollama']
+    prompt = context['params']['prompt']
+    model = context['params']['model']
+    resources = json.loads(json.dumps(context['params']['resources'], default=str))
+    prompts = [{
+        'role': 'user',
+        'content': f"For each Input dict provided, return a dict with attributes such as, 'name': str name of the resource, 'action_required': boolean that shows is the action advisable or not, 'probability_score': integer that shows the probability of the result being correct, 'confidence_score': integrer that shows the confidence in judgement, 'reason': string that mentions the reason for the judgement, 'fields_evaluated': list of fields that were evaluted for the judgement, the evaluation criterion given is {prompt}. The output should be valid parseable json, do not use any markup language at all, the returned message content should be json parsable. Wait till all data is provided before starting",
+    }]
+    for resource in resources:
+        prompts.append({
+            'role': 'user',
+            'content': json.dumps(resource, default=str),
+        })
+    prompts.append({
+        'role': 'user',
+        'content': "All resources are provided, return the result for each resource in the same order in a list. DO NOT SEND ANY TEXT OTHER THAN THE RESULT JSON. SEND FULL RESULT IN THE RESPONSE.",
+    })
+    response = ollama.chat(
+        model=model,
+        messages=prompts
+    )
+    print(response)
+    for idx, res in enumerate(json.loads(response['message']['content'])):
+        resources[idx]["decision"] = res
+    return resources"""}
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
         return OllamaIntegration

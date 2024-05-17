@@ -2,17 +2,23 @@ import importlib
 import os
 from typing_extensions import Literal
 import uuid
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 from pygitguardian.client import GGClient
+from autobotAI_integrations.models import IntegrationCategory
 
 class GitGuardianIntegration(BaseSchema):
     base_url: str = "https://api.gitguardian.com/v1/"
     token: str = Field(default=None, exclude=True)
+
+    category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
+    description: Optional[str] = (
+        "GitGuardian is a security platform specifically designed to protect code repositories. "
+    )
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)

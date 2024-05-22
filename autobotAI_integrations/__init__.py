@@ -370,7 +370,15 @@ class BaseService:
                 query=payload_task.executable,
             )
         else:
-            stdout = transform_inventory_resources(stdout, agent_id=payload_task.context.integration.agent_ids)
+            if stdout and stdout.get("rows"):
+                metadata = {
+                    "agent_id": payload_task.context.integration.agent_ids if payload_task.context.integration.agent_ids else None,
+                    "integration_id": payload_task.context.integration.accountId,
+                    "integration_type": payload_task.creds.connection_name,
+                    "resource_type": payload_task.context.integration.resource_type
+                }
+                stdout = {"resources" : stdout.get("rows")}
+                stdout = transform_inventory_resources(stdout, metadata)
         return stdout, stderr
 
 

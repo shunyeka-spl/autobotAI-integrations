@@ -78,18 +78,18 @@ def change_keys(obj, convert=lambda key: key.replace('.', '_').replace('$', '-')
         return obj
     return new
 
-def transform_inventory_resources(response: dict, agent_id=None):
+def transform_inventory_resources(response: dict, metadata: dict):
     if not response:
         return []
 
     resources = []
 
-    if 'resources' in response and 'rows' in response['resources']:
-        for resource in response['resources']['rows']:
-            resource["integration_id"] = response['debug_info']['integration_id']
-            resource["integration_type"] = response['debug_info']['integration_type']
-            resource["resource_type"] = response['debug_info']['resource_type']
-            resource["agent_id"] = agent_id
+    if 'resources' in response:
+        for resource in response['resources']:
+            resource["integration_id"] = metadata['integration_id']
+            resource["integration_type"] = metadata['integration_type']
+            resource["resource_type"] = metadata['resource_type']
+            resource["agent_id"] = metadata["agent_id"]
             resources.append(change_keys(resource))
 
     response['resources'] = resources

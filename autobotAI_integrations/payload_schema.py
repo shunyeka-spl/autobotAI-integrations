@@ -107,8 +107,6 @@ class TaskResult(BaseModel):
     task_id: str
     integration_id: str
     integration_type: str
-    user_id: str
-    root_user_id: str
     resources: Optional[List] = None
     errors: Optional[List[ResponseError]] = None
     debug_info: ResponseDebugInfo

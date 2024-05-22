@@ -24,6 +24,7 @@ from autobotAI_integrations.utils import (
     run_mod_func,
     oscf_based_steampipe_json,
     transform_steampipe_compliance_resources,
+    change_keys,
     transform_inventory_resources
 )
 
@@ -224,6 +225,7 @@ class BaseService:
                         "result": r,
                         **combination.get("metadata", {})
                     })
+        resources = change_keys(resources)
         return resources
 
     def _get_steampipe_config_path(self):
@@ -360,6 +362,7 @@ class BaseService:
 
         if execution_mode == "compliance":
             stdout = transform_steampipe_compliance_resources(stdout)
+            stdout = change_keys(stdout)
             stdout = oscf_based_steampipe_json(
                 stdout,
                 integration_type=payload_task.creds.connection_name,

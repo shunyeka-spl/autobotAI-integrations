@@ -8,6 +8,7 @@ from pydantic import Field
 from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask, Param
 from autobotAI_integrations.models import *
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
+from autobotAI_integrations.utils import aws_common_regions
 
 
 class AwsSesIntegration(BaseSchema):
@@ -42,29 +43,49 @@ class AwsSesService(BaseService):
         if not isinstance(integration, AwsSesIntegration):
             integration = AwsSesIntegration(**integration)
         super().__init__(ctx, integration)
+    
+    def _get_aws_client(self, aws_client_name: str):
+        if self.integration.roleArn:
+            boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
+            return boto3_helper.get_client(aws_client_name)
+        else:
+            return boto3.client(
+                aws_client_name,
+                aws_access_key_id=self.integration.access_key,
+                aws_secret_access_key=self.integration.secret_key,
+                aws_session_token=self.integration.session_token
+            )
 
     def _test_integration(self) -> dict:
         try:
-            if self.integration.roleArn:
-                boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
-                boto3_helper.get_client("ses")
-            else:
-                ses_client = boto3.client(
-                    "ses",
-                    aws_access_key_id=self.integration.access_key,
-                    aws_secret_access_key=self.integration.secret_key,
-                    aws_session_token=self.integration.session_token
-                )
-                response = ses_client.list_identities()
+            ses_client = self._get_aws_client('ses')
+            response = ses_client.list_identities()
+            sts_client = self._get_aws_client('sts')
+            identity_data = sts_client.get_caller_identity()
+            account_id = identity_data['Account']
+            self.integration.accountId = account_id
+            self.integration.account_id = account_id
             return {'success': True}
         except ClientError as e:
             print(traceback.format_exc())
             return {'success': False, 'error': traceback.format_exc()}
-
-
+    
+    def get_integration_specific_details(self) -> dict:
+        try:
+            account_client = self._get_aws_client('account')
+            regions = [region['RegionName'] for region in account_client.list_regions()['Regions'] if region['RegionOptStatus'] in ['ENABLED', 'ENABLED_BY_DEFAULT']]
+            # Fetching the model
+            return {
+                "integration_id": self.integration.accountId,
+                "available_regions": regions
+            }
+        except Exception as e:
+            return {
+                "error": "Details can not be fetched"
+            }
+    
     @staticmethod
     def get_forms():
-        # TODO: Add regions adn return themm in options variable containing two values value label
         return {
             "label": "AWS SES",
             "type": "form",
@@ -74,10 +95,12 @@ class AwsSesService(BaseService):
                     "type": "form",
                     "children": [
                         {
-                            "name": "roleArn",
-                            "type": "text",
-                            "label": "IAM Role ARN",
-                            "placeholder": "Enter IAM role ARN",
+                            "name": "integration_id",
+                            "type": "select",
+                            "dataType": "integration",
+                            "label": "Integration Id",
+                            "placeholder": "Enter Integration Id",
+                            "description": "Select Account you want to install this integration",
                             "required": True
                         },
                         {
@@ -85,12 +108,14 @@ class AwsSesService(BaseService):
                             "type": "select",
                             "label": "Region",
                             "placeholder": "Select Region",
+                            "options": aws_common_regions,
                             "required": True
                         }
                     ]
                 }
             ]
         }
+
 
     @staticmethod
     def get_schema() -> Type[BaseSchema]:

@@ -67,8 +67,7 @@ class AWSService(BaseService):
         try:
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
-            account_id = identity_data['Account']
-            self.integration.accountId = account_id
+            account_id = str(identity_data['Account'])
             self.integration.account_id = account_id
             return {'success': True}
         except ClientError as e:

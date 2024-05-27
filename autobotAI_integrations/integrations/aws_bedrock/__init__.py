@@ -8,7 +8,6 @@ from pydantic import Field
 from autobotAI_integrations import AIBaseService, BaseService, list_of_unique_elements, PayloadTask, Param
 from autobotAI_integrations.models import *
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
-from autobotAI_integrations.utils import aws_common_regions
 
 class AWSBedrockIntegration(BaseSchema):
     region: str
@@ -98,25 +97,22 @@ class AWSBedrockService(AIBaseService):
                     "type": "form",
                     "children": [
                         {
-                            "name": "integration_id",
-                            "type": "select",
-                            "dataType": "integration",
-                            "label": "Integration Id",
-                            "placeholder": "Enter Integration Id",
-                            "description": "Select Account you want to install this integration",
-                            "required": True
+                            "name": "roleArn",
+                            "type": "text",
+                            "label": "IAM Role ARN",
+                            "placeholder": "Enter IAM role ARN",
+                            "required": True,
                         },
                         {
                             "name": "region",
                             "type": "select",
                             "label": "Region",
                             "placeholder": "Select Region",
-                            "options": aws_common_regions,
-                            "required": True
-                        }
-                    ]
+                            "required": True,
+                        },
+                    ],
                 }
-            ]
+            ],
         }
 
     @staticmethod

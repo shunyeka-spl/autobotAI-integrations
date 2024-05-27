@@ -8,7 +8,6 @@ from pydantic import Field
 from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask, Param
 from autobotAI_integrations.models import *
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
-from autobotAI_integrations.utils import aws_common_regions
 
 
 class AwsSesIntegration(BaseSchema):
@@ -43,7 +42,7 @@ class AwsSesService(BaseService):
         if not isinstance(integration, AwsSesIntegration):
             integration = AwsSesIntegration(**integration)
         super().__init__(ctx, integration)
-    
+
     def _get_aws_client(self, aws_client_name: str):
         if self.integration.roleArn:
             boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
@@ -68,7 +67,7 @@ class AwsSesService(BaseService):
         except ClientError as e:
             print(traceback.format_exc())
             return {'success': False, 'error': traceback.format_exc()}
-    
+
     def get_integration_specific_details(self) -> dict:
         try:
             account_client = self._get_aws_client('account')
@@ -82,7 +81,7 @@ class AwsSesService(BaseService):
             return {
                 "error": "Details can not be fetched"
             }
-    
+
     @staticmethod
     def get_forms():
         return {
@@ -94,27 +93,23 @@ class AwsSesService(BaseService):
                     "type": "form",
                     "children": [
                         {
-                            "name": "integration_id",
-                            "type": "select",
-                            "dataType": "integration",
-                            "label": "Integration Id",
-                            "placeholder": "Enter Integration Id",
-                            "description": "Select Account you want to install this integration",
-                            "required": True
+                            "name": "roleArn",
+                            "type": "text",
+                            "label": "IAM Role ARN",
+                            "placeholder": "Enter IAM role ARN",
+                            "required": True,
                         },
                         {
                             "name": "region",
                             "type": "select",
                             "label": "Region",
                             "placeholder": "Select Region",
-                            "options": aws_common_regions,
-                            "required": True
-                        }
-                    ]
+                            "required": True,
+                        },
+                    ],
                 }
-            ]
+            ],
         }
-
 
     @staticmethod
     def get_schema() -> Type[BaseSchema]:

@@ -41,7 +41,7 @@ class AWSBedrockService(AIBaseService):
         if not isinstance(integration, AWSBedrockIntegration):
             integration = AWSBedrockIntegration(**integration)
         super().__init__(ctx, integration)
-    
+
     def _get_aws_client(self, aws_client_name: str):
         if self.integration.roleArn:
             boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
@@ -57,6 +57,10 @@ class AWSBedrockService(AIBaseService):
     def _test_integration(self) -> dict:
         try:
             bedrock_client = self._get_aws_client('bedrock')
+            models = [
+                {**model, "name": model["modelId"]}
+                for model in bedrock_client.list_foundation_models()["modelSummaries"]
+            ]
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
             account_id = str(identity_data['Account'])
@@ -114,7 +118,6 @@ class AWSBedrockService(AIBaseService):
                 }
             ]
         }
-
 
     @staticmethod
     def ai_prompt_python_template():
@@ -191,4 +194,3 @@ class AWSBedrockService(AIBaseService):
                 "AWS_SECRET_ACCESS_KEY": self.integration.secret_key,
                 "AWS_SESSION_TOKEN": self.integration.session_token,
             }
-

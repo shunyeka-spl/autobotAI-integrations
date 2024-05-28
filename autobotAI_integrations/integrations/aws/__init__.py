@@ -32,10 +32,11 @@ class AWSIntegration(BaseSchema):
     externalId: Optional[str] = None
     activeRegions: Optional[list] = None
 
-    category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value 
+    category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
     description: Optional[str] = (
         """The world's most comprehensive and mature cloud computing platform, offering a vast range of on-demand compute, storage, database, networking, analytics, and machine learning services."""
     )
+
     def __init__(self, **kwargs):
         if not kwargs["accountId"]:
             kwargs["accountId"] = str(uuid.uuid4().hex)
@@ -149,7 +150,7 @@ class AWSService(BaseService):
             "supported_executor": "ecs",
             "compliance_supported": False,
             "supported_interfaces": cls.supported_connection_interfaces(),
-            "python_code_sample": "print('hello world')"
+            "python_code_sample": cls.get_code_sample()
         }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -170,13 +171,18 @@ class AWSService(BaseService):
             "global": {},
             "regional": {
 
-                }
             }
+        }
         global_clients = pydash.filter_(client_definitions, lambda x: x.is_regional is False)
         regional_clients = pydash.filter_(client_definitions, lambda x: x.is_regional is True)
+        creds = {
+            "aws_access_key_id": payload_task.creds.envs["AWS_ACCESS_KEY_ID"],
+            "aws_secret_access_key": payload_task.creds.envs["AWS_SECRET_ACCESS_KEY"],
+            "aws_session_token": payload_task.creds.envs["AWS_SESSION_TOKEN"]
+        }
         if global_clients:
             for client in global_clients:
-                built_clients["global"][client.name] = boto3.client(client.name)
+                built_clients["global"][client.name] = boto3.client(client.name, **creds)
         if regional_clients:
             active_regions = self.integration.activeRegions
             if not active_regions:
@@ -185,7 +191,7 @@ class AWSService(BaseService):
                 built_clients["regional"].setdefault(region, {})
                 for client in regional_clients:
                     try:
-                        built_clients["regional"][region][client.name] = boto3.client(client.name, region_name=region)
+                        built_clients["regional"][region][client.name] = boto3.client(client.name, region_name=region, **creds)
                     except ImportError:
                         print(f"Failed create client for {client['name']}")
         combinations = []
@@ -209,14 +215,12 @@ class AWSService(BaseService):
     def filer_combo_params(self, params: List[Param], region):
         filtered_params = []
         for param in params:
-            if not param.filter_relevant_resources or not param.values:
+            if not param.filter_relevant_resources or not param.values or not isinstance(param.values, list):
                 filtered_params.append(param)
-            elif not hasattr(param.values, '__iter__'):
-                filtered_params.append({"name": param.name, "values": param.values})
             else:
                 filtered_values = []
                 for value in param.values:
-                    if isinstance(value, dict):
+                    if isinstance(value, dict) and "region" in value:
                         if value.get("region") == region:
                             filtered_values.append(value)
                     else:

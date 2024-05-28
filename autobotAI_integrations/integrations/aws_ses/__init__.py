@@ -122,18 +122,23 @@ class AwsSesService(BaseService):
             "supported_executor": "ecs",
             "compliance_supported": False,
             "supported_interfaces": cls.supported_connection_interfaces(),
-            "python_code_sample": "print('hello world')"
+            "python_code_sample": cls.get_code_sample(),
         }
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask,
                                             client_definitions: List[SDKClient]) -> list:
+        creds = {
+            "aws_access_key_id": payload_task.creds.envs["AWS_ACCESS_KEY_ID"],
+            "aws_secret_access_key": payload_task.creds.envs["AWS_SECRET_ACCESS_KEY"],
+            "aws_session_token": payload_task.creds.envs["AWS_SESSION_TOKEN"]
+        }
         return [
             {
                 "metadata": {
                     "region": self.integration.region
                 },
                 "clients": {
-                    "ses": boto3.client("ses", region_name=self.integration.region)
+                    "ses": boto3.client("ses", region_name=self.integration.region, **creds)
                 },
                 "params": self.prepare_params(self.filer_combo_params(payload_task.params, self.integration.region)),
                 "context": payload_task.context
@@ -143,12 +148,12 @@ class AwsSesService(BaseService):
     def filer_combo_params(self, params: List[Param], region):
         filtered_params = []
         for param in params:
-            if not param.filter_relevant_resources or not param.values:
+            if not param.filter_relevant_resources or not param.values or not isinstance(param.values, list):
                 filtered_params.append(param)
             else:
                 filtered_values = []
                 for value in param.values:
-                    if isinstance(value, dict):
+                    if isinstance(value, dict) and "region" in value:
                         if value.get("region") == region:
                             filtered_values.append(value)
                     else:

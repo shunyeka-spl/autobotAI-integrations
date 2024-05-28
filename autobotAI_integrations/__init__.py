@@ -105,6 +105,28 @@ class BaseService:
         return compliance_names
 
     @classmethod
+    def get_code_sample(cls):
+        base_path = os.path.dirname(inspect.getfile(cls))
+        try:
+            code_file = open(path.join(base_path, "code_sample.py"))
+            sample_code = code_file.read()
+            return sample_code
+        except FileNotFoundError:
+            code = """# import your modules here...
+# Don't import client related modules
+
+def executor(context):
+    params = context["params"]    
+    clients = context["clients"]
+    
+    # <> Your Code goes here.
+    
+    # Always return a list
+    return []
+"""
+            return code
+
+    @classmethod
     def get_steampipe_tables(cls) -> List[dict]:
         base_path = os.path.dirname(inspect.getfile(cls))
         integration_type = cls.get_integration_type()
@@ -126,7 +148,7 @@ class BaseService:
     @classmethod
     def get_details(cls):
         return {
-            "python_code_sample": "print('dummy code')",
+            "python_code_sample": cls.get_code_sample(),
             "fetcher_supported": ["code", "no_code"],
             "listener_supported": False,
             "supported_interfaces": cls.supported_connection_interfaces(),
@@ -201,7 +223,8 @@ class BaseService:
 
         if payload_task.creds and payload_task.creds.envs:
             for key, value in payload_task.creds.envs.items():
-                os.environ[key] = value
+                if key and value:
+                    os.environ[key] = value
 
         results = []
         errors = []
@@ -319,7 +342,7 @@ class BaseService:
                     "non_json_output": stdout,
                 }
             }]
-        
+
         # Transforming the output
         if isinstance(stdout, dict) and stdout.get('rows'):
             stdout = stdout['rows']
@@ -328,7 +351,7 @@ class BaseService:
                 row["integration_type"] = payload_task.context.integration.cspName
                 row["user_id"] = payload_task.context.execution_details.caller.user_id
                 row["root_user_id"] = payload_task.context.execution_details.caller.root_user_id
-        
+
         # Covering Edge Cases
         if not isinstance(stdout, list):
             stdout = list(stdout)

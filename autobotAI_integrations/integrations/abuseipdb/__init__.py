@@ -107,3 +107,4 @@ class AbuseIPDBService(BaseService):
             conf_path=conf_path,
             config=config,
         )
+

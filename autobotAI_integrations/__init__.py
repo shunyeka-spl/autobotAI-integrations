@@ -134,6 +134,56 @@ def executor(context):
             return code
 
     @classmethod
+    def load_compliance_data(cls):
+        base_path = os.path.dirname(inspect.getfile(cls))
+        try:
+            clients_data = open(path.join(base_path, "compliance.json"))
+            data = json.loads(clients_data.read())
+            integration_type = cls.get_integration_type()
+            return data[integration_type]["benchmarks"]
+        except FileNotFoundError:
+            return []
+
+    @classmethod
+    def get_compliance_meta(cls, compliance_data):
+        benchmarks = cls.load_compliance_data()
+        compliance_details = []
+        for compliance in benchmarks:
+            if compliance["name"] in compliance_data:
+                compliance_details.append(compliance)
+        return compliance_details
+
+    @classmethod
+    def get_compliance_meta_names(cls):
+        benchmarks = cls.load_compliance_data()
+        compliance_names = []
+        for compliance in benchmarks:
+            compliance_names.append(compliance['name'])
+        return compliance_names
+
+    @classmethod
+    def get_code_sample(cls):
+        base_path = os.path.dirname(inspect.getfile(cls))
+        try:
+            code_file = open(path.join(base_path, "code_sample.py"))
+            sample_code = code_file.read()
+            return sample_code
+        except FileNotFoundError:
+            code = """# import your modules here...
+# Don't import client related modules
+
+def executor(context):
+    params = context["params"]    
+    clients = context["clients"]
+    
+    # <> Your Code goes here.
+    
+    # Always return a list
+    return []
+"""
+            return code
+
+    @classmethod
     def get_steampipe_tables(cls) -> List[dict]:
         base_path = os.path.dirname(inspect.getfile(cls))
         integration_type = cls.get_integration_type()
@@ -155,6 +205,7 @@ def executor(context):
     @classmethod
     def get_details(cls):
         return {
+            "python_code_sample": cls.get_code_sample(),
             "python_code_sample": cls.get_code_sample(),
             "fetcher_supported": ["code", "no_code"],
             "listener_supported": False,
@@ -232,6 +283,8 @@ def executor(context):
             for key, value in payload_task.creds.envs.items():
                 if key and value:
                     os.environ[key] = value
+                if key and value:
+                    os.environ[key] = value
 
         results = []
         errors = []
@@ -270,6 +323,16 @@ def executor(context):
                 result = [result]
             for r in result:
                 if isinstance(r, dict):
+                    resources.append(
+                        {
+                            **r, 
+                            **combination.get("metadata", {}),
+                            "integration_id": payload_task.context.integration.accountId,
+                            "integration_type":payload_task.context.integration.cspName,
+                            "user_id": payload_task.context.execution_details.caller.user_id,
+                            "root_user_id": payload_task.context.execution_details.caller.root_user_id
+                        }
+                    )
                     resources.append(
                         {
                             **r, 

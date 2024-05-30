@@ -18,7 +18,7 @@ abuseipdb_json = {
     "accountId": "175c0fa813244bc5a1aa6264e7ba20cc*",
     "integrationState": "INACTIVE",
     "cspName": "abuseipdb",
-    "api_key": "9ee1fc2e2756c3063bdc0abd0f38a9fa35c7344043d8b09128c3949be14e736ff6da66bc132aeabe",
+    "api_key": "",
     "alias": "test-abuseipdb-integrations2*",
     "connection_type": "DIRECT",
     "groups": ["abuseipdb", "shunyeka", "integrations-v2"],

@@ -5,7 +5,6 @@ from autobotAI_integrations.models import ConnectionInterfaces
 from autobotAI_integrations.payload_schema import TaskResult, PayloadTask, ResponseDebugInfo, ResponseError
 import json
 
-
 def handle_task(task: PayloadTask) -> TaskResult:
     if not isinstance(task, PayloadTask):
         raise Exception("Task must be of type PayloadTask")

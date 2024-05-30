@@ -47,6 +47,7 @@ class PayloadTaskContext(BaseModel):
 class Param(BaseModel):
     params_type: str = Field(alias="type")
     name: str
+    required: bool = False
     values: Optional[Any] = None
     filter_relevant_resources: bool = False
     
@@ -55,10 +56,11 @@ class Param(BaseModel):
         return super().model_dump_json(*args, **kwargs)
 
     @model_validator(mode="before")
+    @classmethod
     def resource_type_validator(cls, values: Any) -> Any:
-        if not values.get("params_type") and values.get("type"):
+        if not values.get("params_type", None) and values.get("type", None):
             values["params_type"] = values["type"]
-        if not values.get("type") and values.get("params_type"):
+        if not values.get("type", None) and values.get("params_type", None):
             values["type"] = values["params_type"]
         return values
 

@@ -5,7 +5,7 @@ import uuid
 import boto3
 import pydash
 from botocore.exceptions import ClientError
-from pydantic import Field
+from pydantic import Field, model_validator
 import os
 
 from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask, Param
@@ -31,13 +31,22 @@ class AWSIntegration(BaseSchema):
     externalId: Optional[str] = None
     activeRegions: Optional[list] = None
 
-    category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value 
+    category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
     description: Optional[str] = (
         """The world's most comprehensive and mature cloud computing platform, offering a vast range of on-demand compute, storage, database, networking, analytics, and machine learning services."""
     )
+
     def __init__(self, **kwargs):
-        kwargs["accountId"] = str(uuid.uuid4().hex)
+        if not kwargs["accountId"]:
+            kwargs["accountId"] = str(uuid.uuid4().hex)
         super().__init__(**kwargs)
+
+    @model_validator(mode="before")
+    @classmethod
+    def resource_type_validator(cls, values: Any) -> Any:
+        if values.get("accountId", None):
+            values["accountId"] = str(values["accountId"])
+        return values
 
 
 class AWSService(BaseService):
@@ -50,19 +59,24 @@ class AWSService(BaseService):
             integration = AWSIntegration(**integration)
         super().__init__(ctx, integration)
 
+    def _get_aws_client(self, aws_client_name: str):
+        if self.integration.roleArn:
+            boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
+            return boto3_helper.get_client(aws_client_name)
+        else:
+            return boto3.client(
+                aws_client_name,
+                aws_access_key_id=self.integration.access_key,
+                aws_secret_access_key=self.integration.secret_key,
+                aws_session_token=self.integration.session_token
+            )
+
     def _test_integration(self) -> dict:
         try:
-            if self.integration.roleArn:
-                boto3_helper = Boto3Helper(self.ctx, integration=self.integration.dump_all_data())
-                boto3_helper.get_client("ec2")
-            else:
-                iam_client = boto3.client(
-                    "iam",
-                    aws_access_key_id=self.integration.access_key,
-                    aws_secret_access_key=self.integration.secret_key,
-                    aws_session_token=self.integration.session_token
-                )
-                response = iam_client.get_account_summary(max_items=10)
+            sts_client = self._get_aws_client("sts")
+            identity_data = sts_client.get_caller_identity()
+            account_id = str(identity_data['Account'])
+            self.integration.account_id = account_id
             return {'success': True}
         except ClientError as e:
             print(traceback.format_exc())
@@ -109,6 +123,20 @@ class AWSService(BaseService):
                 }
             ]
         }
+    
+    def get_integration_specific_details(self) -> dict:
+        try:
+            account_client = self._get_aws_client('account')
+            regions = [region['RegionName'] for region in account_client.list_regions()['Regions'] if region['RegionOptStatus'] in ['ENABLED', 'ENABLED_BY_DEFAULT']]
+            # Fetching the model
+            return {
+                "integration_id": self.integration.accountId,
+                "available_regions": regions
+            }
+        except Exception as e:
+            return {
+                "error": "Details can not be fetched"
+            }
 
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
@@ -121,7 +149,7 @@ class AWSService(BaseService):
             "supported_executor": "ecs",
             "compliance_supported": False,
             "supported_interfaces": cls.supported_connection_interfaces(),
-            "python_code_sample": "print('hello world')"
+            "python_code_sample": cls.get_code_sample()
         }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -129,6 +157,7 @@ class AWSService(BaseService):
         conf_path = "~/.steampipe/config/aws.spc"
         config = """connection "aws" {
   plugin = "aws"
+  regions = ["*"]
   ignore_error_codes = ["AccessDenied", "AccessDeniedException", "NotAuthorized", "UnauthorizedOperation", "UnrecognizedClientException", "AuthorizationError"]
 }
 """
@@ -141,24 +170,29 @@ class AWSService(BaseService):
             "global": {},
             "regional": {
 
-                }
             }
+        }
         global_clients = pydash.filter_(client_definitions, lambda x: x.is_regional is False)
         regional_clients = pydash.filter_(client_definitions, lambda x: x.is_regional is True)
+        creds = {
+            "aws_access_key_id": payload_task.creds.envs["AWS_ACCESS_KEY_ID"],
+            "aws_secret_access_key": payload_task.creds.envs["AWS_SECRET_ACCESS_KEY"],
+            "aws_session_token": payload_task.creds.envs["AWS_SESSION_TOKEN"]
+        }
         if global_clients:
             for client in global_clients:
-                built_clients["global"][client.name] = boto3.client(client.name)
-
-        active_regions = self.integration.activeRegions
-        if not active_regions:
-            active_regions = ["us-east-1"]
-        for region in active_regions:
-            built_clients["regional"].setdefault(region, {})
-            for client in regional_clients:
-                try:
-                    built_clients["regional"][region][client.name] = boto3.client(client.name, region_name=region)
-                except ImportError:
-                    print(f"Failed create client for {client['name']}")
+                built_clients["global"][client.name] = boto3.client(client.name, **creds)
+        if regional_clients:
+            active_regions = self.integration.activeRegions
+            if not active_regions:
+                active_regions = ["us-east-1"]
+            for region in active_regions:
+                built_clients["regional"].setdefault(region, {})
+                for client in regional_clients:
+                    try:
+                        built_clients["regional"][region][client.name] = boto3.client(client.name, region_name=region, **creds)
+                    except ImportError:
+                        print(f"Failed create client for {client['name']}")
         combinations = []
         if built_clients["regional"]:
             for region in built_clients["regional"]:
@@ -168,17 +202,24 @@ class AWSService(BaseService):
                     "params": self.prepare_params(self.filer_combo_params(payload_task.params, region)),
                     "context": payload_task.context}
                 combinations.append(combo)
+        else:
+            combo = {"metadata": {
+                "region": "global"
+            }, "clients": {**built_clients["global"]},
+                "params": self.prepare_params(self.filer_combo_params(payload_task.params, "global")),
+                "context": payload_task.context}
+            combinations.append(combo)
         return combinations
 
     def filer_combo_params(self, params: List[Param], region):
         filtered_params = []
         for param in params:
-            if not param.filter_relevant_resources or not param.values:
+            if not param.filter_relevant_resources or not param.values or not isinstance(param.values, list):
                 filtered_params.append(param)
             else:
                 filtered_values = []
                 for value in param.values:
-                    if isinstance(value, dict):
+                    if isinstance(value, dict) and "region" in value:
                         if value.get("region") == region:
                             filtered_values.append(value)
                     else:

@@ -13,7 +13,7 @@ from autobotAI_integrations.models import IntegrationCategory
 
 
 class GithubIntegration(BaseSchema):
-    base_url: Optional[str] =  None# If enterprice version of gihub
+    base_url: Optional[str] =  None# If enterprise version of github
     token: str = Field(default=None, exclude=True)
 
     category: Optional[str] = IntegrationCategory.CODE_REPOSITORY.value

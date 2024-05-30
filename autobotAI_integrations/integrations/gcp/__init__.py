@@ -3,6 +3,8 @@ from typing import Dict, List, Type, Union
 import os
 import importlib
 import json
+
+from google.oauth2 import service_account
 from pydantic import Field, field_validator
 from functools import wraps
 
@@ -12,8 +14,9 @@ from autobotAI_integrations.models import List
 from autobotAI_integrations import BaseSchema, SteampipeCreds, RestAPICreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
 
-from google.cloud.resourcemanager import ProjectsClient, GetProjectRequest
+from google.cloud.storage import Client as StorageClient
 from google.oauth2.service_account import Credentials
+
 
 class GCPCredentials(BaseModel):
     model_config = ConfigDict(frozen=True)
@@ -71,6 +74,7 @@ class GCPIntegration(BaseSchema):
                 raise ValueError(f"Invalid JSON format in 'credentials': {e}")
         return credentials
 
+
 class GCPService(BaseService):
 
     def __init__(self, ctx: dict, integration: Union[GCPIntegration, dict]):
@@ -84,13 +88,15 @@ class GCPService(BaseService):
     def _test_integration(self) -> dict:
         try:
             gcp_creds = self.integration.credentials.model_dump()
-            credential = Credentials.from_service_account_info(gcp_creds)
-            client = ProjectsClient(credentials=credential)
-            res = client.common_project_path(project=gcp_creds['project_id'])
-            print(res)
+            credentials = Credentials.from_service_account_info(gcp_creds)
+            client = StorageClient(credentials=credentials)
+            buckets = client.list_buckets()
+            print("Buckets: ")
+            for bucket in buckets:
+                print(bucket.name)
             return {"success": True}
         except Exception as e:
-            return {"success": False, "error":str(e)}
+            return {"success": False, "error": str(e)}
 
     @staticmethod
     def get_forms():
@@ -125,7 +131,7 @@ class GCPService(BaseService):
             "supported_executor": "ecs",
             "compliance_supported": True,
             "supported_interfaces": cls.supported_connection_interfaces(),
-            "python_code_sample": "print('hello world')",
+            "python_code_sample": cls.get_code_sample(),
         }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -144,18 +150,22 @@ class GCPService(BaseService):
     def build_python_exec_combinations_hook(
             self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        
+
         clients_classes = dict()
+        credentials = service_account.Credentials.from_service_account_info(payload_task.creds.envs["GOOGLE_APPLICATION_CREDENTIALS"])
         for client in client_definitions:
             try:
                 client_module = importlib.import_module(client.module, package=None)
                 if hasattr(client_module, client.class_name):
                     cls = getattr(client_module, client.class_name)
-                    clients_classes[client.name] = cls()
+                    clients_classes[client.name] = cls(
+                        project=payload_task.creds.envs["CLOUDSDK_CORE_PROJECT"],
+                        credentials=credentials
+                    )
             except BaseException as e:
                 print(e)
                 continue
-        
+
         return [
             {
                 "clients": clients_classes,

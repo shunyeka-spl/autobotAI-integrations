@@ -107,6 +107,3 @@ class AbuseIPDBService(BaseService):
             conf_path=conf_path,
             config=config,
         )
-
-    def generate_cli_creds(self) -> CLICreds:
-        raise NotImplementedError()

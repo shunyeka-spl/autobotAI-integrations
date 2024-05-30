@@ -419,20 +419,6 @@ def executor(context):
                     "non_json_output": stdout,
                 }
             }]
-        # Transforming the output
-        if isinstance(stdout, dict) and stdout.get("rows"):
-            stdout = stdout["rows"]
-            for row in stdout:
-                row["integration_id"] = payload_task.context.integration.accountId
-                row["integration_type"] = payload_task.context.integration.cspName
-                row["user_id"] = payload_task.context.execution_details.caller.user_id
-                row["root_user_id"] = (
-                    payload_task.context.execution_details.caller.root_user_id
-                )
-
-        # Covering Edge Cases
-        if not isinstance(stdout, list):
-            stdout = list(stdout)
 
         if execution_mode == "compliance":
             stdout = transform_steampipe_compliance_resources(stdout)
@@ -443,16 +429,14 @@ def executor(context):
                 integration_id=payload_task.context.integration.accountId,
                 query=payload_task.executable,
             )
-        else:
-            if stdout and stdout.get("rows"):
-                metadata = {
-                    "agent_id": payload_task.context.integration.agent_ids if payload_task.context.integration.agent_ids else None,
-                    "integration_id": payload_task.context.integration.accountId,
-                    "integration_type": payload_task.creds.connection_name,
-                    "resource_type": payload_task.context.integration.resource_type
-                }
-                stdout = {"resources" : stdout.get("rows")}
-                stdout = transform_inventory_resources(stdout, metadata)
+        # Transforming the output
+        elif isinstance(stdout, dict) and stdout.get("rows"):
+            stdout = transform_inventory_resources(stdout, payload_task)
+
+        # Covering Edge Cases
+        if not isinstance(stdout, list):
+            stdout = list(stdout)
+
         return stdout, stderr
 
 

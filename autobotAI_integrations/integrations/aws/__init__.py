@@ -153,7 +153,7 @@ class AWSService(BaseService):
         }
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
-        creds = self._temp_credentials()
+        creds = {k: v for k,v in self._temp_credentials().items() if v}
         conf_path = "~/.steampipe/config/aws.spc"
         config = """connection "aws" {
   plugin = "aws"

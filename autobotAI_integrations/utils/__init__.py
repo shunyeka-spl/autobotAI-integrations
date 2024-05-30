@@ -7,6 +7,8 @@ import uuid
 from pathlib import Path
 import json
 
+from autobotAI_integrations.payload_schema import PayloadTask
+
 
 def fromisoformat(strdate):
     try:
@@ -69,23 +71,19 @@ def change_keys(obj, convert=lambda key: key.replace('.', '_').replace('$', '-')
         return obj
     return new
 
-def transform_inventory_resources(response: dict, metadata: dict):
-    if not response:
-        return []
-
-    resources = []
-
-    if 'resources' in response:
-        for resource in response['resources']:
-            resource["integration_id"] = metadata['integration_id']
-            resource["integration_type"] = metadata['integration_type']
-            resource["resource_type"] = metadata['resource_type']
-            resource["agent_id"] = metadata["agent_id"]
-            resources.append(change_keys(resource))
-
-    response['resources'] = resources
-
-    return response
+def transform_inventory_resources(stdout: dict, payload_task: PayloadTask):
+    results = []
+    stdout = stdout["rows"]
+    for row in stdout:
+        row["integration_id"] = payload_task.context.integration.accountId
+        row["integration_type"] = payload_task.context.integration.cspName
+        row["user_id"] = payload_task.context.execution_details.caller.user_id
+        row["root_user_id"] = (
+            payload_task.context.execution_details.caller.root_user_id
+        )
+        row["agent_id"] = payload_task.context.integration.agent_ids if payload_task.context.integration.agent_ids else None
+        results.append(change_keys(row))
+    return results
 
 
 # transform steampipe compliance data

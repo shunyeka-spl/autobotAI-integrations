@@ -363,6 +363,12 @@ def executor(context):
                     stderr=subprocess.DEVNULL
                 )
         
+        # Set Env Variables for creds.
+        if payload_task.creds and payload_task.creds.envs:
+            for key, value in payload_task.creds.envs.items():
+                if key and value:
+                    os.environ[key] = value
+
         # Save the configuration in the creds.config_path with value creds.config
         self.set_steampipe_spc_config(
             config_str=payload_task.creds.config,

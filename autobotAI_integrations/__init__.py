@@ -350,7 +350,7 @@ def executor(context):
             cwd=path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            env={**os.environ, **payload_task.creds.envs}
+            env={**os.environ}
         )
 
         return process
@@ -399,7 +399,7 @@ def executor(context):
                     ["powerpipe", "query", "run", "{}".format(payload_task.executable), "--output", "json"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    env={**os.environ, **payload_task.creds.envs}
+                    env={**os.environ}
                 )
             
             stdout = process.stdout.decode("utf-8")

@@ -11,7 +11,7 @@ from enum import Enum
 from os import path
 from pathlib import Path
 from typing import Optional, Dict, Any, List, Callable
-
+from time import sleep
 import requests
 import yaml
 from pydantic import BaseModel
@@ -355,25 +355,23 @@ def executor(context):
 
         return process
 
-    def execute_steampipe_task(self, payload_task: PayloadTask):
-        print("running execute steampipe task")
-
-        subprocess.run(
-            ["steampipe", "plugin", "install", payload_task.creds.plugin_name]
-        )
-        print("after installing the plugin")
-        subprocess.run(
-            ["steampipe", "plugin", "update", payload_task.creds.plugin_name]
-        )
-        # print("after installing the updating the plugin")
-        # subprocess.run(
-        #     ["steampipe service start"]
-        # )
-        # print("after starting the server")
+    def execute_steampipe_task(self, payload_task:PayloadTask):
+        print(f"Installing plugin '{payload_task.creds.plugin_name}'")
+        result = subprocess.run(
+                    ["steampipe", "plugin", "install", payload_task.creds.plugin_name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+        
         # Save the configuration in the creds.config_path with value creds.config
         self.set_steampipe_spc_config(
             config_str=payload_task.creds.config,
         )
+
+        # Start service after the config file is saved.
+        print("Starting Steampipe Service...")
+        result = subprocess.run(["steampipe", "service", "start"])
+        
         execution_mode = None
         if payload_task.executable.startswith(f"{payload_task.creds.plugin_name}_compliance"):
             execution_mode = "compliance"
@@ -382,30 +380,36 @@ def executor(context):
         else:
             raise ValueError("Execution mode is not supported.")
 
-        if execution_mode == "compliance":
-            print(f"Running compliance benchmark: '{payload_task.executable}'")
-            process = self._execute_steampipe_compliance(payload_task)
+        max_retries = 30
+        retries = 0
+        while retries < max_retries:
+            if execution_mode == "compliance":
+                print(f"Running compliance benchmark: '{payload_task.executable}'")
+                process = self._execute_steampipe_compliance(payload_task)
 
-        else:
-            print(f"Running query: '{payload_task.executable}'")
-            process = subprocess.run(
-                ["/usr/local/bin/steampipe", "query", "{}".format(payload_task.executable), "--output", "json"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, **payload_task.creds.envs}
-            )
-
-        # subprocess.run(
-        #     ["steampipe service stop"]
-        # )
-        # print("after stopping the server")
-        # clear config file
+            else:
+                print(f"Running query: '{payload_task.executable}'")
+                process = subprocess.run(
+                    ["powerpipe", "query", "run", "{}".format(payload_task.executable), "--output", "json"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, **payload_task.creds.envs}
+                )
+            
+            stdout = process.stdout.decode("utf-8")
+            stderr = [{
+                "message": process.stderr.decode("utf-8")
+            }]
+            if "SQLSTATE 42P01" in stderr[0]["message"]: # Assuming DB is not reloaded.
+                print(f"Retrying due to SQLSTATE 42P01 error... attempt {retries + 1}")
+                retries += 1
+                sleep(1)
+            else:
+                break
+        
+        print("Performing post-execution clean up...")
+        subprocess.run(["steampipe", "service", "stop"])
         self.clear_steampipe_spc_config()
-
-        stdout = process.stdout.decode("utf-8")
-        stderr = [{
-            "message": process.stderr.decode("utf-8")
-        }]
 
         try:
             stdout = json.loads(stdout)

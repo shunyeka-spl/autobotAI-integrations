@@ -38,7 +38,8 @@ def handle_task(task: PayloadTask) -> TaskResult:
         output = service.execute_steampipe_task(task)
     else:
         raise Exception("Invalid task.connection_interface = {}".format(task.connection_interface))
-    
+
+    logger.info(f"Task Completed With Id: {task.task_id}")
     logger.debug(f"Task Completed With Output: {output}")
     result = TaskResult(**result_json)
     try:

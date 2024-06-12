@@ -2,7 +2,7 @@ from autobotAI_integrations.payload_schema import Payload, JobResult
 from .task_handler import handle_task
 import requests
 import tempfile
-from autobotAI_integrations.logging_config import logger
+from autobotAI_integrations.utils.logging_config import logger
 
 
 def handle_payload(

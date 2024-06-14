@@ -1,7 +1,7 @@
 import traceback
 from typing import Type, Union
 
-import boto3, uuid
+import boto3, uuid, json
 from botocore.exceptions import ClientError
 from pydantic import Field
 
@@ -284,6 +284,56 @@ def executor(context):
                 "AWS_SECRET_ACCESS_KEY": self.integration.secret_key,
                 "AWS_SESSION_TOKEN": self.integration.session_token,
             }
-    
+
+    def _get_bedrock_model_request(self, model: str, prompt: str, max_tokens=512, temperature=0.5, *args, **kwargs):
+        if model.startswith("amazon.titan-text"):
+            native_request = {
+                "inputText": prompt,
+                "textGenerationConfig": {
+                    "maxTokenCount": int(max_tokens),
+                    "temperature": float(temperature),
+                },
+            }
+            request = json.dumps(native_request)
+            return request
+        elif model.startswith("meta.llama3"):
+            formatted_prompt = f"""
+<|begin_of_text|>
+{prompt}
+<|eot_id|>
+<|start_header_id|>assistant<|end_header_id|>"""
+            native_request = {
+                "prompt": formatted_prompt,
+                "max_gen_len": int(max_tokens),
+                "temperature": float(temperature),
+            }
+            request = json.dumps(native_request)
+            return request
+        elif model.startswith("mistral.mistral") or model.startswith("meta.llama2"):
+            formatted_prompt = f"<s>[INST] {prompt} [/INST]"
+            native_request = {
+                "prompt": formatted_prompt,
+                "max_gen_len": int(max_tokens),
+                "temperature": float(temperature),
+            }
+            request = json.dumps(native_request)
+            return request
+        else:
+            raise Exception(f"Model {model} not found in generate request")
+
     def prompt_executor(self, model=None, prompt=None, options: dict = {}):
-        pass
+        if not model or not prompt:
+            raise Exception("Model and prompt are required")
+        request = self._get_bedrock_model_request(model, prompt, **options)
+        client = self._get_aws_client('bedrock-runtime')
+        try:
+            # Invoke the model with the request.
+            response = client.invoke_model(modelId=model, body=request)
+
+        except (ClientError, Exception) as e:
+            print(f"ERROR: Can't invoke '{model}'. Reason: {e}")
+            exit(1)
+
+        # Decode the response body.
+        model_response = json.loads(response["body"].read())
+        return model_response

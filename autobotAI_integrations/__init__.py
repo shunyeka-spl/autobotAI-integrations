@@ -438,6 +438,7 @@ def executor(context):
 
         # Covering Edge Cases
         if not isinstance(stdout, list):
+            logger.error(f"Failed Output as List: {stdout}")
             stdout = list(stdout)
 
         logger.debug(f"Transformed Output: {stdout}")

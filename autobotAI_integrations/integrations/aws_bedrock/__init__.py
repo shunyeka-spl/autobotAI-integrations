@@ -84,6 +84,11 @@ class AWSBedrockService(AIBaseService):
         try:
             # Fetching the model
             # models = [model['modelId'] for model in bedrock_client.list_foundation_models()['modelSummaries']]
+            ec2_client = self._get_aws_client("ec2")
+            regions = [
+                region["RegionName"]
+                for region in ec2_client.describe_regions()["Regions"]
+            ]
             models = [
                 "amazon.titan-text-express-v1",
                 "meta.llama3-8b-instruct-v1:0",
@@ -93,7 +98,7 @@ class AWSBedrockService(AIBaseService):
             return {
                 "integration_id": self.integration.accountId,
                 "models": models,
-                "available_region": self.integration.region
+                "available_regions": [self.integration.region, *regions]
             }
         except Exception as e:
             logger.error(e)

@@ -128,7 +128,7 @@ class AWSBedrockService(AIBaseService):
     @staticmethod
     def ai_prompt_python_template():
         return {
-            "integration_type": "openai",
+            "integration_type": "aws_bedrock",
             "param_definitions": [
                 {
                     "name": "prompt",

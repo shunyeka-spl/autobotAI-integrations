@@ -26,6 +26,7 @@ class AWSBedrockIntegration(BaseSchema):
 
     def __init__(self, **kwargs):
         kwargs["accountId"] = str(uuid.uuid4().hex)
+        kwargs["activeRegions"] = [kwargs['region']]
         super().__init__(**kwargs)
 
     def use_dependency(self, dependency):
@@ -75,9 +76,6 @@ class AWSBedrockService(AIBaseService):
 
     def get_integration_specific_details(self) -> dict:
         try:
-            bedrock_client = self._get_aws_client("bedrock")
-            ec2_client = self._get_aws_client('ec2')
-            regions = [region['RegionName'] for region in  ec2_client.describe_regions()["Regions"]]
             # Fetching the model
             # models = [model['modelId'] for model in bedrock_client.list_foundation_models()['modelSummaries']]
             models = [
@@ -89,7 +87,7 @@ class AWSBedrockService(AIBaseService):
             return {
                 "integration_id": self.integration.accountId,
                 "models": models,
-                "available_regions": regions
+                "available_region": self.integration.region
             }
         except Exception as e:
             logger.error(e)

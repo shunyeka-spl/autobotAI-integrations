@@ -32,20 +32,16 @@ class SlackService(BaseService):
         super().__init__(ctx, integration)
 
     def _test_integration(self):
-        if self.integration.webhook not in [None, "None"]:
-            res = {"success": False, "error": "Webhook is not provided"}
-            pattern = re.compile(
-                "https:\\/\\/hooks.slack.com\\/services\\/[\\w\\d\\-\\@]+\\/[\\w\\d\\-\\@]+\\/[\\w\\d\\-\\@]+"
-            )
-            result = pattern.match(self.integration.webhook)
-            if result is None:
-                res = {"success": False, "error": "Webhook is not valid slack webhook URL"}
-            else:
-                res = {"success": True}
-            return res
         try:
-            client = WebClient(token=self.integration.bot_token)
-            client.usergroups_list()
+            if self.integration.webhook not in [None, "None"]:
+                webhook = WebhookClient(self.integration.webhook)
+                response = webhook.send(text="Hello, Integration Tested Successfully!")
+                assert response.status_code == 200
+                assert response.body == "ok"
+                return {"success": True}
+            else:
+                client = WebClient(token=self.integration.bot_token)
+                client.usergroups_list()
             return {"success": True}
         except Exception as e:
             return {"success": False, "error": str(e)}

@@ -117,9 +117,7 @@ class VirusTotalService(BaseService):
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        vt = importlib.import_module(
-            client_definitions[0].import_library_names[0], package=None
-        )
+        import vt
 
         return [
             {

@@ -28,7 +28,7 @@ setup(
         "ollama",
         "jira",
         "GitPython",
-        "",
+        "vt-py",
     ],
     package_data={
         "": ["integrations/*/inventory.json", "integrations/*/python_sdk_clients.yml"]

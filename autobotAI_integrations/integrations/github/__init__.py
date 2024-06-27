@@ -20,9 +20,6 @@ class GithubIntegration(BaseSchema):
     description: Optional[str] = (
         "Popular version control platform for software development, known for its social coding features and large user base."
     )
-    def __init__(self, **kwargs):
-        kwargs["accountId"] = str(uuid.uuid4().hex)
-        super().__init__(**kwargs)
 
 
 class GithubService(BaseService):

@@ -1,6 +1,7 @@
 import uuid
 from typing import Dict, List, Type, Union
 import importlib
+from pathlib import Path
 import json
 
 from google.oauth2 import service_account
@@ -203,21 +204,24 @@ class GCPService(BaseService):
         @wraps(func)
         def wrapper(self, payload_task: PayloadTask, *args, **kwargs):
             try:
+                home_dir = Path.home()
                 credentials_dict = GCPCredentials.model_validate_json(
                     json.loads(payload_task.creds.envs["GOOGLE_APPLICATION_CREDENTIALS"])
-                ).model_dump(by_alias=True)
-
-                file_path = f"gcp_credentials_{str(uuid.uuid4().hex)}.json"
+                ).model_dump()
+                file_path = os.path.join(home_dir, f"gcp_credentials_{str(uuid.uuid4().hex)}.json")
                 with open(file_path, "w") as f:
                     f.write(json.dumps(credentials_dict))
 
                 payload_task.creds.envs["GOOGLE_APPLICATION_CREDENTIALS"] = file_path
                 result = func(self, payload_task, *args, **kwargs)  # Call the original function
             finally:
-                os.remove(file_path)
+                try:
+                    os.remove(file_path)
+                except BaseException as e:
+                    print(e)
             return result
         return wrapper
-    
+
     @manage_creds_path
     def execute_steampipe_task(self, payload_task: PayloadTask):
         return super().execute_steampipe_task(payload_task)

@@ -21,7 +21,7 @@ import os
 class GCPCredentials(BaseModel):
     model_config = ConfigDict(frozen=True)
 
-    type_: str = Field(alias="type")
+    type_: str = Field(alias="type", serialization_alias="type")
     project_id: str
     private_key_id: str
     private_key: str
@@ -32,17 +32,17 @@ class GCPCredentials(BaseModel):
     auth_provider_x509_cert_url: str
     client_x509_cert_url: str
 
-    def model_dump_json(self, *args, **kwargs) -> str:
-        kwargs["by_alias"] = True
-        return super().model_dump_json(*args, **kwargs)
+    def model_dump(self, **kwargs):
+        return super().model_dump(by_alias=True, **kwargs)
+
+    def model_dump_json(self, **kwargs):
+        return super().model_dump_json(by_alias=True, **kwargs)
 
 
 class GCPIntegration(BaseSchema):
     # TODO: Integration Credential Field Optimization,
     account_id: Optional[str] = uuid.uuid4().hex
-    credentials: GCPCredentials = Field(
-        default=None, exclude=True
-    )
+    credentials: Optional[GCPCredentials] = Field(default=None, exclude=True)
 
     category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
     description: Optional[str] = (
@@ -54,20 +54,17 @@ class GCPIntegration(BaseSchema):
             creds = kwargs.get("credentials")
             if isinstance(kwargs.get('credentials'), str):
                 creds = json.loads(creds)
+            kwargs["credentials"] = GCPCredentials(**creds)
+        if not kwargs.get("accountId"):
             kwargs["accountId"] = str(creds.get("project_id"))
         super().__init__(**kwargs)
 
-    @property
-    def credentials(self) -> dict:
-        return self.credentials.model_dump(by_alias=True)
-
-    def model_dump(self, *args, **kwargs) -> str:
-        kwargs["by_alias"] = True
-        return super().model_dump(*args, **kwargs)
 
     @field_validator('credentials', mode='before')
     @classmethod
     def validate_credentials(cls, credentials) -> GCPCredentials:
+        if isinstance(credentials, dict):
+            return GCPCredentials(**credentials)
         if isinstance(credentials, str):
             try:
                 return GCPCredentials(**json.loads(credentials))  # Parse JSON string
@@ -198,7 +195,7 @@ class GCPService(BaseService):
     def _temp_credentials(self):
         return {
             "CLOUDSDK_CORE_PROJECT": self.integration.credentials.project_id,
-            "GOOGLE_APPLICATION_CREDENTIALS": json.dumps(self.integration.credentials.model_dump_json(by_alias=True))
+            "GOOGLE_APPLICATION_CREDENTIALS": json.dumps(self.integration.credentials.model_dump_json())
         }
 
     @staticmethod

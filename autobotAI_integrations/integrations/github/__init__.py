@@ -120,7 +120,7 @@ class GithubService(BaseService):
   plugin = "github"
 }"""
         return SteampipeCreds(envs=envs, plugin_name="github", connection_name="github",
-                              conf_path=conf_path)
+                              conf_path=conf_path, config=config)
 
     def generate_rest_api_creds(self) -> RestAPICreds:
         pass

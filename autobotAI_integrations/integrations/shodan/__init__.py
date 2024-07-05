@@ -116,7 +116,7 @@ class ShodanService(BaseService):
         return [
             {
                 "clients": {
-                    "virustotal": shodan.Shodan(
+                    "shodan": shodan.Shodan(
                         payload_task.creds.envs.get("SHODAN_API_KEY")
                     )
                 },

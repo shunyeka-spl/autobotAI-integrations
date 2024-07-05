@@ -29,5 +29,4 @@ def executor(context):
 
     # Example: Code to get Host count (for illustration purposes only)
     # result = client.count(query="port:22", facets="org,os")
-    # result = json.loads(result)
     # return [result] # Replace with your actual return logic

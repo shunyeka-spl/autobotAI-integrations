@@ -106,6 +106,7 @@ class PrometheusService(BaseService):
         conf_path = "~/.steampipe/config/prometheus.spc"
         config = """connection "prometheus" {
   plugin = "prometheus"
+  metrics = [".+"]
 }"""
         return SteampipeCreds(
             envs=envs,

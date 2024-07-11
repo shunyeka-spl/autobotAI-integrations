@@ -21,7 +21,7 @@ import imaplib
 
 class IMAPIntegration(BaseSchema):
     host: Optional[str] = None
-    port: int = Field(default=993)
+    port: Optional[str] = Field(default="993")
     username: Optional[str] = Field(default=None, exclude=True)
     password: Optional[str] = Field(default=None, exclude=True)
 
@@ -93,8 +93,12 @@ class IMAPService(BaseService):
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
 
-        connection = imaplib.IMAP4_SSL(self.integration.host, self.integration.port)
-        connection.login(self.integration.username, self.integration.password)
+        connection = imaplib.IMAP4_SSL(
+            payload_task.creds.envs["IMAP_HOST"], payload_task.creds.envs["IMAP_PORT"]
+        )
+        connection.login(
+            payload_task.creds.envs["IMAP_USERNAME"], payload_task.creds.envs["IMAP_PASSWORD"]
+        )
         return [
             {
                 "clients": {
@@ -124,7 +128,6 @@ class IMAPService(BaseService):
             config=config,
         )
 
-
     def generate_python_sdk_creds(self) -> SDKCreds:
         envs = {
             "IMAP_HOST": self.integration.host,
@@ -133,4 +136,3 @@ class IMAPService(BaseService):
             "IMAP_PASSWORD": self.integration.password,
         }
         return SDKCreds(envs=envs)
-

@@ -28,40 +28,23 @@ def executor(context):
     # User's Python code execution logic goes here
     # (Replace this comment with the your actual code)
 
-    # Example: Code to list all yesterdays emails data (for illustration purposes only)
-    client.select()
-
-    yesterday_date = datetime.today() - timedelta(days=1)
-    AFTER_DATE_FILTER = f'(SINCE "{yesterday_date.strftime("%d-%b-%Y")}")'
-    emails_data = []
-    result, data = client.search(None, AFTER_DATE_FILTER)
-    if result == "OK":
-        email_ids = data[0].split()
-
-        # Get the most recent email
-        if email_ids:
-            for email_id in email_ids[::-1]:
-                result, data = client.fetch(email_id, "(RFC822)")
-                if result == "OK":
-                    raw_email = data[0][1]
-                    msg = email.message_from_bytes(raw_email)
-                    email_data = {
-                        "Subject": msg["Subject"],
-                        "From": msg["From"],
-                        "Body": "",
-                    }
-                    for part in msg.walk():
-                        if part.get_content_type() == "text/html":
-                            html_body = part.get_payload(decode=True).decode()
-                            msg_body = (
-                                html.unescape(html_body)
-                                .replace("\r", "")
-                                .replace("\n", " ")
-                            )
-                            email_data["Body"] += msg_body
-                    emails_data.append(email_data)
-
-            return email_data
-    client.close()
-    client.logout()
-    return [{"result": "No emails found for yesterday"}]
+    # Example: Code to list last 10 emails data (for illustration purposes only)
+    # client.select("Inbox")
+    # res = []
+    # try:
+    #     tmp, data = client.search(None, "ALL")
+    #     # Fetching last 10 emails
+    #     count = 10
+    #     for num in data[0].split()[::-1]:
+    #         tmp, data = client.fetch(num, "(RFC822)")
+    #         raw_email = data[0][1]
+    #         (Your Email parsing login goes here)
+    #         res.append(raw_email)
+    #         count -= 1
+    #         if count == 0:
+    #             break
+    #     client.close()
+    #     client.logout()
+    #     return res
+    # except BaseException as e:
+    #     return [{"result": str(e)}]

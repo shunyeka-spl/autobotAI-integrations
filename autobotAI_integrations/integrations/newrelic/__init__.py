@@ -1,21 +1,18 @@
 from typing import List, Type, Union
 
 from autobotAI_integrations.models import *
-from autobotAI_integrations.models import List
 from autobotAI_integrations import (
     BaseSchema,
     BaseService,
     ConnectionInterfaces,
-) 
+)
 import requests
-import json
 
 
 class NewrelicIntegrations(BaseSchema):
-    
     api_key: Optional[str] = Field(default=None, exclude=True)
     region: Optional[str] = Field(default="us", exclude=False)
-    
+
     category: Optional[str] = IntegrationCategory.MONITORING_TOOLS.value
     description: Optional[str] = (
         "New Relic is a SaaS providing Monitoring, Alerting, Dashboards for applications, infrastructure, etc."
@@ -34,13 +31,11 @@ class NewrelicService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            api_key = self.integration.api_key 
-            headers = {
-                "X-Api-Key": api_key
-            }
-            url = "https://api.newrelic.com/v2/applications.json"  
+            api_key = self.integration.api_key
+            headers = {"X-Api-Key": api_key}
+            url = "https://api.newrelic.com/v2/applications.json"
             response = requests.get(url, headers=headers)
-                                    
+
             if response.status_code == 200:
                 return {"success": True}
             else:
@@ -50,6 +45,7 @@ class NewrelicService(BaseService):
                 }
         except requests.exceptions.ConnectionError as e:
             return {"success": False, "error": "Connection is Unreachable"}
+
     @staticmethod
     def get_forms():
         return {
@@ -64,13 +60,12 @@ class NewrelicService(BaseService):
                     "required": True,
                 },
                 {
-                "name": "region",
-                "type": "text",
-                "label": "Region",
-                "placeholder": "'us' or 'eu',default:'us'",
-                "required": True,
-                 },
-    
+                    "name": "region",
+                    "type": "text",
+                    "label": "Region",
+                    "placeholder": "'us' or 'eu',default:'us'",
+                    "required": True,
+                },
             ],
         }
 
@@ -97,8 +92,8 @@ class NewrelicService(BaseService):
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = {
-        "NEW_RELIC_API_KEY": self.integration.api_key,
-        "NEW_RELIC_REGION": self.integration.region  
+            "NEW_RELIC_API_KEY": self.integration.api_key,
+            "NEW_RELIC_REGION": self.integration.region,
         }
         conf_path = "~/.steampipe/config/newrelic.spc"
         config = """connection "newrelic" {
@@ -112,5 +107,3 @@ class NewrelicService(BaseService):
             conf_path=conf_path,
             config=config,
         )
-        
-        

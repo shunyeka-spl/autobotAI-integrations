@@ -17,9 +17,7 @@ class TestClassNewrelic:
             "region": get_keys["NEWRELIC_REGION"]
         }
         integration = sample_integration_dict("newrelic", tokens)
-        newrelic_query = (
-            "select * from newrelic_search where query = 'domain:steampipe.io'"
-        )
+        newrelic_query = "select * from newrelic_account"
         task = sample_steampipe_task(integration, query=newrelic_query)
         result = handle_task(task)
         test_result_format(result)

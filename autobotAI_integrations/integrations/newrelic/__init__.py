@@ -29,23 +29,35 @@ class NewrelicService(BaseService):
             integration = NewrelicIntegrations(**integration)
         super().__init__(ctx, integration)
 
+
     def _test_integration(self) -> dict:
-        try:
-            api_key = self.integration.api_key
-            headers = {"X-Api-Key": api_key}
-            url = "https://api.newrelic.com/v2/applications.json"
-            response = requests.get(url, headers=headers)
+     try:
+        api_key = self.integration.api_key
+        headers = {"X-Api-Key": api_key}
+        url = "https://api.newrelic.com/v2/applications.json"
+        response = requests.get(url, headers=headers)
 
-            if response.status_code == 200:
-                return {"success": True}
-            else:
-                return {
-                    "success": False,
-                    "error": f"Error: API request failed. Status code: {response.status_code}",
-                }
-        except requests.exceptions.ConnectionError as e:
-            return {"success": False, "error": "Connection is Unreachable"}
+        print(f"Response status code: {response.status_code}")
+        print(f"Response content: {response.content}")
 
+        if response.status_code == 200:
+            try:
+                response_data = response.json()
+                if "applications" in response_data:
+                    return {"success": True}
+                else:
+                    return {"success": False, "error": "Unexpected response format"}
+            except ValueError:
+                return {"success": False, "error": "Invalid JSON response"}
+        else:
+            return {
+                "success": False,
+                "error": f"API request failed. Status code: {response.status_code}",
+            }
+     except requests.exceptions.ConnectionError as e:
+        return {"success": False, "error": "Connection is unreachable"}
+
+    
     @staticmethod
     def get_forms():
         return {

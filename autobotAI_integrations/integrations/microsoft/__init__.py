@@ -16,12 +16,12 @@ class MicrosoftIntegration(BaseSchema):
 
     category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
     description: Optional[str] = (
-        "Microsoft is a cloud computing platform developed by Microsoft that provides a wide range of services for building, deploying, and managing applications on a global scale."
+        "Microsoft 365 is a suite of cloud-based productivity and collaboration applications that integrates all Microsoft's existing online applications (Outlook, People etc.)."
     )
 
     def __init__(self, **kwargs):
         if kwargs.get("subscription_id"):
-            kwargs["accountId"] = kwargs["subscription_id"]
+            kwargs["accountId"] = kwargs["subscription_id"] + "_microsoft365"
         super().__init__(**kwargs)
 
 
@@ -37,7 +37,7 @@ class MicrosoftService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            url = f"https://login.microsoftonline.com/{self.integration.tenant_iid}/oauth2/v2.0/token"
+            url = f"https://login.microsoftonline.com/{self.integration.tenant_id}/oauth2/v2.0/token"
             headers = {"Content-Type": "application/x-www-form-urlencoded"}
             data = {
                 "client_id": self.integration.client_id,
@@ -130,7 +130,7 @@ class MicrosoftService(BaseService):
             client_id=payload_task.creds.envs.get("AZURE_CLIENT_ID"),
             client_secret=payload_task.creds.envs.get("AZURE_CLIENT_SECRET"),
         )
-        scopes = ['https://graph.microsoft.com/.default']
+        scopes = ["https://graph.microsoft.com/.default"]
         msgraph = importlib.import_module(client_definitions[0].import_library_names[0], package=None)
         return [
             {

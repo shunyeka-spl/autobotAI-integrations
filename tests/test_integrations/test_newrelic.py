@@ -32,7 +32,7 @@ class TestClassNewrelic:
         res = service.is_active()
         assert res["success"]
         tokens = {
-            "api_key": get_keys["NEWRELIC_API_KEY"],
+            "api_key": get_keys["NEWRELIC_API_KEY"][0:-3],
             "region": get_keys["NEWRELIC_REGION"],
         }
         integration = sample_integration_dict("newrelic", tokens)

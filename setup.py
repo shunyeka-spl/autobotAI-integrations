@@ -29,7 +29,6 @@ setup(
         "jira",
         "GitPython",
         "vt-py",
-        "splunk-sdk",
     ],
     package_data={
         "": [

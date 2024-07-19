@@ -50,4 +50,3 @@ ollama
 jira
 GitPython
 vt-py
-splunk-sdk

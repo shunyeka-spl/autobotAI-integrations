@@ -183,6 +183,23 @@ class AwsAthenaService(BaseService):
         creds = self._temp_credentials()
         return SDKCreds(envs=creds)
 
+    def generate_steampipe_creds(self) -> SteampipeCreds:
+        creds = self._temp_credentials()
+        conf_path = "~/.steampipe/config/aws.spc"
+        config = f"""connection "aws" {{
+  plugin = "aws"
+  regions = ["*"]
+  ignore_error_codes = ["AccessDenied", "AccessDeniedException", "NotAuthorized", "UnauthorizedOperation", "UnrecognizedClientException", "AuthorizationError"]
+}}
+"""
+        return SteampipeCreds(
+            envs=creds,
+            plugin_name="aws",
+            connection_name="aws",
+            conf_path=conf_path,
+            config=config,
+        )
+
     @staticmethod
     def supported_connection_interfaces():
         return [ConnectionInterfaces.PYTHON_SDK]
@@ -191,9 +208,20 @@ class AwsAthenaService(BaseService):
         raise NotImplementedError()
 
     def _temp_credentials(self):
-        boto3_helper = Boto3Helper(self.ctx, integration=self.integration.model_dump())
-        return {
-            "AWS_ACCESS_KEY_ID": boto3_helper.get_access_key(),
-            "AWS_SECRET_ACCESS_KEY": boto3_helper.get_secret_key(),
-            "AWS_SESSION_TOKEN": boto3_helper.get_session_token(),
-        }
+        if self.integration.roleArn not in ["None", None]:
+            boto3_helper = Boto3Helper(
+                self.ctx, integration=self.integration.model_dump()
+            )
+            return {
+                "AWS_ACCESS_KEY_ID": boto3_helper.get_access_key(),
+                "AWS_SECRET_ACCESS_KEY": boto3_helper.get_secret_key(),
+                "AWS_SESSION_TOKEN": boto3_helper.get_session_token(),
+            }
+        else:
+            creds = {
+                "AWS_ACCESS_KEY_ID": str(self.integration.access_key),
+                "AWS_SECRET_ACCESS_KEY": str(self.integration.secret_key),
+            }
+            if self.integration.session_token not in [None, "None"]:
+                creds["AWS_SESSION_TOKEN"] = str(self.integration.session_token)
+            return creds

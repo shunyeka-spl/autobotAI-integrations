@@ -56,7 +56,6 @@ class TestClassMicrosoft:
         result = handle_task(task)
         test_result_format(result)
         print(result.model_dump_json(indent=2))
-        assert 1 == 2
 
     def test_microsoft_python_task(
         self, get_keys, sample_integration_dict, sample_python_task, test_result_format
@@ -74,7 +73,7 @@ class TestClassMicrosoft:
         result = handle_task(task)
         test_result_format(result)
         print(result.model_dump_json(indent=2))
-        assert 1 == 2
+
 
     def test_integration_active(self, get_keys, sample_integration_dict):
         tokens = {

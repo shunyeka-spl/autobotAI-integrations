@@ -1,7 +1,7 @@
 import traceback
 from typing import Type, Union
 
-import boto3, uuid
+import boto3
 from botocore.exceptions import ClientError
 from pydantic import Field
 
@@ -26,9 +26,6 @@ class AwsSecurityLakeIntegration(BaseSchema):
 
     category: Optional[str] = IntegrationCategory.OTHERS.value
     description: Optional[str] = "AWS Security Lake centralizes security data from across AWS accounts, AWS services, and on-premises."
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def use_dependency(self, dependency):
         self.roleArn = dependency["roleArn"]
@@ -69,7 +66,7 @@ class AwsSecurityLakeService(BaseService):
     def _test_integration(self) -> dict:
         try:
             securitylake_client = self._get_aws_client("securitylake")
-            response = securitylake_client.describe_security_lake()
+            response = securitylake_client.list_subscribers()
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
             account_id = str(identity_data["Account"])
@@ -77,7 +74,7 @@ class AwsSecurityLakeService(BaseService):
             return {"success": True}
         except ClientError as e:
             print(traceback.format_exc())
-            return {"success": False, "error": traceback.format_exc()}
+            return {"success": False, "error": e}
 
     def get_integration_specific_details(self) -> dict:
         try:
@@ -183,23 +180,6 @@ class AwsSecurityLakeService(BaseService):
         creds = self._temp_credentials()
         return SDKCreds(envs=creds)
 
-    def generate_steampipe_creds(self) -> SteampipeCreds:
-        creds = self._temp_credentials()
-        conf_path = "~/.steampipe/config/aws.spc"
-        config = f"""connection "aws" {{
-  plugin = "aws"
-  regions = ["*"]
-  ignore_error_codes = ["AccessDenied", "AccessDeniedException", "NotAuthorized", "UnauthorizedOperation", "UnrecognizedClientException", "AuthorizationError"]
-}}
-"""
-        return SteampipeCreds(
-            envs=creds,
-            plugin_name="aws",
-            connection_name="aws",
-            conf_path=conf_path,
-            config=config,
-        )
-
     @staticmethod
     def supported_connection_interfaces():
         return [ConnectionInterfaces.PYTHON_SDK]
@@ -225,4 +205,3 @@ class AwsSecurityLakeService(BaseService):
             if self.integration.session_token not in [None, "None"]:
                 creds["AWS_SESSION_TOKEN"] = str(self.integration.session_token)
             return creds
-

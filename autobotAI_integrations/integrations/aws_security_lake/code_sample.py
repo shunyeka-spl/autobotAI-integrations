@@ -15,15 +15,15 @@ def executor(context):
     Returns:
         list: Always returns an empty list (`[]`) or a list containing the results of the code execution.
     """
-    
+
     params = context["params"]
     clients = context["clients"]
-    client = clients["security_lake"]
+    client = clients["securitylake"]
 
+    # Example code to get the list of subscribers 
     # try:
-    #     response = client.list_data_lakes()
-    #     return response.get("DataLakes", [{"error": "No data lakes found."}])
-    
+    #     response = client.list_subscribers()
+    #     return response
     # except ClientError as e:
     #     return [{"error": f"An error occurred: {str(e)}"}]
     # except Exception as e:

@@ -1,5 +1,4 @@
 # Import your modules here
-import json
 
 # **Security Note:** Client-related modules should not be directly imported here.
 # Instead, they are passed as arguments and retrieved from a secure configuration.
@@ -22,15 +21,19 @@ def executor(context):
     clients = context["clients"]
 
     # Placeholder for retrieving the integration-specific client if needed
-    client = clients["splunk"]  # Supports only one client
+    client = clients["athena"]
 
     # User's Python code execution logic goes here
     # (Replace this comment with the your actual code)
 
-    # Example: Code to search for events (for illustration purposes only)
-    # try:
-    #     search_query = "search index=main | head 10"
-    #     result = client.search(search_query)
-    #     return [result]  # Replace with your actual return logic
-    # except Exception as e:
-    #     return {"error": e, "clients": context["clients"]}
+    # Modify/Replace the below code by your own logic
+    # Example:
+    # response = client.list_databases(CatalogName="AwsDataCatalog")
+    # databases = response.get("DatabaseList", [])
+
+    # if len(databases) > 0:
+    #     return databases
+    # else:
+    #     return [{
+    #         "error": "No databases found in the specified catalog."
+    #     }]

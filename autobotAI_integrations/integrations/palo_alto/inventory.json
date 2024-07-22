@@ -1,0 +1,121 @@
+{
+    "paloalto" :[
+        {
+            "name": "panos_address_object",
+            "all_columns": [
+                "description",
+                "device_group",
+                "name",
+                "tags",
+                "type",
+                "value"
+            ],
+            "included": [],
+            "excluded": [],
+            "inventory_supported": true           
+        },
+        {
+            "name": "panos_administrative_tag",
+            "all_columns": [
+                "color",
+                "comment",
+                "device_group",
+                "name",
+                "vsys"
+            ],
+            "included": [],
+            "excluded": [],
+            "inventory_supported": true
+            
+        },
+        {
+            "name": "panos_nat_rule",
+            "all_columns": [
+                "dat_address",
+                "dat_dynamic_distribution",
+                "dat_port",
+                "dat_type",
+                "description",
+                "destination_addresses",
+                "destination_zone",
+                "device_group",
+                "disabled",
+                "group_tag",
+                "name",
+                "negate_target",
+                "rule_base",
+                "sat_address_type",
+                "sat_fallback_interface",
+                "sat_fallback_ip_address",
+                "sat_fallback_ip_type",
+                "sat_fallback_translated_addresses",
+                "sat_fallback_type",
+                "sat_interface",
+                "sat_ip_address",
+                "sat_static_bi_directional",
+                "sat_static_translated_address",
+                "sat_translated_addresses",
+                "sat_type",
+                "service",
+                "source_addresses",
+                "source_zones",
+                "tags",
+                "targets",
+                "to_interface",
+                "type",
+                "uuid",
+                "vsys"
+            ],
+            "included": [],
+            "excluded": [],
+            "inventory_supported": true
+            
+        },
+        {
+            "name": "panos_security_rule",
+            "all_columns": [
+                "action",
+                "applications",
+                "categories",
+                "data_filtering",
+                "description",
+                "destination_addresses",
+                "destination_zones",
+                "device_group",
+                "disable_server_response_inspection",
+                "disabled",
+                "file_blocking",
+                "group",
+                "group_tag",
+                "hip_profiles",
+                "icmp_unreachable",
+                "log_end",
+                "log_setting",
+                "log_start",
+                "name",
+                "negate_destination",
+                "negate_source",
+                "negate_target",
+                "rule_base",
+                "schedule",
+                "services",
+                "source_addresses",
+                "source_users",
+                "source_zones",
+                "spyware",
+                "tags",
+                "targets",
+                "type",
+                "url_filtering",
+                "uuid",
+                "virus",
+                "vsys",
+                "vulnerability",
+                "wild_fire_analysis"
+            ],
+            "included": [],
+            "excluded": [],
+            "inventory_supported": true
+        }
+    ]
+}

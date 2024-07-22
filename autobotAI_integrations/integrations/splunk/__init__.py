@@ -1,5 +1,4 @@
 import importlib
-import json
 from typing import Type, Union
 from autobotAI_integrations.models import *
 from autobotAI_integrations import (
@@ -11,11 +10,18 @@ import requests
 
 from autobotAI_integrations.payload_schema import PayloadTask
 from autobotAI_integrations.utils import list_of_unique_elements
+import urllib.parse
+import ssl
+from xml.etree import ElementTree
+import http.client
+from autobotAI_integrations.utils.logging_config import logger
 
 
 class SplunkIntegration(BaseSchema):
     username: Optional[str] = Field(default=None, exclude=True)
     password: Optional[str] = Field(default=None, exclude=True)
+
+    host_url: Optional[str] = None
 
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
@@ -35,25 +41,40 @@ class SplunkService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-        
-            response = requests.get("https://api.splunk.com/2.0/rest/login/splunk", auth=(self.integration.username, self.integration.password))
-            
-            if response.status_code == 200:
+            HOST, PORT = self._get_host_and_port()
+            print(HOST, PORT)
+
+            connection = http.client.HTTPSConnection(HOST, PORT, context=ssl._create_unverified_context())
+            body = urllib.parse.urlencode({'username': self.integration.username, 'password': self.integration.password})
+            headers = {
+                'Content-Type': "application/x-www-form-urlencoded",
+                'Content-Length': str(len(body)),
+                'Host': HOST,
+                'User-Agent': "apicalls_httplib.py/1.0",
+                'Accept': "*/*"
+            }
+            connection.request("POST", "/services/auth/login", body, headers)
+            response = connection.getresponse()
+            if response.status == 200:
                 return {"success": True}
             else:
-                return {
-                    "success": False,
-                    "error": f"Error: API request failed. Status code: {response.status_code}",
-                }
+                return {"success": False, "error": response.reason}
         except requests.exceptions.ConnectionError:
             return {"success": False, "error": "Connection is unreachable"}
-        
+
     @staticmethod
     def get_forms():
         return {
             "label": "Splunk",
             "type": "form",
             "children": [
+                {
+                    "name": "host_url",
+                    "type": "text/url",
+                    "label": "TCP Management HOST URL",
+                    "placeholder": "https://example.com:8089",
+                    "required": True,
+                },
                 {
                     "name": "username",
                     "type": "text",
@@ -94,10 +115,7 @@ class SplunkService(BaseService):
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
-        creds = {
-            "SPLUNK_USERNAME": str(self.integration.username),
-            "SPLUNK_PASSWORD": str(self.integration.password)
-        }
+        creds = self._temp_credentials()
         conf_path = "~/.steampipe/config/splunk.spc"
         config = """connection "splunk" {
   plugin = "splunk"
@@ -114,17 +132,14 @@ class SplunkService(BaseService):
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        Splunk = importlib.import_module(
+        client = importlib.import_module(
             client_definitions[0].import_library_names[0], package=None
         )
-
+        HOST, PORT = self._get_host_and_port()
         return [
             {
                 "clients": {
-                    "Splunk": Splunk.Splunk(
-                        payload_task.creds.envs.get("SPLUNK_USERNAME"),
-                        payload_task.creds.envs.get("SPLUNK_PASSWORD")
-                    )
+                    "splunk": client.connect(host=HOST, port=PORT, token=payload_task.creds.envs.get("SPLUNK_AUTH_TOKEN"), autologin=True)
                 },
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context,
@@ -132,10 +147,42 @@ class SplunkService(BaseService):
         ]
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
-        creds = {
-            "SPLUNK_USERNAME": str(self.integration.username),
-            "SPLUNK_PASSWORD": str(self.integration.password),
-        }
+        creds = self._temp_credentials()
         return SDKCreds(envs=creds)
 
+    def _temp_credentials(self):
+        try:
+            sessionKey = None
+            HOST, PORT = self._get_host_and_port()
+            connection = http.client.HTTPSConnection(HOST, PORT, context=ssl._create_unverified_context())
+            body = urllib.parse.urlencode({'username': self.integration.username, 'password': self.integration.password})
+            headers = {
+                'Content-Type': "application/x-www-form-urlencoded",
+                'Content-Length': str(len(body)),
+                'Host': HOST,
+                'User-Agent': "apicalls_httplib.py/1.0",
+                'Accept': "*/*"
+            }
+            connection.request("POST", "/services/auth/login", body, headers)
+            response = connection.getresponse()
+            if response.status != 200:
+                connection.close()
+                logger.exception(f"{response.status} ({response.reason})")
+            body = response.read()
+            sessionKey = ElementTree.XML(body).findtext("./sessionKey")
+        except Exception as e:
+            logger.ERROR(f"Cannot Generate credentials for this task, Failed with error {e}")
+        return {
+            "SPLUNK_URL": self.integration.host_url,
+            "SPLUNK_AUTH_TOKEN": sessionKey
+        }
 
+    def _get_host_and_port(self):
+        # Extracting HOST and PORT from host_url
+        HOST = self.integration.host_url.split(":")[1][2:]
+        PORT = (
+            8089
+            if len(self.integration.host_url.split(":")) == 2
+            else self.integration.host_url.split(":")[-1]
+        )
+        return HOST, PORT

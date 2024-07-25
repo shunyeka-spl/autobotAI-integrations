@@ -98,8 +98,8 @@ class WizService(BaseService):
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = {
-            "WIZ_AUTH_CLIENT_ID": self.integration.api_key,
-            "WIZ_AUTH_CLIENT_SECRET": self.integration.region,
+            "WIZ_AUTH_CLIENT_ID": self.integration.client_id,
+            "WIZ_AUTH_CLIENT_SECRET": self.integration.client_secret,
             "WIZ_URL": self.integration.url,
         }
         conf_path = "~/.steampipe/config/wiz.spc"

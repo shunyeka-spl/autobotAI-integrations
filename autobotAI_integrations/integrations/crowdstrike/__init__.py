@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import List, Type, Union
 
 from autobotAI_integrations.models import *
 from autobotAI_integrations import (
@@ -9,25 +9,25 @@ from autobotAI_integrations import (
 import requests
 
 
-class WizIntegrations(BaseSchema):
-    url: Optional[str] = Field(default=None, exclude=True)
+class CrowdstrikeIntegrations(BaseSchema):
     client_id: Optional[str] = Field(default=None, exclude=True)
     client_secret: Optional[str] = Field(default=None, exclude=True)
+    client_cloud: Optional[str] = Field(default="us-2", exclude=True)
 
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
-        "Wiz provides direct visibility, risk prioritization, and remediation guidance for development teams to address risks in their own infrastructure and applications so they can ship faster and more securely."
+        "CrowdStrike provides cloud workload and endpoint security, threat intelligence, and cyberattack response services."
     )
 
 
-class WizService(BaseService):
+class CrowdstrikeService(BaseService):
 
-    def __init__(self, ctx: dict, integration: Union[WizIntegrations, dict]):
+    def __init__(self, ctx: dict, integration: Union[CrowdstrikeIntegrations, dict]):
         """
         Integration should have all the data regarding the integration
         """
-        if not isinstance(integration, WizIntegrations):
-            integration = WizIntegrations(**integration)
+        if not isinstance(integration, CrowdstrikeIntegrations):
+            integration = CrowdstrikeIntegrations(**integration)
         super().__init__(ctx, integration)
 
     def _test_integration(self) -> dict:
@@ -48,28 +48,33 @@ class WizService(BaseService):
     @staticmethod
     def get_forms():
         return {
-            "label": "Wiz",
+            "label": "Crowdstrike",
             "type": "form",
             "children": [
                 {
                     "name": "client_id",
-                    "type": "text/password",
+                    "type": "text",
                     "label": "Client ID",
-                    "placeholder": "Enter the Wiz Client ID",
+                    "placeholder": "Enter the Client ID",
                     "required": True,
                 },
                 {
                     "name": "client_secret",
                     "type": "text/password",
                     "label": "Client Secret",
-                    "placeholder": "Enter the Wiz Client Secret",
+                    "placeholder": "Enter the Client Secret",
                     "required": True,
                 },
                 {
-                    "name": "url",
-                    "type": "text",
-                    "label": "URL",
-                    "placeholder": "Enter the Wiz URL",
+                    "label": "Client Cloud",
+                    "name": "client_cloud",
+                    "type": "select",
+                    "options": [
+                        {"label": "US-1", "value": "us-1"},
+                        {"label": "US-2", "value": "us-2"},
+                        {"label": "EU-1", "value": "eu-1"},
+                        {"label": "US-GOV-1", "value": "us-gov-1"},
+                    ],
                     "required": True,
                 },
             ],
@@ -77,7 +82,7 @@ class WizService(BaseService):
 
     @staticmethod
     def get_schema() -> Type[BaseSchema]:
-        return WizIntegrations
+        return CrowdstrikeIntegrations
 
     @classmethod
     def get_details(cls):
@@ -98,19 +103,19 @@ class WizService(BaseService):
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = {
-            "WIZ_AUTH_CLIENT_ID": self.integration.client_id,
-            "WIZ_AUTH_CLIENT_SECRET": self.integration.client_secret,
-            "WIZ_URL": self.integration.url,
+            "FALCON_CLIENT_ID": self.integration.client_id,
+            "FALCON_CLIENT_SECRET": self.integration.client_secret,
+            "FALCON_CLOUD": self.integration.url,
         }
-        conf_path = "~/.steampipe/config/wiz.spc"
-        config = """connection "wiz" {
-  plugin = "wiz"
+        conf_path = "~/.steampipe/config/crowdstrike.spc"
+        config = """connection "crowdstrike" {
+  plugin = "crowdstrike"
 }
 """
         return SteampipeCreds(
             envs=creds,
-            plugin_name="wiz",
-            connection_name="wiz",
+            plugin_name="crowdstrike",
+            connection_name="crowdstrike",
             conf_path=conf_path,
             config=config,
         )

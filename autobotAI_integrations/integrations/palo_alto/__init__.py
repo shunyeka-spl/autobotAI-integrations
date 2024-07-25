@@ -8,9 +8,11 @@ from autobotAI_integrations import (
 import requests
 
 class PaloAltoIntegrations(BaseSchema):
+    # TODO: Add API Key Set up and Use Username,Password to generate API key, Optimize for API key
     username: Optional[str] = Field(default=None, exclude=False)
     password: Optional[str] = Field(default=None, exclude=False)
-    host_url: Optional[str] = Field(default="https://api.paloaltonetworks.com", exclude=False)
+    api_key: Optional[str] = Field(default=None, exclude=False)
+    host_url: Optional[str] = Field(default=None, exclude=False)
 
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (

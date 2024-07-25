@@ -3,7 +3,7 @@ import pytest
 from autobotAI_integrations.handlers.task_handler import handle_task
 from autobotAI_integrations.integrations import integration_service_factory
 
-azure_entra_id_python_code = """
+microsoft_office_365_python_code = """
 # Import your modules here
 import json
 import asyncio
@@ -30,8 +30,8 @@ def executor(context):
 """
 
 
-class TestClassAzure_entra_id:
-    def test_azure_entra_id_steampipe_task(
+class TestClassMicrosoft_office_365:
+    def test_microsoft_office_365_steampipe_task(
         self,
         get_keys,
         sample_integration_dict,
@@ -41,26 +41,28 @@ class TestClassAzure_entra_id:
         tokens = {
             "tenant_id": get_keys["AZURE_TENANT_ID"],
             "client_id": get_keys["AZURE_CLIENT_ID"],
-            "client_secret": get_keys["AZURE_CLIENT_SECRET"]
+            "client_secret": get_keys["AZURE_CLIENT_SECRET"],
+            "user_id": get_keys["AZURE_USER_ID"],
         }
-        integration = sample_integration_dict("azure_entra_id", tokens)
-        azure_entra_id_query = "select * from azuread_user"
-        task = sample_steampipe_task(integration, query=azure_entra_id_query)
+        integration = sample_integration_dict("microsoft_office_365", tokens)
+        microsoft_office_365_query = "select * from microsoft365_organization_contact"
+        task = sample_steampipe_task(integration, query=microsoft_office_365_query)
         result = handle_task(task)
         test_result_format(result)
         print(result.model_dump_json(indent=2))
 
-    def test_azure_entra_id_python_task(
+    def test_microsoft_office_365_python_task(
         self, get_keys, sample_integration_dict, sample_python_task, test_result_format
     ):
         tokens = {
             "tenant_id": get_keys["AZURE_TENANT_ID"],
             "client_id": get_keys["AZURE_CLIENT_ID"],
             "client_secret": get_keys["AZURE_CLIENT_SECRET"],
+            "user_id": get_keys["AZURE_USER_ID"],
         }
-        integration = sample_integration_dict("azure_entra_id", tokens)
+        integration = sample_integration_dict("microsoft_office_365", tokens)
         task = sample_python_task(
-            integration, code=azure_entra_id_python_code, clients=["msgraph"]
+            integration, code=microsoft_office_365_python_code, clients=["msgraph"]
         )
         result = handle_task(task)
         test_result_format(result)
@@ -71,8 +73,9 @@ class TestClassAzure_entra_id:
             "tenant_id": get_keys["AZURE_TENANT_ID"],
             "client_id": get_keys["AZURE_CLIENT_ID"],
             "client_secret": get_keys["AZURE_CLIENT_SECRET"],
+            "user_id": get_keys["AZURE_USER_ID"],
         }
-        integration = sample_integration_dict("azure_entra_id", tokens)
+        integration = sample_integration_dict("microsoft_office_365", tokens)
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
         print(res)
@@ -80,10 +83,10 @@ class TestClassAzure_entra_id:
         tokens = {
             "tenant_id": get_keys["AZURE_TENANT_ID"],
             "client_id": get_keys["AZURE_CLIENT_ID"],
-            # Invalid secret
-            "client_secret": get_keys["AZURE_CLIENT_SECRET"][:-2],
+            "client_secret": get_keys["AZURE_CLIENT_SECRET"],
+            "user_id": get_keys["AZURE_USER_ID"],
         }
-        integration = sample_integration_dict("azure_entra_id", tokens)
+        integration = sample_integration_dict("microsoft_office_365", tokens)
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
         assert not res["success"]

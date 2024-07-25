@@ -12,6 +12,7 @@ class MicrosoftIntegration(BaseSchema):
     tenant_id: Optional[str] = Field(default=None, exclude=True)
     client_id: Optional[str] = Field(default=None, exclude=True)
     subscription_id: Optional[str] = Field(default=None, exclude=True)
+    user_id: Optional[str] = Field(default=None, exclude=True)
     client_secret: Optional[str] = Field(default=None, exclude=True)
 
     category: Optional[str] = IntegrationCategory.CLOUD_SERVICES_PROVIDERS.value
@@ -91,6 +92,13 @@ class MicrosoftService(BaseService):
                     "placeholder": "Enter your Microsoft Application Client Secret",
                     "required": True,
                 },
+                {
+                    "name": "user_id",
+                    "type": "text",
+                    "label": "User ID",
+                    "placeholder": "test@org.domain.com",
+                    "required": True,
+                },
             ],
         }
 
@@ -111,9 +119,10 @@ class MicrosoftService(BaseService):
     def generate_steampipe_creds(self) -> SteampipeCreds:
         creds = self._temp_credentials()
         conf_path = "~/.steampipe/config/microsoft365.spc"
-        config = """connection "microsoft365" {
+        config = f"""connection "microsoft365" {{
   plugin = "microsoft365"
-}"""
+  user_id = "{self.integration.user_id}"
+}}"""
         return SteampipeCreds(
             envs=creds,
             plugin_name="microsoft365",

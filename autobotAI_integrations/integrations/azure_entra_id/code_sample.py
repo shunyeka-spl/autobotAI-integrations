@@ -1,6 +1,5 @@
 # Import your modules here
-import json
-
+import asyncio
 # **Security Note:** Client-related modules should not be directly imported here.
 # Instead, they are passed as arguments and retrieved from a secure configuration.
 
@@ -21,27 +20,19 @@ def executor(context):
     params = context["params"]
     clients = context["clients"]
 
-    # Placeholder for retrieving the integration-specific client if needed
-    client = clients["splunk"]  # Supports only one client
+    # Microsoft Uses Async Apis to get details with python
+    async def me(client):
+        res = []
+        users = await client.users.get()
+        if users and users.value:
+            for user in users.value:
+                res.append([user.id, user.display_name, user.mail])
+        return res
 
-    # User's Python code execution logic goes here
-    # (Replace this comment with the your actual code)
+    try:
+        client = clients["msgraph"]
+        return asyncio.run(me(client))
+    except Exception as e:
+        return {"error": e, "clients": context["clients"]}
 
-    # Example: Code to search for events (for illustration purposes only)
-    # try:
-    #     query = "search index=_internal earliest=-15m"
-    #     job = client.jobs.create(query)
-
-    #     # Wait for the search to complete
-    #     while not job.is_done():
-    #         pass
-
-    #     # Fetch the results as a raw string
-    #     results_stream = job.results(output_mode="json")
-
-    #     # Read the results
-    #     results_json = results_stream.read()
-
-    #     return json.loads(results_json)
-    # except Exception as e:
-    #     return {"error": e, "clients": context["clients"]}
+    # return resources # Replace with your actual return logic

@@ -27,18 +27,7 @@ class TrivyService(BaseService):
         super().__init__(ctx, integration)
 
     def _test_integration(self) -> dict:
-        try:
-            # TODO: replace with actual API
-            response = requests.get("https://api.example.com")
-            if response.status_code == 200:
-                return {"success": True}
-            else:
-                return {
-                "success": False,
-                "error": f"API request failed. Status code: {response.status_code}",
-            }
-        except requests.exceptions.ConnectionError as e:
-            return {"success": False, "error": "Connection is unreachable"}
+        return {"success": True}
 
     @staticmethod
     def get_forms():

@@ -31,16 +31,20 @@ class GrafanaService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            # TODO: replace with actual API
-            return {"success": True}
-            # response = requests.get("https://api.example.com")
-            # if response.status_code == 200:
-            #     return {"success": True}
-            # else:
-            #     return {
-            #     "success": False,
-            #     "error": f"API request failed. Status code: {response.status_code}",
-            # }
+            if len(self.integration.auth_key.split(":")) > 1:
+                response = requests.get(f"https://{self.integration.auth_key}@{self.integration.host_url.split("://")[1]}/api/user")
+            else:
+                response = requests.get(
+                    f"{self.integration.host_url}/api/user",
+                    headers={"Authorization": f"Bearer {self.integration.auth_key}"},
+                )
+            if response.status_code == 200:
+                return {"success": True}
+            else:
+                return {
+                "success": False,
+                "error": f"API request failed. Status code: {response.status_code}",
+            }
         except requests.exceptions.ConnectionError as e:
             return {"success": False, "error": "Connection is unreachable"}
 
@@ -54,16 +58,16 @@ class GrafanaService(BaseService):
                     "name": "host_url",
                     "label": "Host URL",
                     "type": "text",
-                    "placeholder": "your machine's host url",
+                    "placeholder": "grafana host url",
                     "required": True,
                 },
                 {
                     "name": "auth_key",
                     "label": "Auth Key",
                     "type": "text/password",
-                    "placeholder": "your grafana auth key",
+                    "placeholder": "Service account token or username:password",
                     "required": True,
-                }
+                },
             ],
         }
 

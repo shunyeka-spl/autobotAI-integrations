@@ -91,6 +91,7 @@ class CrowdstrikeService(BaseService):
             "supported_executor": "ecs",
             "compliance_supported": False,
             "supported_interfaces": cls.supported_connection_interfaces(),
+            "preview": True
         }
 
     @staticmethod
@@ -105,7 +106,7 @@ class CrowdstrikeService(BaseService):
         creds = {
             "FALCON_CLIENT_ID": self.integration.client_id,
             "FALCON_CLIENT_SECRET": self.integration.client_secret,
-            "FALCON_CLOUD": self.integration.url,
+            "FALCON_CLOUD": self.integration.client_cloud,
         }
         conf_path = "~/.steampipe/config/crowdstrike.spc"
         config = """connection "crowdstrike" {

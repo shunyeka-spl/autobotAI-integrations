@@ -59,10 +59,7 @@ class WhoisService(BaseService):
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
-        creds = {
-            "NEW_RELIC_API_KEY": self.integration.api_key,
-            "NEW_RELIC_REGION": self.integration.region,
-        }
+        creds = {}
         conf_path = "~/.steampipe/config/whois.spc"
         config = """connection "whois" {
   plugin = "whois"

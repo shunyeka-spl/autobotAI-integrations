@@ -14,6 +14,7 @@ from autobotAI_integrations.utils import list_of_unique_elements
 class VirusTotalIntegration(BaseSchema):
     api_key: Optional[str] = Field(default=None, exclude=True)
 
+    name: Optional[str] = "VirusTotal"
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
         "VirusTotal is a free online service that analyzes files and URLs for malicious content using multiple antivirus engines and threat intelligence sources"

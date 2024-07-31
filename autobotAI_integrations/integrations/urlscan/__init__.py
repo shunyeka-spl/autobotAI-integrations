@@ -14,6 +14,7 @@ import json
 class URLScanIntegrations(BaseSchema):
     api_key: Optional[str] = Field(default=None, exclude=True)
 
+    name: Optional[str] = "URLScan"
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
         "UrlScan is a free service to scan and analyse websites."

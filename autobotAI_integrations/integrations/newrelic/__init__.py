@@ -13,6 +13,7 @@ class NewrelicIntegrations(BaseSchema):
     api_key: Optional[str] = Field(default=None, exclude=True)
     region: Optional[str] = Field(default="us", exclude=False)
 
+    name: Optional[str] = "New Relic"
     category: Optional[str] = IntegrationCategory.MONITORING_TOOLS.value
     description: Optional[str] = (
         "New Relic is a SaaS providing Monitoring, Alerting, Dashboards for applications, infrastructure, etc."

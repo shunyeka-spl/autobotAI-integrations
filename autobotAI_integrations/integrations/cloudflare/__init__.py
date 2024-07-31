@@ -15,6 +15,7 @@ class CloudflareIntegration(BaseSchema):
 
     token: Optional[str] = Field(default=None, exclude=True)
 
+    name: Optional[str] = "Cloudflare"
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
         "Cloudflare is a security-focused cloud services provider offering solutions like DDoS protection, web application firewall, CDN, and SSL/TLS encryption to enhance the performance and security of websites and applications."

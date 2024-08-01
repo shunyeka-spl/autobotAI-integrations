@@ -56,9 +56,9 @@ class CloudflareService(BaseService):
                 return {"success": True}
             else:
                 return {
-                "success": False,
-                "error": f"API request failed. Status code: {response.status_code}",
-            }
+                    "success": False,
+                    "error": f"Request failed with status code: {response.status_code}",
+                }
         except requests.exceptions.ConnectionError as e:
             return {"success": False, "error": "Connection is unreachable"}
 

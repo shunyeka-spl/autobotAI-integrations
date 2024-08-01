@@ -47,7 +47,7 @@ class VirusTotalService(BaseService):
         except requests.exceptions.RequestException as e:
             return {
                 "success": False,
-                "error": f"Error: API request failed. {e}",
+                "error": f"Request failed. {e}",
             }
 
     @staticmethod

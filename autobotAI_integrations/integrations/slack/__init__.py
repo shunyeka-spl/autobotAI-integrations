@@ -117,6 +117,7 @@ class SlackService(BaseService):
             clients["WebhookClient"] = webhook
         else:
             clients["WebClient"] = WebClient(payload_task.creds.envs.get("SLACK_BOT_TOKEN"))
+        
         return [
             {
                 "clients": clients,

@@ -47,7 +47,7 @@ class AzureEntraIdService(BaseService):
             else:
                 return {
                     "success": False,
-                    "error": f"Error: API request failed. Status code: {response.status_code}",
+                    "error": f"Request failed with status code: {response.status_code}",
                 }
         except Exception as e:
             return {"success": False, "error": str(e)}

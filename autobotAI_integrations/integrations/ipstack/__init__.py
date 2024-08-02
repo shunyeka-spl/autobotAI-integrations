@@ -10,9 +10,12 @@ import requests
 
 
 class IPStackIntegrations(BaseSchema):
+    api_key: Optional[str] = Field(default=None, exclude=True)
+
+    name: Optional[str] = "IPStack"
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
-        "ipstack provides IP to geolocation APIs and global IP database services."
+        "IPStack provides IP to geolocation APIs and global IP database services."
     )
 
 
@@ -28,10 +31,19 @@ class IPStackService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            api_key = self.get_api_key()
-            return self.validate_ipstack_api_key(api_key)
-        except requests.exceptions.ConnectionError as e:
-            return {"success": False, "error": "Connection is unreachable"}
+            url = f"http://api.ipstack.com/check"
+            response = requests.get(url, params={"access_key": self.integration.api_key})
+
+            if response.status_code == 200:
+                data = response.json()
+                if "success" in data and not data["success"]:
+                    return {"success": False, "error": "Invalid API key"}
+                else:
+                    return {"success": True}
+            else:
+                return {"success": False, "error": f"Request failed with status code: {response.status_code}"}
+        except Exception as e:
+            return {"success": False, "error": f"Error: {str(e)}"}
 
     @staticmethod
     def get_forms():
@@ -40,11 +52,11 @@ class IPStackService(BaseService):
             "type": "form",
             "children": [
                 {
-                 "name": "api_key",
-                 "type": "text/password",
-                 "label": "API key",
-                 "placeholder": "Enter the IPStack API key",
-                 "required": True,
+                    "name": "api_key",
+                    "type": "text/password",
+                    "label": "API key",
+                    "placeholder": "Enter the IPStack API key",
+                    "required": True,
                 }
             ],
         }
@@ -68,34 +80,18 @@ class IPStackService(BaseService):
         return [
             ConnectionInterfaces.STEAMPIPE,
             ConnectionInterfaces.REST_API,
-            ConnectionInterfaces.CLI,
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         conf_path = "~/.steampipe/config/ipstack.spc"
         config = """connection "ipstack" {
   plugin = "ipstack"
-  api_key  = "%s"
 }
-""" % self.get_api_key()
-
+"""
         return SteampipeCreds(
-            envs={},
+            envs={"IPSTACK_TOKEN": self.integration.api_key},
             plugin_name="ipstack",
             connection_name="ipstack",
             conf_path=conf_path,
             config=config,
         )
-        
-def validate_ipstack_api_key(self, api_key):
-        url = f"http://api.ipstack.com/check?access_key={api_key}"
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            data = response.json()
-            if "success" in data and not data["success"]:
-                return {"success": False, "error": f"Invalid API key: {data['error']['info']}"}
-            else:
-                return {"success": True}
-        else:
-            return {"success": False, "error": f"Error: Unable to reach IPStack API. Status code: {response.status_code}"}

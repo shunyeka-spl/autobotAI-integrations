@@ -10,7 +10,7 @@ import requests
 
 
 class IPinfoIntegrations(BaseSchema):
-    token: Optional[str] = None
+    token: Optional[str] = Field(default=None, exclude=True)
 
     name: Optional[str] = "IPInfo"
     category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value

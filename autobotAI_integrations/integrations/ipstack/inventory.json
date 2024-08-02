@@ -52,7 +52,6 @@
         {
            "name": "ipstack_my_ip",
            "all_columns": [
-            "_ctx",
             "asn",
             "city",
             "continent_code",

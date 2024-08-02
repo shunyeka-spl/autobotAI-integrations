@@ -11,7 +11,9 @@ class TestClassIPinfo:
         sample_steampipe_task,
         test_result_format,
     ):
-        tokens = {}
+        tokens = {
+            "token": get_keys["IPINFO_TOKEN"],
+        }
         integration = sample_integration_dict("ipinfo", tokens)
         ipinfo_query = "select * from ipinfo_ip where ip = '8.8.8.8'"
         task = sample_steampipe_task(integration, query=ipinfo_query)
@@ -24,3 +26,17 @@ class TestClassIPinfo:
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
         assert res["success"]
+        tokens = {
+            "token": get_keys["IPINFO_TOKEN"],
+        }
+        integration = sample_integration_dict("ipinfo", tokens)
+        service = integration_service_factory.get_service(None, integration)
+        res = service.is_active()
+        assert res["success"]
+        tokens = {
+            "token": get_keys["IPINFO_TOKEN"][:-2],
+        }
+        integration = sample_integration_dict("ipinfo", tokens)
+        service = integration_service_factory.get_service(None, integration)
+        res = service.is_active()
+        assert not res["success"]

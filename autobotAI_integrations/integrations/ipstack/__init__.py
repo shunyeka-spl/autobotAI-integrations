@@ -28,15 +28,8 @@ class IPStackService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            return {"success": True}
-            # response = requests.get("https://api.example.com")
-            # if response.status_code == 200:
-            #     return {"success": True}
-            # else:
-            #     return {
-            #     "success": False,
-            #     "error": f"API request failed. Status code: {response.status_code}",
-            # }
+            api_key = self.get_api_key()
+            return self.validate_ipstack_api_key(api_key)
         except requests.exceptions.ConnectionError as e:
             return {"success": False, "error": "Connection is unreachable"}
 
@@ -93,3 +86,16 @@ class IPStackService(BaseService):
             conf_path=conf_path,
             config=config,
         )
+        
+def validate_ipstack_api_key(self, api_key):
+        url = f"http://api.ipstack.com/check?access_key={api_key}"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            if "success" in data and not data["success"]:
+                return {"success": False, "error": f"Invalid API key: {data['error']['info']}"}
+            else:
+                return {"success": True}
+        else:
+            return {"success": False, "error": f"Error: Unable to reach IPStack API. Status code: {response.status_code}"}

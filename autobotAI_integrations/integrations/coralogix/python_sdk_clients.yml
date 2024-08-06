@@ -1,0 +1,3 @@
+- name: dataStreamApiClient
+  pip_package_names:
+    - openapi-python-client

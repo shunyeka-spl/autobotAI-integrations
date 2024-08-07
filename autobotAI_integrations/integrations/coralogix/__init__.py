@@ -1,5 +1,3 @@
-import base64
-import importlib
 from typing import List, Optional, Type, Union
 
 from pydantic import Field
@@ -11,10 +9,10 @@ from autobotAI_integrations.models import (
     IntegrationCategory,
     SDKClient,
     SDKCreds,
-    SteampipeCreds,
 )
 from autobotAI_integrations.payload_schema import PayloadTask
 from autobotAI_integrations.utils import list_of_unique_elements
+from .coralogix_client import CoralogixClient
 
 
 class CoralogixIntegration(BaseSchema):
@@ -39,8 +37,29 @@ class CoralogixService(BaseService):
         super().__init__(ctx, integration)
 
     def _test_integration(self) -> dict:
-        # TODO: SEND THE API REQUEST TO CHECK THE VALIDATIONS OF TOKEN
-        pass
+        try:
+            response = requests.post(
+                url=f"{self.integration.api_url}/api/v1/dataprime/query",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {str(self.integration.api_key)}",
+                },
+                json={"query": "source logs | limit 1"},
+            )
+            if response.status_code == 200:
+                return {"success": True}
+            else:
+                return {"success": False, "error": f"Request failed with status code: {response.status_code}"}
+        except requests.exceptions.SSLError:
+            return {
+                "success": False,
+                "error": f"Request failed with invalid API URl",
+            }
+        except BaseException as e:
+            return {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}",
+            }
 
     @staticmethod
     def get_forms():
@@ -53,7 +72,7 @@ class CoralogixService(BaseService):
                     "type": "text/url",
                     "label":"API URL",
                     "placeholder": "Enter HOST URL",
-                    "description": "Emter your domain api url, for more info: https://coralogix.com/docs/coralogix-endpoints/#data-prime",
+                    "description": "Enter your domain api url, for more info: https://coralogix.com/docs/coralogix-endpoints/#data-prime",
                     "required": False
                 },
                 {
@@ -90,23 +109,19 @@ class CoralogixService(BaseService):
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        # TODO: CREATE CLIENT FOR CORALOGIX
-        # INSTALL CLIENT
-        # IMPORT CLIENT
-        # PASS TO CLIENTS LIST
-        # return [
-        #     {
-        #         "clients": {
-        #             "coralogix": Client(
-        #                 payload_task.creds.envs.get("CORALOGIX_API_URL"),
-        #                 payload_task.creds.envs.get("CORALOGIX_APIKEY"),
-        #             )
-        #         },
-        #         "params": self.prepare_params(payload_task.params),
-        #         "context": payload_task.context,
-        #     }
-        # ]
-        pass
+        api_url = f"{payload_task.creds.envs.get("CORALOGIX_API_URL")}/api/v1/dataprime/query"
+        return [
+            {
+                "clients": {
+                    "dataPrimeApiClient": CoralogixClient(
+                        api_url=api_url,
+                        api_key=payload_task.creds.envs.get("CORALOGIX_APIKEY"),
+                    )
+                },
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context,
+            }
+        ]
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
         creds = {

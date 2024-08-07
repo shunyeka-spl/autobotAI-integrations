@@ -1,3 +1,2 @@
 - name: dataPrimeApiClient
-  pip_package_names:
-    - openapi-python-client
+

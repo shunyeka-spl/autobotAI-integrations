@@ -1,12 +1,14 @@
 # autobotAI-integrations
 
-**autobotAI-Integrations** enables seamless connections between diverse workspaces, cloud AI platforms, and various tools to integrate with your code effortlessly. Currently, we support implementations in Python and Steampipe, boasting **38 integrations**, including major cloud providers such as AWS, GCP, and Azure. Additionally, we are continuously adding more integrations to expand our capabilities and better serve your needs.
+**autobotAI-Integrations** enables seamless connections between diverse workspaces, cloud AI platforms, and various tools to integrate with your code effortlessly. Currently, we support implementations in Python and Steampipe, boasting **40 integrations**, including major cloud providers such as AWS, GCP, and Azure. Additionally, we are continuously adding more integrations to expand our capabilities and better serve your needs.
+
+**For more extensive documentation visit**: [documentation](./docs/INTEGRATIONS.md)
 
 ## Installation
 
 To install the `autobotAI-integrations` package, use the following command:
 
-```sh
+```sh {"id":"01J55NEXJA8JA9CJGSWN6MVY9Z"}
 pip install git+https://github.com/shunyeka-spl/autobotAI-integrations
 ```
 
@@ -84,20 +86,21 @@ handle_payload(payload=payload, print_output=True)
 ### Utilities
 
 - **`utils.some_utility`**: Description of this utility function.
--->
+
 ## Testing
 
 To run tests, you can use `pytest`. First, ensure you have `pytest` installed:
 
-```sh
+```sh {"id":"01J55NEXJA8JA9CJGSWNNKVME5"}
 pip install pytest
 ```
 
 Run the tests with:
 
-```sh
+```sh {"id":"01J55NEXJA8JA9CJGSWRSX19YY"}
 pytest
 ```
+
 <!--
 ### Test Configuration
 
@@ -125,4 +128,3 @@ For support or inquiries, please contact us at:
 
 - **Email**: support@shunyeka-spl.com
 - **GitHub Issues**: [GitHub Issues Page](https://github.com/shunyeka-spl/autobotAI-integrations/issues)
--->

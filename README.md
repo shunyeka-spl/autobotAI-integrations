@@ -8,7 +8,7 @@
 
 To install the `autobotAI-integrations` package, use the following command:
 
-```sh {"id":"01J55NEXJA8JA9CJGSWN6MVY9Z"}
+```sh
 pip install git+https://github.com/shunyeka-spl/autobotAI-integrations
 ```
 
@@ -91,13 +91,13 @@ handle_payload(payload=payload, print_output=True)
 
 To run tests, you can use `pytest`. First, ensure you have `pytest` installed:
 
-```sh {"id":"01J55NEXJA8JA9CJGSWNNKVME5"}
+```sh
 pip install pytest
 ```
 
 Run the tests with:
 
-```sh {"id":"01J55NEXJA8JA9CJGSWRSX19YY"}
+```sh
 pytest
 ```
 

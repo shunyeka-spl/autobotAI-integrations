@@ -60,7 +60,7 @@ class TestClassGoogle_api:
         integration = sample_integration_dict("google_api", tokens)
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
-        assert not res["success"]
+        assert res["success"]
         with open(get_keys["GCP_TOKEN_PATH"]) as f:
             creds = json.load(fp=f)
         

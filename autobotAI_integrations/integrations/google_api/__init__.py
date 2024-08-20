@@ -6,6 +6,7 @@ from autobotAI_integrations.models import *
 from autobotAI_integrations.models import List
 from autobotAI_integrations import (
     BaseSchema,
+    BaseService,
     SteampipeCreds,
     PayloadTask,
     SDKClient,
@@ -22,7 +23,7 @@ class GoogleAPIsIntegration(GCPIntegration):
     )
 
 
-class GoogleAPIsService(GCPService):
+class GoogleAPIsService(GCPService, BaseService):
 
     def __init__(self, ctx: dict, integration: Union[GoogleAPIsIntegration, dict]):
         """
@@ -88,10 +89,11 @@ class GoogleAPIsService(GCPService):
         )
         for client in client_definitions:
             try:
-                cls = importlib.import_module(client.module, package=None)
-                name, version = client.name.split("/")
-                clients_classes[client.name] = cls(
-                    name=name, version=version,
+                print(client.model_dump_json(indent=2))
+                discovery = importlib.import_module(client.module, package=None)
+                name, version = client.name.split("_")
+                clients_classes[client.name] = discovery.build(
+                    serviceName=name, version=version,
                     credentials=credentials,
                 )
             except BaseException as e:

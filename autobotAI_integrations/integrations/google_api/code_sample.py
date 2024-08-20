@@ -26,10 +26,10 @@ def executor(context):
     # User's Python code execution logic goes here
     # (Replace this comment with the your actual code)
 
-    # Example: Code to fetch docs (for illustration purposes only)
-    # client = clients["docs"]
+    # # Example: Code to fetch docs (for illustration purposes only)
+    # client = clients["docs_v1"]
     
-    # The ID of a sample document.
+    # # The ID of a sample document.
     # DOCUMENT_ID = "195j9eDD3ccgjQRttHhJPymLJUCOUjs-jmwTrekvdjFE"
     # try:
     #     document = client.documents().get(documentId=DOCUMENT_ID).execute()

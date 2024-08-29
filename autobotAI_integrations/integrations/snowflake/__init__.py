@@ -117,6 +117,12 @@ class SnowflakeService(BaseService):
             ConnectionInterfaces.STEAMPIPE,
         ]
 
+    @classmethod
+    def get_details(cls):
+        details = super().get_details()
+        details["preview"] = True
+        return details
+
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
@@ -124,10 +130,10 @@ class SnowflakeService(BaseService):
         return [
             {
                 "clients": {
-                    "pythonConnector": connector.connect(
+                    "snowflake": connector.connect(
                         user=payload_task.creds.envs.get("SNOWFLAKE_USERNAME"),
                         password=payload_task.creds.envs.get("GITGUARDIAN_PASSWORD"),
-                        account=payload_task.creds.envs.get("SNOWFLAKE_ACCOUNT")
+                        account=payload_task.creds.envs.get("SNOWFLAKE_ACCOUNT"),
                     )
                 },
                 "params": self.prepare_params(payload_task.params),

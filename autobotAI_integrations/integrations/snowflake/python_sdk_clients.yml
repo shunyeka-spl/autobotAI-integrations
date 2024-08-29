@@ -1,0 +1,5 @@
+- name: pythonConnector
+  import_library_names:
+    - snowflake.connector
+  pip_package_names:
+    - snowflake-connector-python

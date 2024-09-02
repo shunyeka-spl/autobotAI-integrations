@@ -26,7 +26,8 @@ from autobotAI_integrations.utils import (
     oscf_based_steampipe_json,
     transform_steampipe_compliance_resources,
     change_keys,
-    transform_inventory_resources
+    transform_inventory_resources,
+    open_api_parser
 )
 
 
@@ -156,6 +157,33 @@ def executor(context):
             print("base path is ",base_path)
         with open(path.join(base_path, ".", 'python_sdk_clients.yml')) as f:
             return yaml.safe_load(f)
+
+    @classmethod
+    def get_all_rest_api_actions(cls):
+        if ConnectionInterfaces.REST_API not in cls.supported_connection_interfaces():
+            return []
+        base_path = os.path.dirname(inspect.getfile(cls))
+        
+        parser = open_api_parser.OpenApiParser()
+        try:
+            parser.parse_file(os.path.join(base_path, "open_api.json"))
+        except Exception as e:
+            logger.exception(f"Error occurred while parsing open api file: {e}")
+        open_api_actions = []
+
+        for path in parser.paths:
+            open_api_actions.append(
+                OpenAPIAction(
+                    name=path.summary,
+                    description=path.description,
+                    code=path.path_url,
+                    method=path.method.upper(),
+                    integration_type=cls.get_integration_type(),
+                    parameters_definition=path.parameters,
+                    header_details=parser.security
+                )
+            )
+        return open_api_actions
 
     @staticmethod
     def get_schema() -> BaseSchema:

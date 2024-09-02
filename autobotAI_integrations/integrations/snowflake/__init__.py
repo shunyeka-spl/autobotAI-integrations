@@ -124,6 +124,7 @@ class SnowflakeService(BaseService):
         return [
             ConnectionInterfaces.PYTHON_SDK,
             # ConnectionInterfaces.STEAMPIPE,
+            ConnectionInterfaces.REST_API
         ]
 
     @classmethod

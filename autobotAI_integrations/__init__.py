@@ -27,7 +27,8 @@ from autobotAI_integrations.utils import (
     transform_steampipe_compliance_resources,
     change_keys,
     transform_inventory_resources,
-    open_api_parser
+    open_api_parser,
+    get_restapi_validated_params,
 )
 
 
@@ -481,6 +482,84 @@ def executor(context):
 
         logger.debug(f"Transformed Output: {stdout}")
         return stdout, stderr
+
+    def rest_api_processor(
+        self,
+        url: str,
+        method: str = "GET",
+        headers: Optional[Dict[str, str]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        timeout: int = 10,
+    ) -> Dict[str, Any]:
+        logger.info(f"Making {method} request to {url}")
+        logger.debug(f"Headers: {headers}, Params: {params}, JSON: {json}")
+        try:
+            response = requests.request(
+                method=method,
+                url=url,
+                headers=headers,
+                params=params,
+                json=json,
+                timeout=timeout,
+            )
+            
+            logger.info(f"Response Status Code: {response.status_code}")
+            logger.debug(f"Response Text: {response.text}")
+
+            response.raise_for_status()  # Raises an exception for HTTP errors
+            # sending json, and non json response
+            if response.headers.get("Content-Type", "").startswith("application/json"):
+                return response.json()
+            else:
+                return response.text
+        except requests.exceptions.RequestException as e:
+            return {"error": str(e)}
+
+    # def make_request
+    def execute_rest_api_task(self, payload_task: PayloadTask):
+        logger.info("Running Rest API Task")
+        results = []
+        errors = []
+        try:
+            logger.info(f"Validating Rest API parameters...")
+            params = get_restapi_validated_params(payload_task.params)
+            
+            logger.info(f"Creating request url..")
+            request_url = payload_task.executable.format(
+                base_url=payload_task.creds.base_url,
+                # Filling path params,
+                **params.get("path_parameters", {}),
+            )
+            logger.info(f"Request URL: {request_url}")
+
+            logger.info(f"Making request..")
+            response = self.rest_api_processor(
+                url=request_url,
+                method=params.get("method", "GET"),
+                headers={
+                    **params.get("headers", {}),
+                    "Content-Type": "application/json",
+                    **payload_task.creds.headers,
+                },
+                params=params.get("query_parameters", None),
+                json=params.get("json", None),
+                timeout=params.get("timeout", 10),
+            )
+            
+            logger.info(f"Response: {response}")
+            results.append(response)
+        except Exception as e:
+            logger.exception(str(e))
+            errors.append(
+                {
+                    "message": traceback.format_exc(chain=True, limit=1),
+                    "other_details": {
+                        "execution_details": payload_task.context.execution_details
+                    },
+                }
+            )
+        return results, errors
 
 
 class AIBaseService(BaseService):

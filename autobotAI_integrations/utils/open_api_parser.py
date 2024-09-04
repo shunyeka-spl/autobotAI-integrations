@@ -1,8 +1,7 @@
 from typing import List, Optional
 import yaml
 import json
-from autobotAI_integrations.models import OpenAPIAction, OpenAPIPathModel, OpenAPISchema, OpenAPIPathParams
-
+from autobotAI_integrations.open_api_schema import OpenAPIAction, OpenAPIPathModel, OpenAPISchema, OpenAPIPathParams
 
 class OpenApiParser:
     def __init__(self) -> None:
@@ -89,7 +88,7 @@ class OpenApiParser:
                         OpenAPIPathParams(
                             params_type=parameter.get("in"),
                             data_type=self._parse_param_data_type(parameter),
-                            default=self._parse_param_default(parameter),
+                            values=self._parse_param_default(parameter),
                             **parameter,
                         )
                     )
@@ -138,7 +137,7 @@ class OpenApiParser:
                 "schemas"
             ].items():
                 self.components[schema_name] = self._parse_component_schema(schema)
-        
+
         if self._parsed_dict["components"].get("securitySchemes"):
             securitySchemas = []
             for name, securitySchema in self._parsed_dict["components"]["securitySchemes"].items():
@@ -149,7 +148,6 @@ class OpenApiParser:
                     }
                 )
             self.security = securitySchemas
-
 
     def _parse_component_schema(self, schema):
 
@@ -208,3 +206,43 @@ class OpenApiParser:
             security=self.security,
             components=self.components,
         )
+
+    def get_actions(self, integration_type) -> List[OpenAPIAction]:
+        actions = []
+        for path in self.paths:
+            parameters = []
+            # Adding Method parameter
+            parameters.append(
+                OpenAPIPathParams(
+                    name="method",
+                    params_type="method",
+                    data_type="string",
+                    required=True,
+                    description="HTTP Method",
+                    values=path.method,
+                )
+            )
+            
+            # Removing unnecessary and integrations credentials related parameters
+            for parameter in path.parameters:
+                if (
+                    parameter.params_type == "header"
+                    and parameter.name.lower() == "authorization"
+                ):
+                    continue
+                elif parameter.params_type == "path" and parameter.name == "base_url":
+                    continue
+                parameters.append(parameter)
+
+
+            actions.append(
+                OpenAPIAction(
+                    name=path.summary,
+                    description=path.description,
+                    code=path.path_url,
+                    integration_type=integration_type,
+                    parameters_definition=parameters,
+                    header_details=self.security,
+                )
+            )
+        return actions

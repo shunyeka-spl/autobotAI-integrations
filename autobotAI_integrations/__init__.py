@@ -163,27 +163,15 @@ def executor(context):
         if ConnectionInterfaces.REST_API not in cls.supported_connection_interfaces():
             return []
         base_path = os.path.dirname(inspect.getfile(cls))
-        
         parser = open_api_parser.OpenApiParser()
+        open_api_actions = []
         try:
             parser.parse_file(os.path.join(base_path, "open_api.json"))
+            open_api_actions = parser.get_actions(cls.get_integration_type())
         except Exception as e:
             logger.exception(f"Error occurred while parsing open api file: {e}")
-        open_api_actions = []
-
-        for path in parser.paths:
-            open_api_actions.append(
-                OpenAPIAction(
-                    name=path.summary,
-                    description=path.description,
-                    code=path.path_url,
-                    method=path.method.upper(),
-                    integration_type=cls.get_integration_type(),
-                    parameters_definition=path.parameters,
-                    header_details=parser.security
-                )
-            )
-        return open_api_actions
+        finally:
+            return open_api_actions
 
     @staticmethod
     def get_schema() -> BaseSchema:
@@ -205,32 +193,6 @@ def executor(context):
         except Exception as e:
             logger.exception(f"Error occurred while fetching details for {cls.__name__}: {e}")
             return {}
-
-    @staticmethod
-    def generic_rest_api_call(api_creds: RestAPICreds, method: str, endpoint: str, data=None):
-        url = api_creds.api_url + endpoint
-        headers = api_creds.headers.copy()
-        headers["Authorization"] = f"Bearer {api_creds.token}"
-
-        try:
-            if method == "GET":
-                response = requests.get(url, headers=headers)
-            elif method == "POST":
-                response = requests.post(url, headers=headers, json=data)
-            elif method == "PUT":
-                response = requests.put(url, headers=headers, json=data)
-            elif method == "DELETE":
-                response = requests.delete(url, headers=headers)
-            else:
-                raise ValueError("Invalid HTTP method specified.")
-
-            response.raise_for_status()  # Raise exception for non-2xx responses
-
-            return response.json()
-
-        except requests.RequestException as e:
-            logger.exception(f"Error occurred during {method} request to {url}: {e}")
-            return None
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         raise NotImplementedError()

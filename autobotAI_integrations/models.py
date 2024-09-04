@@ -49,7 +49,7 @@ class SteampipeCreds(BaseCreds):
 class RestAPICreds(BaseCreds):
     connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.REST_API
     creds_type: str = ConnectionInterfaces.REST_API.value
-    api_url: str
+    base_url: str
     token: str
     headers: dict
 
@@ -77,50 +77,6 @@ class CLICreds(BaseCreds):
     envs: dict
     installer_check: str
     install_command: str
-
-
-class OpenAPIPathParams(BaseModel):
-    name: str
-    params_type: Optional[str] = None
-    data_type: Optional[str] = None
-    required: bool = True
-    description: Optional[str] = None
-    default: Any = None
-    example: Any = None
-
-
-class OpenAPIAction(BaseModel):
-    resource_type: str = "action"
-    name: str
-    root_user_id: str = None
-    user_id: str = None
-    code: str
-    integration_type: str
-    clients: Optional[List[str]] = None
-    executable_type: Optional[str] = "rest_api"
-    category: Optional[str] = None
-    parameters_definition: Optional[List[OpenAPIPathParams]] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    header_details: Optional[List[dict]] = None
-
-
-class OpenAPIPathModel(BaseModel):
-    path_url: str
-    method: str
-    summary: Optional[str] = ""
-    description: Optional[str] = ""
-    parameters: List[OpenAPIPathParams] = []
-
-
-class OpenAPISchema(BaseModel):
-    version: str  # openapi, swagger
-    base_url: Optional[str] = "{base_url}"  # servers or host
-    tags: Optional[List[dict]] = None
-    paths: List[OpenAPIPathModel] = []
-    security: Optional[List[dict]] = None
-    components: dict = dict()
-
 
 # Setting default to None
 class BaseSchema(IntegrationSchema):

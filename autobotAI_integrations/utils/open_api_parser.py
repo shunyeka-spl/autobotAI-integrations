@@ -232,6 +232,10 @@ class OpenApiParser:
                     continue
                 elif parameter.params_type == "path" and parameter.name == "base_url":
                     continue
+                
+                if parameter.params_type == "body" and not parameter.values:
+                    if parameter.example:
+                        parameter.values = parameter.example
                 parameters.append(parameter)
 
 

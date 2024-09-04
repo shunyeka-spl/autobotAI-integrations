@@ -514,7 +514,7 @@ def executor(context):
             else:
                 return response.text
         except requests.exceptions.RequestException as e:
-            return {"error": str(e)}
+            raise Exception(f"Request failed: {e}")
 
     # def make_request
     def execute_rest_api_task(self, payload_task: PayloadTask):
@@ -527,7 +527,7 @@ def executor(context):
             
             logger.info(f"Creating request url..")
             request_url = payload_task.executable.format(
-                base_url=payload_task.creds.base_url,
+                base_url=payload_task.creds.base_url.strip('/'),
                 # Filling path params,
                 **params.get("path_parameters", {}),
             )
@@ -546,7 +546,6 @@ def executor(context):
                 json=params.get("json", None),
                 timeout=params.get("timeout", 10),
             )
-            
             logger.info(f"Response: {response}")
             results.append(response)
         except Exception as e:

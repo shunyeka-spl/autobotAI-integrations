@@ -294,15 +294,17 @@ def get_restapi_validated_params(params: List[Param]):
         elif param.params_type == "header":
             if param.values.lower() == "authorization":
                 raise ValueError("Authorization header is not allowed.")
-            filtered_params["headers"][key] = value
+            filtered_params["headers"][param.name] = param.values
         elif param.params_type == "method":
             if not isinstance(param.values, str):
                 raise ValueError("Method must be a string.")
             filtered_params["method"] = param.values.upper()
         elif param.params_type == "query":
-            filtered_params["query_parameters"][key] = value
+            if param.values is None:
+                continue
+            filtered_params["query_parameters"][param.name] = param.values
         elif param.params_type == "path":
-            filtered_params["path_parameters"][key] = value
+            filtered_params["path_parameters"][param.name] = param.values
         elif param.params_type == "body":
             if filtered_params["json"]:
                 raise ValueError("Only one JSON body parameter is Allowed")
@@ -310,5 +312,5 @@ def get_restapi_validated_params(params: List[Param]):
         elif param.params_type == "timeout":
             if not isinstance(param.values, int):
                 raise ValueError("Timeout must be an integer.")
-            filtered_params ["timeout"] = params.values
+            filtered_params["timeout"] = params.values
     return filtered_params

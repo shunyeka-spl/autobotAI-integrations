@@ -132,6 +132,12 @@ class GenericRestAPIService(BaseService):
                             "label": "API URL",
                             "placeholder": "API URL",
                             "required": True,
+                        },
+                        {
+                            "name": "auth_type",
+                            "type": "hidden",
+                            "value": AuthType.NO_AUTH.value,
+                            "required": True,
                         }
                     ],
                 },
@@ -139,6 +145,12 @@ class GenericRestAPIService(BaseService):
                     "label": "Bearer Token",
                     "type": "form",
                     "children": [
+                        {
+                            "name": "auth_type",
+                            "type": "hidden",
+                            "value": AuthType.BEARER_TOKEN.value,
+                            "required": True,
+                        },
                         {
                             "name": "api_url",
                             "type": "text",
@@ -159,6 +171,12 @@ class GenericRestAPIService(BaseService):
                     "label": "Basic Auth",
                     "type": "form",
                     "children": [
+                        {
+                            "name": "auth_type",
+                            "type": "hidden",
+                            "value": AuthType.BASIC_AUTH.value,
+                            "required": True,
+                        },
                         {
                             "name": "api_url",
                             "type": "text",
@@ -186,6 +204,12 @@ class GenericRestAPIService(BaseService):
                     "label": "API Key",
                     "type": "form",
                     "children": [
+                        {
+                            "name": "auth_type",
+                            "type": "hidden",
+                            "value": AuthType.API_KEY.value,
+                            "required": True,
+                        },
                         {
                             "name": "api_url",
                             "type": "text",

@@ -24,7 +24,7 @@ class GenericRestAPIIntegration(BaseSchema):
     # No Auth
     api_url: str
     auth_type: Union[AuthType, str] = AuthType.NO_AUTH
-    
+
     # Bearer Token
     token: Optional[str] = Field(None, description="Bearer token")
 
@@ -46,7 +46,8 @@ class GenericRestAPIIntegration(BaseSchema):
         auth_type = values.get("auth_type")
         if isinstance(auth_type, str):
             auth_type = AuthType(auth_type)
-        
+            values["auth_type"] = auth_type
+
         if auth_type == AuthType.NO_AUTH:
             pass
         elif auth_type == AuthType.BEARER_TOKEN:

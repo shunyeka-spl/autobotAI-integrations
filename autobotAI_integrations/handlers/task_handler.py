@@ -25,10 +25,15 @@ def handle_task(task: PayloadTask) -> TaskResult:
         "debug_info": ResponseDebugInfo(**{
             "executable": task.executable,
             "job_type": "job_type_here",
-            "resource_type": "",
-            "environs": {**os.environ},
+            "resource_type": ""
         }),
     }
+    
+    if (
+        task.context.execution_details.caller.user_id
+        == task.context.execution_details.caller.root_user_id
+    ):
+        result_json["debug_info"].environs = {**os.environ}
 
     logger.info(f"Checking For Connection Interface: {task.connection_interface}")
 

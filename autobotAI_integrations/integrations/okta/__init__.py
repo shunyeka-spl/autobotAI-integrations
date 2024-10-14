@@ -23,7 +23,7 @@ class OktaIntegration(BaseSchema):
     host_url: str
     token: Optional[str] = Field(default=None, exclude=True)
 
-    category: Optional[str] = IntegrationCategory.MONITORING_TOOLS.value
+    category: Optional[str] = IntegrationCategory.SECURITY_TOOLS.value
     description: Optional[str] = (
         "Okta is the leading independent identity provider. The Okta Identity enables organizations to securely connect the right people to the right technologies at the right time."
     )

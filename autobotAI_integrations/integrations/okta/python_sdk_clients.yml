@@ -1,5 +1,5 @@
-- name: prometheus_api_client
+- name: okta
   import_library_names:
-    - prometheus_api_client
+    - okta.client
   pip_package_names:
-    - prometheus-api-client
+    - okta

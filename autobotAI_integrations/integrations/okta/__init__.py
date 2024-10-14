@@ -1,7 +1,7 @@
 import importlib
 from typing import List, Optional, Union
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from autobotAI_integrations import (
     BaseSchema,
@@ -18,9 +18,6 @@ from autobotAI_integrations import (
 from autobotAI_integrations.models import IntegrationCategory
 import requests
 
-# demeg63111@hraifi.com
-# @Password123
-
 
 class OktaIntegration(BaseSchema):
     host_url: str
@@ -30,6 +27,12 @@ class OktaIntegration(BaseSchema):
     description: Optional[str] = (
         "Okta is the leading independent identity provider. The Okta Identity enables organizations to securely connect the right people to the right technologies at the right time."
     )
+    
+    @field_validator("host_url", mode='before')
+    def validate_host_url(cls, value):
+        if not value.startswith("https://"):
+            raise ValueError("Host URL must start with 'https://'")
+        return value.strip('/')
 
 
 class OktaService(BaseService):
@@ -44,7 +47,10 @@ class OktaService(BaseService):
 
     def _test_integration(self):
         try:
-            response = requests.get(self.integration.host_url)
+            response = requests.get(
+                url=self.integration.host_url + '/api/v1/users',
+                headers={"Authorization": f"SSWS {self.integration.token}"}
+            )
             if response.status_code == 200:
                 return {"success": True}
             else:
@@ -69,6 +75,13 @@ class OktaService(BaseService):
                     "label": "Okta Host URL",
                     "placeholder": "Enter HOST URL",
                     "required": True,
+                },
+                {
+                    "name": "token",
+                    "type": "text/password",
+                    "label": "Okta API Token",
+                    "placeholder": "Enter API Token",
+                    "required": True,
                 }
             ],
         }
@@ -77,11 +90,15 @@ class OktaService(BaseService):
     def get_schema():
         return OktaIntegration
 
+    @classmethod
+    def get_details(cls):
+        details = super().get_details()
+        details["preview"] = True
+        return details
+
     @staticmethod
     def supported_connection_interfaces():
         return [
-            ConnectionInterfaces.REST_API,
-            ConnectionInterfaces.CLI,
             ConnectionInterfaces.PYTHON_SDK,
             ConnectionInterfaces.STEAMPIPE,
         ]
@@ -92,13 +109,15 @@ class OktaService(BaseService):
         okta = importlib.import_module(
             client_definitions[0].import_library_names[0], package=None
         )
+        config = {
+            "orgUrl": payload_task.creds.envs.get("OKTA_CLIENT_ORGURL"),
+            "token": payload_task.creds.envs.get("OKTA_CLIENT_TOKEN"),
+        }
 
         return [
             {
                 "clients": {
-                    "okta_api_client": okta.OktaConnect(
-                        url=payload_task.creds.envs["OKTA_URL"], disable_ssl=True
-                    ),
+                    "okta": okta.Client(config),
                 },
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context,
@@ -107,12 +126,13 @@ class OktaService(BaseService):
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
         envs = {
-            "OKTA_URL": self.integration.host_url,
+            "OKTA_CLIENT_ORGURL": self.integration.host_url,
+            "OKTA_CLIENT_TOKEN": self.integration.token,
         }
         conf_path = "~/.steampipe/config/okta.spc"
         config = """connection "okta" {
   plugin = "okta"
-  # metrics = [".+"]
+
 }"""
         return SteampipeCreds(
             envs=envs,
@@ -122,12 +142,9 @@ class OktaService(BaseService):
             config=config,
         )
 
-    def generate_rest_api_creds(self) -> RestAPICreds:
-        pass
-
     def generate_python_sdk_creds(self) -> SDKCreds:
-        envs = {"OKTA_URL": self.integration.host_url}
+        envs = {
+            "OKTA_CLIENT_ORGURL": self.integration.host_url,
+            "OKTA_CLIENT_TOKEN": self.integration.token,
+        }
         return SDKCreds(envs=envs)
-
-    def generate_cli_creds(self) -> CLICreds:
-        pass

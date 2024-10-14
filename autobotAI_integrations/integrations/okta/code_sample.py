@@ -1,5 +1,5 @@
 # Import your modules here
-import json
+import asyncio
 
 # **Security Note:** Client-related modules should not be directly imported here.
 # Instead, they are passed as arguments and retrieved from a secure configuration.
@@ -22,12 +22,17 @@ def executor(context):
     clients = context["clients"]
 
     # Placeholder for retrieving the integration-specific client if needed
-    client = clients["prometheus_api_client"]  # Supports only one client
-    # To Learn more about usage visit: https://github.com/4n4nd/prometheus-api-client-python
+    okta_client = clients["okta"]  # Supports only one client
 
-    # User's Python code execution logic goes here
-    # (Replace this comment with the your actual code)
+    # example of usage, list all users first name and last name
+    # async def main():
+    #     users, resp, err = await okta_client.list_users()
+    #     res = []
+    #     for user in users:
+    #         res.append(
+    #             {"First Name": user.profile.first_name, "Last Name": user.profile.last_name}
+    #         )
+    #     return res
 
-    # Example: Get the list of all the metrics that the Prometheus host scrapes(for illustration purposes only)
-    result = client.all_metrics()
-    return result  # Replace with your actual return logic
+    # loop = asyncio.get_event_loop()
+    # return loop.run_until_complete(main())

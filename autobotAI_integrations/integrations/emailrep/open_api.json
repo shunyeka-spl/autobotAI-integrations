@@ -23,7 +23,7 @@
                         "schema": {
                             "type": "string"
                         },
-                        "description": "email to query"
+                        "description": "Email address to query"
                     },
                     {
                         "name": "accept",
@@ -33,35 +33,52 @@
                             "type": "string"
                         },
                         "default": "application/json",
-                        "description": "header for the request json"
+                        "description": "The format to accept in response"
                     },
                     {
                         "name": "summary",
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "bool"
+                            "type": "boolean"
                         },
-                        "description": "get summary or not in response"
+                        "description": "Get summary or not in the response"
                     }
                 ]
-            },
+            }
+        },
+        "/report": {
             "post": {
-                "summary": "Report Email Address",
+                "summary": "Report email address",
                 "operationId": "reportEmailAddress",
+                "parameters": [
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/json",
+                        "description": "The format to accept in response"
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/Resource"
+                                "$ref": "#/components/schemas/ReportEmail"
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Email Reported successfully"
+                    "200": {
+                        "description": "Report successfully submitted"
+                    },
+                    "400": {
+                        "description": "Invalid request"
                     }
                 }
             }
@@ -69,22 +86,47 @@
     },
     "components": {
         "schemas": {
-            "Resource": {
+            "ReportEmail": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "string"
+                    "email": {
+                        "type": "string",
+                        "description": "Email address to report",
+                        "example": "test@example.com"
                     },
-                    "name": {
-                        "type": "string"
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Tags associated with the email, such as 'malicious' or 'romance_scam'",
+                        "example": [
+                            "malicious",
+                            "romance_scam"
+                        ]
                     },
                     "description": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "A description of the issue",
+                        "example": "Phishing email sent to accounting dept"
+                    },
+                    "timestamp": {
+                        "type": "integer",
+                        "description": "Unix timestamp of when the event occurred",
+                        "example": 1562171178
+                    },
+                    "expires": {
+                        "type": "integer",
+                        "description": "How long the report is valid, in hours",
+                        "example": 24
                     }
                 },
                 "required": [
-                    "id",
-                    "name"
+                    "email",
+                    "tags",
+                    "description",
+                    "timestamp",
+                    "expires"
                 ]
             }
         }

@@ -1,0 +1,92 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "EmailRep",
+        "description": "EmailRep is a system of crawlers, scanners, and enrichment services that collect data on email addresses, domains, and internet personas.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://emailrep.io"
+        }
+    ],
+    "paths": {
+        "/{email}": {
+            "get": {
+                "summary": "Query email address",
+                "operationId": "queryEmailAddress",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "email to query"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/json",
+                        "description": "header for the request json"
+                    },
+                    {
+                        "name": "summary",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "bool"
+                        },
+                        "description": "get summary or not in response"
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Report Email Address",
+                "operationId": "reportEmailAddress",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Resource"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Email Reported successfully"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Resource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name"
+                ]
+            }
+        }
+    }
+}

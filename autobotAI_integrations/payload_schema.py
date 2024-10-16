@@ -11,8 +11,6 @@ from autobotAI_integrations.models import (
 import inspect
 import os
 
-from autobotAI_integrations.open_api_schema import OpenAPIPathParams
-
 
 class Caller(BaseModel):
     user_id: str
@@ -56,38 +54,8 @@ class PayloadTaskContext(BaseModel):
                         return subclass(**integration)
         return integration
 
-
-class ParamTypes(str, Enum):
-    LIST = "list"
-    DICT = "dict"
-    STR = "str"
-    JSON = "json"
-    HANDLEBARS_JSON = "handlebars-json"
-    HANDLEBARS_MARKDOWN = "handlebars-markdown"
-    HANDLEBARS_HTML = "handlebars-html"
-    INT = "int"
-    BOOL = "bool"
-
-    def __str__(self):
-        return self.value
-
-    @classmethod
-    def _missing_(cls, value):
-        fallback_value_mapper = {
-            "integer": cls.INT,
-            "number": cls.INT,
-            "boolean": cls.BOOL,
-            "object": cls.JSON,
-            "array": cls.LIST,
-            "handlebar/html": cls.HANDLEBARS_HTML,
-            "handlebar/markdown": cls.HANDLEBARS_MARKDOWN,
-            "handlebar/json": cls.HANDLEBARS_JSON,
-        }
-        return fallback_value_mapper.get(str(value).lower(), cls.STR)
-
-
 class Param(BaseModel):
-    params_type: ParamTypes = Field(alias="type")
+    params_type: str = Field(alias="type")
     name: str
     ai_generated: bool = False
     required: bool = False
@@ -102,10 +70,32 @@ class Param(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def resource_type_validator(cls, values: Any) -> Any:
-        if not values.get("params_type", None) and values.get("type", None):
-            values["params_type"] = values["type"]
-        if not values.get("type", None) and values.get("params_type", None):
-            values["type"] = values["params_type"]
+        if isinstance(values, dict):
+            if not values.get("params_type", None) and values.get("type", None):
+                values["params_type"] = values["type"]
+            if not values.get("type", None) and values.get("params_type", None):
+                values["type"] = values["params_type"]
+        return values
+
+
+class OpenAPIPathParams(Param):
+    in_: Optional[str] = Field(default=None, alias="in")
+    description: Optional[str] = None
+    default: Any = None
+    example: Any = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def resource_type_validator(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            if not values.get("params_type", None) and values.get("type", None):
+                values["params_type"] = values["type"]
+            if not values.get("type", None) and values.get("params_type", None):
+                values["type"] = values["params_type"]
+            if not values.get("in", None) and values.get("in_", None):
+                values["in"] = values["in_"]
+            if not values.get("in_", None) and values.get("in", None):
+                values["in_"] = values["in"]
         return values
 
 
@@ -116,7 +106,7 @@ class PayloadTask(BaseModel):
     executable: str
     tables: Optional[List[str]] = None
     clients: Optional[List[str]] = None
-    params: Optional[List[Union[Param, OpenAPIPathParams]]] = []
+    params: Optional[List[Union[OpenAPIPathParams, Param]]] = []
     node_details: Optional[Any] = None
     context: PayloadTaskContext
 
@@ -128,21 +118,6 @@ class PayloadTask(BaseModel):
                 if sub_cls.connection_interface.value == creds['creds_type']:
                     return sub_cls(**creds)
         return creds
-
-    @field_validator("params", mode="before")
-    @classmethod
-    def validate_params(cls, params):
-        validated_params = []
-        for param in params:
-            if isinstance(param, dict):
-                if "in" in param or "in_" in param:
-                    validated_params.append(OpenAPIPathParams(**params))
-                else:
-                    validated_params.append(Param(**params))
-        if validated_params:
-            return validated_params
-        return params
-
 
 class Payload(BaseModel):
     job_id: str

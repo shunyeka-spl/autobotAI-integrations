@@ -9,7 +9,6 @@ from autobotAI_integrations.models import (
     IntegrationCategory,
     RestAPICreds,
 )
-from utils.open_api_parser import OpenApiParser
 
 class CrowdSecIntegration(BaseSchema):
     token: Optional[str] = Field(default=None, description="token", exclude=True)

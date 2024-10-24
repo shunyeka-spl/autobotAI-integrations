@@ -55,12 +55,8 @@ def run_mod_func(fn, **kwargs):
         else:
             return asyncio.run(fn(**kwargs)), None
     except:
-        try:
-            traceback_execution = traceback.format_exc(chain=True).splitlines()
-            return None, "\n".join(traceback_execution[:1]+ traceback_execution[4: ])
-        except:
-            return None, traceback.format_exc()
-
+        traceback_execution = traceback.format_exc(chain=True).splitlines()
+        return None, "\n".join(traceback_execution[:1]+ traceback_execution[4: ])
 
 def list_of_unique_elements(list_to_verify: list) -> list:
     my_set = set()

@@ -10,6 +10,7 @@ def executor(context):
     orgs = snyk_client.get('/orgs').json().get('data')
     return orgs
 """
+
 class TestClassSnyk:
     def test_snyk_token(
         self,
@@ -45,3 +46,10 @@ class TestClassSnyk:
         task = sample_python_task(integration, code=snyk_python_code, clients=["snyk"])
         result = handle_task(task)
         test_result_format(result)
+
+    def test_actions_generation(self, get_keys):
+        service = integration_service_factory.get_service_cls('snyk')
+        actions = service.get_all_rest_api_actions()
+        for action in actions:
+            print(action.model_dump_json(indent=2))
+        assert len(actions) > 0

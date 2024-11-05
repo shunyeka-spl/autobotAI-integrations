@@ -77,11 +77,17 @@ class SnykService(BaseService):
             "children": [
                 {
                     "name": "api_url",
-                    "type": "text/url",
+                    "type": "select",
                     "label": "API URL",
-                    "placeholder": "default: 'https://api.snyk.io/rest'",
+                    "placeholder": "Select the Snyk API URL",
+                    "options":  [
+                        {"label": "SNYK-US-01", "value": "https://api.snyk.io/rest"},
+                        {"label": "SNYK-US-02", "value": "https://api.us.snyk.io/rest"},
+                        {"label": "SNYK-EU-01", "value": "https://api.eu.snyk.io/rest"},
+                        {"label": "SNYK-AU-01", "value": "https://api.au.snyk.io/rest"}
+                    ],
                     "description": "Enter api url, for more info: https://docs.snyk.io/snyk-api/rest-api/about-the-rest-api#api-urls",
-                    "required": False,
+                    "required": True,
                 },
                 {
                     "name": "api_key",

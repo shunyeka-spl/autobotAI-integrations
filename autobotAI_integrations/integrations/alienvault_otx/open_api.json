@@ -368,63 +368,60 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "additionalProperties": true,
-                                "description": "The fields to update in the pulse."
-                            },
-                            "examples": {
-                                "update_description_tags": {
-                                    "summary": "Update description and tags.",
-                                    "value": {
-                                        "description": "New Description",
-                                        "tags": {
-                                            "add": [
-                                                "addtag1",
-                                                "addtag2"
-                                            ],
-                                            "remove": [
-                                                "remtag1"
-                                            ]
+                                "example": {
+                                    "update_description_tags": {
+                                        "summary": "Update description and tags.",
+                                        "value": {
+                                            "description": "New Description",
+                                            "tags": {
+                                                "add": [
+                                                    "addtag1",
+                                                    "addtag2"
+                                                ],
+                                                "remove": [
+                                                    "remtag1"
+                                                ]
+                                            }
                                         }
-                                    }
-                                },
-                                "update_indicators": {
-                                    "summary": "Update indicators.",
-                                    "value": {
-                                        "indicators": {
-                                            "add": [
-                                                {
-                                                    "indicator": "8.8.8.9",
-                                                    "type": "IPv4",
-                                                    "role": "command_and_control"
-                                                },
-                                                {
-                                                    "indicator": "8.8.8.10",
-                                                    "type": "IPv4"
-                                                }
-                                            ],
-                                            "edit": [
-                                                {
-                                                    "id": 1,
-                                                    "type": "hostname",
-                                                    "indicator": "www.amazon.com"
-                                                },
-                                                {
-                                                    "id": 2,
-                                                    "indicator": "you@rustybrooks.com"
-                                                },
-                                                {
-                                                    "id": 3,
-                                                    "is_active": true,
-                                                    "expiration": "2017-01-01",
-                                                    "role": "scanning_host"
-                                                }
-                                            ],
-                                            "remove": [
-                                                {
-                                                    "id": 4
-                                                }
-                                            ]
+                                    },
+                                    "update_indicators": {
+                                        "summary": "Update indicators.",
+                                        "value": {
+                                            "indicators": {
+                                                "add": [
+                                                    {
+                                                        "indicator": "8.8.8.9",
+                                                        "type": "IPv4",
+                                                        "role": "command_and_control"
+                                                    },
+                                                    {
+                                                        "indicator": "8.8.8.10",
+                                                        "type": "IPv4"
+                                                    }
+                                                ],
+                                                "edit": [
+                                                    {
+                                                        "id": 1,
+                                                        "type": "hostname",
+                                                        "indicator": "www.amazon.com"
+                                                    },
+                                                    {
+                                                        "id": 2,
+                                                        "indicator": "you@rustybrooks.com"
+                                                    },
+                                                    {
+                                                        "id": 3,
+                                                        "is_active": true,
+                                                        "expiration": "2017-01-01",
+                                                        "role": "scanning_host"
+                                                    }
+                                                ],
+                                                "remove": [
+                                                    {
+                                                        "id": 4
+                                                    }
+                                                ]
+                                            }
                                         }
                                     }
                                 }
@@ -717,203 +714,64 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$schema": "http://json-schema.org/draft-04/schema",
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": [
-                                    "name",
-                                    "public"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "description": {
-                                        "type": "string"
-                                    },
-                                    "public": {
-                                        "type": "boolean"
-                                    },
-                                    "tags": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
+                                "$ref": "#/components/schemas/CreatePulse",
+                                "example": {
+                                    "name": "Test Pulse Name",
+                                    "description": "Test Pulse Description",
+                                    "public": true,
+                                    "TLP": "white",
+                                    "tags": [
+                                        "tag1",
+                                        "tag2",
+                                        "tag3"
+                                    ],
+                                    "references": [
+                                        "https://google.com",
+                                        "https://amazon.com"
+                                    ],
+                                    "adversary": "APT 1",
+                                    "targeted_countries": [
+                                        "Afghanistan",
+                                        "Anguilla"
+                                    ],
+                                    "industries": [
+                                        "Industry1",
+                                        "Industry2"
+                                    ],
+                                    "group_ids": [
+                                        1,
+                                        2,
+                                        3
+                                    ],
+                                    "malware_families": [
+                                        "Backdoor:Linux/Netbus",
+                                        "Backdoor:Linux/Cyrax"
+                                    ],
+                                    "attack_ids": [
+                                        "T1001",
+                                        "T1486"
+                                    ],
+                                    "indicators": [
+                                        {
+                                            "indicator": "8.8.8.8",
+                                            "type": "IPv4",
+                                            "description": "",
+                                            "title": "",
+                                            "content": "",
+                                            "expiration": "2020-01-01T00:00:00",
+                                            "role": null
+                                        },
+                                        {
+                                            "indicator": "rustybrooks.com",
+                                            "type": "domain",
+                                            "description": "A longer description can be used if desired",
+                                            "title": "It's my website",
+                                            "content": "",
+                                            "expiration": "2019-01-01T00:00:00",
+                                            "role": "scanning_host"
                                         }
-                                    },
-                                    "TLP": {
-                                        "type": "string",
-                                        "enum": [
-                                            "white",
-                                            "green",
-                                            "amber",
-                                            "red"
-                                        ]
-                                    },
-                                    "references": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "adversary": {
-                                        "type": "string"
-                                    },
-                                    "targeted_countries": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "industries": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "group_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "malware_families": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "attack_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "pattern": "^[A-Z][0-9]{4}$"
-                                        }
-                                    },
-                                    "indicators": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "object",
-                                            "additionalProperties": false,
-                                            "required": [
-                                                "indicator",
-                                                "type",
-                                                "description"
-                                            ],
-                                            "properties": {
-                                                "indicator": {
-                                                    "type": "string"
-                                                },
-                                                "type": {
-                                                    "type": "string"
-                                                },
-                                                "title": {
-                                                    "type": "string"
-                                                },
-                                                "description": {
-                                                    "type": "string"
-                                                },
-                                                "expiration": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "content": {
-                                                    "type": "string"
-                                                },
-                                                "role": {
-                                                    "type": [
-                                                        "string",
-                                                        "null"
-                                                    ],
-                                                    "enum": [
-                                                        null,
-                                                        "",
-                                                        "scanning_host",
-                                                        "malware_hosting",
-                                                        "command_and_control",
-                                                        "exploit_kit",
-                                                        "malvertising",
-                                                        "phishing",
-                                                        "bruteforce",
-                                                        "web_attack",
-                                                        "exploit_source",
-                                                        "trojan",
-                                                        "rat",
-                                                        "backdoor",
-                                                        "adware",
-                                                        "hacking_tool",
-                                                        "ransomware",
-                                                        "worm",
-                                                        "macro_malware",
-                                                        "domain_owner",
-                                                        "delivery_email",
-                                                        "unknown",
-                                                        "file_scanning",
-                                                        "memory_scanning",
-                                                        "hunting",
-                                                        "pcap_scanning"
-                                                    ]
-                                                }
-                                            }
-                                        }
-                                    }
+                                    ]
                                 }
-                            },
-                            "example": {
-                                "name": "Test Pulse Name",
-                                "description": "Test Pulse Description",
-                                "public": true,
-                                "TLP": "white",
-                                "tags": [
-                                    "tag1",
-                                    "tag2",
-                                    "tag3"
-                                ],
-                                "references": [
-                                    "https://google.com",
-                                    "https://amazon.com"
-                                ],
-                                "adversary": "APT 1",
-                                "targeted_countries": [
-                                    "Afghanistan",
-                                    "Anguilla"
-                                ],
-                                "industries": [
-                                    "Industry1",
-                                    "Industry2"
-                                ],
-                                "group_ids": [
-                                    1,
-                                    2,
-                                    3
-                                ],
-                                "malware_families": [
-                                    "Backdoor:Linux/Netbus",
-                                    "Backdoor:Linux/Cyrax"
-                                ],
-                                "attack_ids": [
-                                    "T1001",
-                                    "T1486"
-                                ],
-                                "indicators": [
-                                    {
-                                        "indicator": "8.8.8.8",
-                                        "type": "IPv4",
-                                        "description": "",
-                                        "title": "",
-                                        "content": "",
-                                        "expiration": "2020-01-01T00:00:00",
-                                        "role": null
-                                    },
-                                    {
-                                        "indicator": "rustybrooks.com",
-                                        "type": "domain",
-                                        "description": "A longer description can be used if desired",
-                                        "title": "It's my website",
-                                        "content": "",
-                                        "expiration": "2019-01-01T00:00:00",
-                                        "role": "scanning_host"
-                                    }
-                                ]
                             }
                         }
                     }
@@ -1323,20 +1181,10 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object",
-                                "required": [
-                                    "indicator",
-                                    "type"
-                                ],
-                                "properties": {
-                                    "indicator": {
-                                        "type": "string",
-                                        "example": "192.168.1.1"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "example": "IPv4"
-                                    }
+                                "$ref": "#/components/schemas/ValidatedIndecatorPair",
+                                "example": {
+                                    "indicator": "192.168.1.1",
+                                    "type": "IPv4"
                                 }
                             }
                         }
@@ -1892,10 +1740,1064 @@
                     }
                 ]
             }
+        },
+        "/api/v1/indicators/submitted_filesget": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Returns a list of all submitted files.",
+                "description": "Returns a list of all submitted files, along with the status of the submission. When complete, results can be found at `/indicator/file/{file_hash}` in your browser, or `/api/v1/indicators/file/{file_hash}/{section}` in the API.",
+                "operationId": "getSubmittedFiles",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of results to include per page.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Which page of results is desired.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Order by one of these fields: `add_date`, `sha256`, `complete_date`.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "add_date",
+                                "sha256",
+                                "complete_date"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "file_hash": {
+                                                "type": "string",
+                                                "description": "The hash of the file."
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "description": "The status of the file submission."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/update_submitted_files_tlp": {
+            "post": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Update TLP level of previously submitted files.",
+                "description": "Update the TLP level of previously submitted files. Valid TLPs are `white`, `green`, `amber`, and `red`. You can only update the TLP of a file you submitted yourself, and you cannot update the TLP if someone else has submitted the same file.",
+                "operationId": "updateSubmittedFilesTlp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "urls",
+                                    "tlp"
+                                ],
+                                "properties": {
+                                    "urls": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "tlp": {
+                                        "type": "string",
+                                        "enum": [
+                                            "white",
+                                            "green",
+                                            "amber",
+                                            "red"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "TLP updated successfully."
+                    },
+                    "400": {
+                        "description": "Invalid input parameters."
+                    },
+                    "403": {
+                        "description": "Unauthorized to update the TLP of this file."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/submit_url": {
+            "post": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Submit a single URL for analysis.",
+                "description": "Analyze suspicious URLs to quickly detect malware and malicious activity. When you submit a URL, the system will automatically visit the URL and analyze the content. If the URL has other artifacts, such as a file in the response, this will be automatically submitted to the system for analysis.",
+                "operationId": "submitUrl",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "url"
+                                ],
+                                "properties": {
+                                    "url": {
+                                        "type": "string"
+                                    },
+                                    "tlp": {
+                                        "type": "string",
+                                        "enum": [
+                                            "white",
+                                            "green",
+                                            "amber",
+                                            "red"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "URL submitted successfully and under analysis."
+                    },
+                    "400": {
+                        "description": "Invalid input parameters."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/submit_urls": {
+            "post": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Submit multiple URLs for analysis.",
+                "description": "Analyze suspicious URLs to quickly detect malware and malicious activity. When you submit URLs, the system will automatically visit each URL and analyze the content. If a URL has other artifacts, such as a file in the response, this will be automatically submitted to our system for analysis.",
+                "operationId": "submitUrls",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "url"
+                                ],
+                                "properties": {
+                                    "url": {
+                                        "type": "string",
+                                        "description": "The URLs to be analyzed, submitted as a JSON string."
+                                    },
+                                    "tlp": {
+                                        "type": "string",
+                                        "enum": [
+                                            "white",
+                                            "green",
+                                            "amber",
+                                            "red"
+                                        ],
+                                        "description": "The TLP level associated with the submitted URLs."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "URLs submitted successfully and under analysis."
+                    },
+                    "400": {
+                        "description": "Invalid input parameters."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/submitted_urlsget": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Returns a list of all submitted URLs.",
+                "description": "Returns a list of all submitted URLs, along with the status of the submission. When complete, results can be found at `/indicator/url/{url}` in your browser, or `/api/v1/indicators/url/{url}/{section}` in the API.",
+                "operationId": "getSubmittedUrls",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of results to include per page.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Which page of results is desired.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Order by one of these fields: `add_date`, `url`, `complete_date`.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "add_date",
+                                "url",
+                                "complete_date"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "url": {
+                                                "type": "string",
+                                                "description": "The submitted URL."
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "description": "The status of the URL submission."
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/update_submitted_urls_tlp": {
+            "post": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Update TLP level of previously submitted URLs.",
+                "description": "Update the TLP level of previously submitted URLs. Valid TLPs are `white`, `green`, `amber`, and `red`. You can only update the TLP of a URL you submitted yourself, and you cannot update the TLP if someone else has submitted the same URL.",
+                "operationId": "updateSubmittedUrlsTlp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                    "hashes",
+                                    "tlp"
+                                ],
+                                "properties": {
+                                    "hashes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "Array of URL hashes to update."
+                                    },
+                                    "tlp": {
+                                        "type": "string",
+                                        "enum": [
+                                            "white",
+                                            "green",
+                                            "amber",
+                                            "red"
+                                        ],
+                                        "description": "The new TLP level for the URLs."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "TLP updated successfully."
+                    },
+                    "400": {
+                        "description": "Invalid input parameters."
+                    },
+                    "403": {
+                        "description": "Unauthorized to update the TLP of these URLs."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/IPv4/{ip}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about an IPv4 address.",
+                "description": "Retrieve detailed information about an IPv4 address by section. Available sections include:\n- `general`: General information about the IP, such as geo data, and a list of other sections currently available for this IP address.\n- `reputation`: OTX data on malicious activity observed by LevelBlue Labs (IP Reputation).\n- `geo`: A more verbose listing of geographic data (Country code, coordinates, etc.).\n- `malware`: Malware samples analyzed by LevelBlue Labs which have been observed connecting to this IP address.\n- `url_list`: URLs analyzed by LevelBlue Labs which point to or are somehow associated with this IP address.\n- `passive_dns`: Passive DNS information about hostnames/domains observed by LevelBlue Labs pointing to this IP address.\n- `http_scans`: Meta data for HTTP(s) connections to the IP.",
+                "operationId": "getIPv4Info",
+                "parameters": [
+                    {
+                        "name": "ip",
+                        "in": "path",
+                        "description": "The IPv4 address to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "8.8.8.8"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `reputation`, `geo`, `malware`, `url_list`, `passive_dns`, `http_scans`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "reputation",
+                                "geo",
+                                "malware",
+                                "url_list",
+                                "passive_dns",
+                                "http_scans"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given IP."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid IP address or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given IP or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/IPv6/{ip}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about an IPv6 address.",
+                "description": "Retrieve detailed information about an IPv6 address by section. Available sections include:\n- `general`: General information about the IP, such as geo data, and a list of the other sections currently available for this IP address.\n- `reputation`: OTX data on malicious activity observed by LevelBlue Labs (IP Reputation).\n- `geo`: A more verbose listing of geographic data (Country code, coordinates, etc.).\n- `malware`: Malware samples analyzed by LevelBlue Labs which have been observed connecting to this IP address.\n- `url_list`: URLs analyzed by LevelBlue Labs which point to or are somehow associated with this IP address.\n- `passive_dns`: Passive DNS information about hostnames/domains observed by LevelBlue Labs pointing to this IP address.",
+                "operationId": "getIPv6Info",
+                "parameters": [
+                    {
+                        "name": "ip",
+                        "in": "path",
+                        "description": "The IPv6 address to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "2001:4860:4860::8888"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `reputation`, `geo`, `malware`, `url_list`, `passive_dns`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "reputation",
+                                "geo",
+                                "malware",
+                                "url_list",
+                                "passive_dns"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given IPv6 address."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid IPv6 address or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given IPv6 address or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/domain/{domain}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a domain.",
+                "description": "Retrieve detailed information about a domain by section. Available sections include:\n- `general`: General information about the domain, including any pulses, and a list of the other sections currently available for this domain.\n- `geo`: A more verbose listing of geographic data (Country code, coordinates, etc.).\n- `malware`: Malware samples analyzed by LevelBlue Labs which have been observed connecting to this domain.\n- `url_list`: URLs analyzed by LevelBlue Labs on this domain.\n- `passive_dns`: Passive DNS records observed by LevelBlue Labs pointing to this domain.\n- `whois`: Whois records for the domain.\n- `http_scans`: Meta data for HTTP(s) connections to the domain.",
+                "operationId": "getDomainInfo",
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "in": "path",
+                        "description": "The domain name to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "spywaresite.info"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `geo`, `malware`, `url_list`, `passive_dns`, `whois`, `http_scans`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "geo",
+                                "malware",
+                                "url_list",
+                                "passive_dns",
+                                "whois",
+                                "http_scans"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given domain."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid domain name or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given domain or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/hostname/{hostname}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a hostname.",
+                "description": "Retrieve detailed information about a hostname by section. Available sections include:\n- `general`: General information about the hostname, including any pulses, and a list of the other sections currently available for this hostname.\n- `geo`: A more verbose listing of geographic data (Country code, coordinates, etc.).\n- `malware`: Malware samples analyzed by LevelBlue Labs which have been observed connecting to this hostname.\n- `url_list`: URLs analyzed by LevelBlue Labs on this hostname.\n- `passive_dns`: Passive DNS records observed by LevelBlue Labs pointing to this hostname.\n- `http_scans`: Meta data for HTTP(s) connections to the hostname.",
+                "operationId": "getHostnameInfo",
+                "parameters": [
+                    {
+                        "name": "hostname",
+                        "in": "path",
+                        "description": "The hostname to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "mail.vspcord.com"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `geo`, `malware`, `url_list`, `passive_dns`, `http_scans`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "geo",
+                                "malware",
+                                "url_list",
+                                "passive_dns",
+                                "http_scans"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given hostname."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid hostname or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given hostname or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/file/{file_hash}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a file hash.",
+                "description": "Retrieve detailed information about a file hash by section. Available sections include:\n- `general`: General metadata about the file hash, and a list of the other sections currently available for this hash.\n- `analysis`: Dynamic and static analysis of this file (Cuckoo analysis, exiftool, etc.).",
+                "operationId": "getFileInfo",
+                "parameters": [
+                    {
+                        "name": "file_hash",
+                        "in": "path",
+                        "description": "The file hash to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "6c5360d41bd2b14b1565f5b18e5c203cf512e493"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `analysis`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "analysis"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given file hash."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid file hash or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given file hash or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/url/{url}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a URL.",
+                "description": "Retrieve detailed information about a URL by section. Available sections include:\n- `general`: Historical geographic info, any pulses this indicator is on, and a list of the other sections currently available for this URL.\n- `url_list`: Full results (potentially multiple) from LevelBlue Labs URL analysis.",
+                "operationId": "getUrlInfo",
+                "parameters": [
+                    {
+                        "name": "url",
+                        "in": "path",
+                        "description": "The URL to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "http://www.fotoidea.com/sport/4x4_san_ponso/slides/IMG_0068.html"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available values: `general`, `url_list`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general",
+                                "url_list"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given URL."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid URL or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given URL or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/cve/{cve}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a CVE.",
+                "description": "Retrieve detailed information about a CVE by section. Available sections include:\n- `general`: MITRE CVE data (CPEs, CWEs, etc.), any pulses this indicator is on, and a list of the other sections currently available for this CVE.",
+                "operationId": "getCveInfo",
+                "parameters": [
+                    {
+                        "name": "cve",
+                        "in": "path",
+                        "description": "The CVE identifier to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "CVE-2014-0160"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available value: `general`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given CVE."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid CVE identifier or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given CVE identifier or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/nids/{nids}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a NIDS.",
+                "description": "Retrieve detailed information about a Network Intrusion Detection System (NIDS) indicator by section. Available sections include:\n- `general`: General metadata about the NIDS.",
+                "operationId": "getNidsInfo",
+                "parameters": [
+                    {
+                        "name": "nids",
+                        "in": "path",
+                        "description": "The NIDS identifier to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "2820184"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available value: `general`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given NIDS."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid NIDS identifier or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given NIDS identifier or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
+        },
+        "/api/v1/indicators/correlation-rule/{correlationrule}/{section}": {
+            "get": {
+                "tags": [
+                    "Indicators"
+                ],
+                "summary": "Retrieve information about a Correlation Rule.",
+                "description": "Retrieve detailed information about a Correlation Rule by section. Available sections include:\n- `general`: General metadata about the Correlation Rule.",
+                "operationId": "getCorrelationRuleInfo",
+                "parameters": [
+                    {
+                        "name": "correlationrule",
+                        "in": "path",
+                        "description": "The Correlation Rule identifier to retrieve information for.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "572f8c3c540c6f0161677877"
+                        }
+                    },
+                    {
+                        "name": "section",
+                        "in": "path",
+                        "description": "The section of data to retrieve. Available value: `general`.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "general"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response containing the requested data.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "description": "Response containing section data for the given Correlation Rule."
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid Correlation Rule identifier or section."
+                    },
+                    "404": {
+                        "description": "No data found for the given Correlation Rule identifier or section."
+                    },
+                    "500": {
+                        "description": "Server error."
+                    }
+                }
+            }
         }
     },
     "components": {
         "schemas": {
+            "ValidatedIndecatorPair": {
+                "type": "object",
+                "required": [
+                    "indicator",
+                    "type"
+                ],
+                "properties": {
+                    "indicator": {
+                        "type": "string",
+                        "example": "192.168.1.1"
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "IPv4"
+                    }
+                }
+            },
+            "CreatePulse": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "name",
+                    "public"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "public": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "TLP": {
+                        "type": "string",
+                        "enum": [
+                            "white",
+                            "green",
+                            "amber",
+                            "red"
+                        ]
+                    },
+                    "references": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "adversary": {
+                        "type": "string"
+                    },
+                    "targeted_countries": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "industries": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "group_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    },
+                    "malware_families": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "attack_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "^[A-Z][0-9]{4}$"
+                        }
+                    },
+                    "indicators": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                                "indicator",
+                                "type",
+                                "description"
+                            ],
+                            "properties": {
+                                "indicator": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                },
+                                "title": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": "string"
+                                },
+                                "expiration": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "content": {
+                                    "type": "string"
+                                },
+                                "role": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        null,
+                                        "",
+                                        "scanning_host",
+                                        "malware_hosting",
+                                        "command_and_control",
+                                        "exploit_kit",
+                                        "malvertising",
+                                        "phishing",
+                                        "bruteforce",
+                                        "web_attack",
+                                        "exploit_source",
+                                        "trojan",
+                                        "rat",
+                                        "backdoor",
+                                        "adware",
+                                        "hacking_tool",
+                                        "ransomware",
+                                        "worm",
+                                        "macro_malware",
+                                        "domain_owner",
+                                        "delivery_email",
+                                        "unknown",
+                                        "file_scanning",
+                                        "memory_scanning",
+                                        "hunting",
+                                        "pcap_scanning"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import Field
@@ -12,6 +13,9 @@ from autobotAI_integrations.models import IntegrationCategory
 from autobotAI_integrations.utils import list_of_unique_elements
 from autobotAI_integrations.utils.logging_config import logger
 
+class SlackAuthTypes(Enum):
+    WEBHOOK_INTEGRATION = "webhook_integration"
+    TOKEN_INTEGRATION = "token_integration"
 
 class SlackIntegration(BaseSchema):
     webhook: Optional[str] = None
@@ -83,6 +87,7 @@ class SlackService(BaseService):
                 {
                     "label": "Webhook Integration",
                     "type": "form",
+                    "formId": SlackAuthTypes.WEBHOOK_INTEGRATION.value,
                     "children": [
                         {
                             "name": "webhook",
@@ -96,6 +101,7 @@ class SlackService(BaseService):
                 {
                     "label": "Bot Token Integration",
                     "type": "form",
+                    "formId": SlackAuthTypes.TOKEN_INTEGRATION.value,
                     "children": [
                         {
                             "name": "workspace",

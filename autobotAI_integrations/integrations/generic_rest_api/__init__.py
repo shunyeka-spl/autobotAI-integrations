@@ -14,7 +14,7 @@ from autobotAI_integrations.models import (
 
 
 # Supported Auth Types
-class APIAuthType(Enum):
+class APIAuthType(str, Enum):
     NO_AUTH = "no_auth"
     BASIC_AUTH = "basic_auth"
     BEARER_TOKEN = "bearer_token"

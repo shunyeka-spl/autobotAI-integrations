@@ -9,7 +9,7 @@ from autobotAI_integrations import (
 )
 import requests
 
-class CloudflareAuthTypes(Enum):
+class CloudflareAuthTypes(str, Enum):
     TOKEN_INTEGRATION = "token_integration"
     GLOBAL_API_KEY_INTEGRATION = "global_api_key_integration"
 

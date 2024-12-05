@@ -22,7 +22,7 @@ class Forms:
 class AWSSDKClient(SDKClient):
     is_regional: bool
 
-class AWSAuthTypes(Enum):
+class AWSAuthTypes(str, Enum):
     IAM_ROLE_INTEGRaTION = "iam_role_integration"
     ACCESS_KEY_INTEGRATION = "access_key_integration"
 

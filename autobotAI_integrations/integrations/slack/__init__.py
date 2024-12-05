@@ -13,7 +13,7 @@ from autobotAI_integrations.models import IntegrationCategory
 from autobotAI_integrations.utils import list_of_unique_elements
 from autobotAI_integrations.utils.logging_config import logger
 
-class SlackAuthTypes(Enum):
+class SlackAuthTypes(str, Enum):
     WEBHOOK_INTEGRATION = "webhook_integration"
     TOKEN_INTEGRATION = "token_integration"
 

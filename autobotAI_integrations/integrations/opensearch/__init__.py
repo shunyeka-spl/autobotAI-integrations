@@ -14,15 +14,15 @@ from autobotAI_integrations.models import (
 from autobotAI_integrations.payload_schema import PayloadTask
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
-from utils.logging_config import logger
+from autobotAI_integrations.utils.logging_config import logger
 
 
-class OpensearchAuthTypes(Enum):
+class OpensearchAuthTypes(str, Enum):
     AWS_CONFIG = "aws_config"
     DIRECT_AUTH = "direct_auth"
 
 
-class AWSOpensearchType(Enum):
+class AWSOpensearchType(str, Enum):
     AWS_OPENSEARCH_SERVICE = "aws_opensearch_service"
     OPENSEARCH_SERVERLESS = "opensearch_serverless"
 
@@ -36,7 +36,7 @@ class OpensearchIntegration(BaseSchema):
     password: Optional[str] = Field(default=None, exclude=True)
 
     # AWS Opensearch Service
-    region: str
+    region: Optional[str] = None
     opensearch_type: Optional[AWSOpensearchType] = None
     access_key: Optional[str] = Field(default=None, exclude=True)
     secret_key: Optional[str] = Field(default=None, exclude=True)
@@ -74,7 +74,7 @@ class OpensearchService(BaseService):
             integration = OpensearchIntegration(**integration)
         super().__init__(ctx, integration)
 
-    def _get_aws_credentials(self, aws_client_name: str):
+    def _get_aws_credentials(self):
         if self.integration.roleArn not in ["None", None]:
             boto3_helper = Boto3Helper(
                 self.ctx, integration=self.integration.dump_all_data()
@@ -85,26 +85,24 @@ class OpensearchService(BaseService):
                 aws_access_key_id=self.integration.access_key,
                 aws_secret_access_key=self.integration.secret_key,
                 region_name=self.integration.region,
-                aws_session_token=self.integration.session_token,
+                aws_session_token=self.integration.session_token if self.integration.session_token else None,
             ).get_credentials()
 
     def _test_integration(self):
         try:
-            logger.info(f"Initiating test for integration: {self.integration}")
+            logger.info(f"Initiating test for integration: {self.integration.accountId}")
             host = self.integration.host_url.split("://")[1]
             use_ssl = self.integration.host_url.split("://")[0] == "https"
             client = None
             if self.integration.auth_type == OpensearchAuthTypes.AWS_CONFIG.value:
-                service = (
-                    "es"
-                    if AWSOpensearchType.AWS_OPENSEARCH_SERVICE.value
-                    == self.integration.opensearch_type
-                    else "aoss"
+                service = "es" if AWSOpensearchType.AWS_OPENSEARCH_SERVICE.value == self.integration.opensearch_type else "aoss"
+                logger.info(
+                    f"Accessing service: {service} for {self.integration.opensearch_type}"
                 )
                 auth = AWSV4SignerAuth(
                     self._get_aws_credentials(),
                     self.integration.region,
-                    service=service,
+                    service,
                 )
                 client = OpenSearch(
                     hosts=[{"host": host, "port": self.integration.port}],
@@ -125,6 +123,7 @@ class OpensearchService(BaseService):
             else:
                 return {"success": False, "error": "Invalid Authentication Method."}
             logger.info(str(client.info()))
+            return {"success": True}
         except Exception as e:
             logger.error(str(e))
             return {"success": False, "error": "Request failed with unexpected error"}
@@ -152,7 +151,7 @@ class OpensearchService(BaseService):
                     "AWS_SECRET_ACCESS_KEY"
                 ),
                 aws_session_token=payload_task.creds.envs.get("AWS_SESSION_TOKEN"),
-            )
+            ).get_credentials()
             auth = AWSV4SignerAuth(
                 credentials, self.integration.region, service=service
             )
@@ -301,18 +300,30 @@ class OpensearchService(BaseService):
     def generate_python_sdk_creds(self) -> SDKCreds:
         envs = {}
         if self.integration.auth_type == OpensearchAuthTypes.AWS_CONFIG.value:
-            aws_creds = self._get_aws_credentials()
-            envs = {
+            if self.integration.roleArn not in ["None", None]:
+                boto3_helper = Boto3Helper(
+                    self.ctx, integration=self.integration.model_dump()
+                )
+                envs = {
+                    "AWS_ACCESS_KEY_ID": boto3_helper.get_access_key(),
+                    "AWS_SECRET_ACCESS_KEY": boto3_helper.get_secret_key(),
+                    "AWS_SESSION_TOKEN": boto3_helper.get_session_token(),
+                }
+            else:
+                envs = {
+                    "AWS_ACCESS_KEY_ID": str(self.integration.access_key),
+                    "AWS_SECRET_ACCESS_KEY": str(self.integration.secret_key),
+                }
+                if self.integration.session_token not in [None, "None"]:
+                    envs["AWS_SESSION_TOKEN"] = str(self.integration.session_token)
+            envs.update({
                 "OPENSEARCH_HOST_URL": self.integration.host_url,
-                "OPENSEARCH_URL_PORT": 443,
-                "AWS_ACCESS_KEY_ID": aws_creds.access_key,
-                "AWS_SECRET_ACCESS_KEY": aws_creds.secret_key,
-                "AWS_SESSION_TOKEN": aws_creds.session_token,
-            }
+                "OPENSEARCH_URL_PORT": str(443)
+            })
         else:
             envs = {
                 "OPENSEARCH_HOST_URL": self.integration.host_url,
-                "OPENSEARCH_URL_PORT": self.integration.port,
+                "OPENSEARCH_URL_PORT": str(self.integration.port),
                 "OPENSEARCH_USERNAME": self.integration.username,
                 "OPENSEARCH_PASSWORD": self.integration.password,
             }

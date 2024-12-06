@@ -1,4 +1,6 @@
+import re
 from typing import List, Optional
+import uuid
 import yaml
 import json
 from autobotAI_integrations.open_api_schema import OpenAPIAction, OpenAPIPathModel, OpenAPISchema
@@ -12,7 +14,7 @@ class OpenApiParser:
         self.paths: Optional[List[OpenAPIPathModel]] = None
         self.tags: Optional[List[dict]] = None
         self.security: Optional[List[dict]] = None
-        self.components: Optional[dict] = None
+        self.components: Optional[dict] = dict()
         self.open_api_schema: Optional[OpenAPISchema] = None
 
     def _parse_version_type(self):
@@ -253,9 +255,13 @@ class OpenApiParser:
                         parameter.values = parameter.example
                 parameters.append(parameter)
 
+            action_name = re.sub(r"[^A-Za-z0-9\- ]", "", str(path.summary))
+            action_name = re.sub(r"\s+", " ", action_name).strip()
+            if not action_name:
+                action_name = path.method.upper() + " Action" + str(uuid.uuid4().hex[:5])
             actions.append(
                 OpenAPIAction(
-                    name=path.summary,
+                    name=action_name,
                     description=path.description,
                     code=path.path_url,
                     integration_type=integration_type,

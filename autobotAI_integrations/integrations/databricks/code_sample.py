@@ -25,9 +25,6 @@ def executor(context):
 
     # User's Python code execution logic goes here
     # (Replace this comment with the your actual code)
-
-    # Example: Retrieve the list of subscriptions (for illustration purposes only)
-
     clients = context["clients"]
     workspace_client = clients["WorkspaceClient"]
 

@@ -46,7 +46,8 @@ class DatabricksIntegration(BaseSchema):
     @classmethod
     def validate_account_host(cls, account_host):
         if account_host.strip() == "":
-            return None
+            return "https://accounts.cloud.databricks.com/"
+        return account_host
 
     def __init__(self, *args, **kwargs):
         if not kwargs.get("accountId"):
@@ -56,7 +57,7 @@ class DatabricksIntegration(BaseSchema):
         return super().__init__(*args, **kwargs)
 
 
-class SlackService(BaseService):
+class DatabricksService(BaseService):
     def __init__(self, ctx, integration: DatabricksIntegration):
         if not isinstance(integration, DatabricksIntegration):
             integration = DatabricksIntegration(**integration)
@@ -147,9 +148,9 @@ class SlackService(BaseService):
         clients_classes = dict()
         for client in client_definitions:
             try:
-                client_module = importlib.import_module(client.module, package=None)
-                if hasattr(client_module, client.class_name):
-                    cls = getattr(client_module, client.class_name)
+                client_module = importlib.import_module(client.import_library_names[0], package=None)
+                if hasattr(client_module, client.name):
+                    cls = getattr(client_module, client.name)
                     if client.name == "AccountClient":
                         clients_classes[client.name] = cls(
                             host=payload_task.creds.envs["DATABRICKS_ACCOUNT_HOST"],

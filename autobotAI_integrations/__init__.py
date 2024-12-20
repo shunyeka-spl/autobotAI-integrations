@@ -420,7 +420,7 @@ def executor(context):
         logger.debug("Checking for Query type")
         if payload_task.executable.startswith(f"{payload_task.creds.plugin_name}_compliance"):
             execution_mode = "compliance"
-        elif payload_task.executable.startswith("select"):
+        elif payload_task.executable.lower().startswith("select"):
             execution_mode = "query"
         else:
             raise ValueError("Execution mode is not supported.")
@@ -604,7 +604,7 @@ def executor(context):
             )
             logger.debug(f"Response: {response}")
 
-            if response.get("abAI-client-error"):
+            if isinstance(response, dict) and response.get("abAI-client-error"):
                 errors.append(
                     {
                         "message": str(response["abAI-client-error"])

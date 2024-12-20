@@ -13,7 +13,7 @@ from autobotAI_integrations.models import (
 )
 from autobotAI_integrations.payload_schema import PayloadTask
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
-from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
+from opensearchpy import AuthorizationException, OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 from autobotAI_integrations.utils.logging_config import logger
 
 
@@ -124,6 +124,8 @@ class OpensearchService(BaseService):
                 return {"success": False, "error": "Invalid Authentication Method."}
             logger.info(str(client.info()))
             return {"success": True}
+        except AuthorizationException as e:
+            return {"success": False, "error": str(e.error)}
         except Exception as e:
             logger.error(str(e))
             return {"success": False, "error": "Request failed with unexpected error"}
@@ -225,11 +227,11 @@ class OpensearchService(BaseService):
                             "options": [
                                 {
                                     "label": "Amazon OpenSearch Service",
-                                    "value": "amazon_opensearch",
+                                    "value": AWSOpensearchType.AWS_OPENSEARCH_SERVICE.value,
                                 },
                                 {
                                     "label": "OpenSearch Serverless",
-                                    "value": "opensearch_serverless",
+                                    "value": AWSOpensearchType.OPENSEARCH_SERVERLESS.value,
                                 },
                             ],
                             "required": True,
@@ -267,15 +269,15 @@ class OpensearchService(BaseService):
                             "type": "text",
                             "label": "Username",
                             "placeholder": "Enter your username",
-                            "required": False,
+                            "required": True,
                         },
                         {
                             "name": "password",
                             "type": "text/password",
                             "label": "Password",
                             "placeholder": "Enter your password",
-                            "required": False,
-                        }
+                            "required": True,
+                        },
                     ],
                 },
             ],

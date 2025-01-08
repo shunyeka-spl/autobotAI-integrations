@@ -24,6 +24,12 @@ def sample_integration_dict():
         }
     return _sample_integration_dict
 
+@pytest.fixture(autouse=True)
+def caplog_autouse(caplog):
+    """
+    Automatically enable caplog for all tests in this module.
+    """
+    return caplog
 
 @pytest.fixture
 def sample_context_data():

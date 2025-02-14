@@ -18,7 +18,7 @@ from .http_requests_client import HTTPRequestClient
 
 
 class PythonHTTPRequestIntegration(BaseSchema):
-    api_url: str = Field(default="https://localhost:3000")
+    api_url: str = Field(default=None,exclude=True)
     headers_json : Dict[str,str] = Field(default=dict(),exclude=True)
     ignore_ssl : bool = False
     name: Optional[str] = "Python HTTP REST API"
@@ -83,8 +83,8 @@ class PythonHTTPService(BaseService):
                     "name": "api_url",
                     "type": "text/url",
                     "label": "API URL",
-                    "placeholder": "default: 'https://ng-api-http.coralogix.com'",
-                    "description": "Enter your domain api url, for more info: https://coralogix.com/docs/coralogix-endpoints/#data-prime",
+                    "placeholder": "default: HTTP Integration",
+                    "description": "Enter your domain api url",
                     "required": True,
                 },
                 {
@@ -93,13 +93,13 @@ class PythonHTTPService(BaseService):
                     "label": "Ignore SSL ",
                     "placeholder": "default: 'False'",
                     "description": "",
-                    "required": True,
+                    "required": False,
                 },
                 {
                     "name": "headers_json",
                     "type": "textarea",
                     "label": "Header KV",
-                    "placeholder": "--",
+                    "placeholder": r'{"Authorization": "Bearer ABC" }',
                     "required": True,
                 },
             ],
@@ -144,7 +144,6 @@ class PythonHTTPService(BaseService):
         ]
 
     def generate_python_sdk_creds(self, requested_clients=None) -> SDKCreds:
-        self.integration : PythonHTTPRequestIntegration
         creds = {
             "PYTHON_HTTP_API_URL": self.integration.api_url,
             "PYTHON_HTTP_HEADERS": json.dumps(self.integration.headers_json),

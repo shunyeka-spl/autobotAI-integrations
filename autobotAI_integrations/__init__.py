@@ -215,6 +215,52 @@ def executor(context):
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask,
                                             client_definitions: List[SDKClient]) -> list:
         raise NotImplementedError()
+    
+    @classmethod
+    def fetch_client_method_registry(cls):
+        try:
+            if ConnectionInterfaces.PYTHON_SDK not in cls.supported_connection_interfaces():
+                return []
+            base_path = os.path.dirname(inspect.getfile(cls))
+            integration_type = cls.get_integration_type()
+            with open(path.join(base_path, 'client_method_registry.json')) as f:
+                clients_data = f.read()
+                data = json.loads(clients_data)
+            return data
+        except Exception as e:
+            print(str(e))
+            traceback.print_exc()
+            return {}
+    
+    @classmethod
+    def _find_all_methods_from_client(cls, client: str):
+        try:
+            data = cls.fetch_client_method_registry()
+            return data[client].keys()
+        except Exception as e:
+            print(str(e))
+            traceback.print_exc()
+            return []
+    
+    @classmethod
+    def _find_documentation_details(cls, client: str, method_name: str):
+        try:
+            data = cls.fetch_client_method_registry()
+            return {
+                "urls": [],
+                "content": data.get(client, {}).get(method_name, "No details available"),
+                "client": client,
+                "method_name": method_name,
+            } 
+        except Exception as e:
+            print(str(e))
+            traceback.print_exc()
+            return {
+                "urls": [],
+                "content": "No details are available regarding client and method",
+                "client": client,
+                "method_name": method_name,
+            } 
 
     def build_python_exec_combinations(self, payload_task: PayloadTask):
         client_definitions = self.find_client_definitions(payload_task.clients)

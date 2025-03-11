@@ -40,6 +40,7 @@ setup(
             "integrations/*/python_sdk_clients.yml",
             "integrations/*/compliance.json",
             "integrations/*/open_api.json",
+            "integrations/*/client_method_registry.json"
         ]
     },
     classifiers=[

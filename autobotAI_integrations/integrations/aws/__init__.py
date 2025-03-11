@@ -186,6 +186,36 @@ class AWSService(BaseService):
 """
         return SteampipeCreds(envs=creds, plugin_name="aws", connection_name="aws",
                               conf_path=conf_path, config=config)
+    
+    @classmethod
+    def _find_all_methods_from_client(cls, client) -> List[Union[str, dict]]:
+        print(f"Fetching methods for {client}")
+        try:
+            return [
+                method_name
+                for method_name in dir(boto3.client(client))
+                if not method_name.startswith("_")
+            ]
+        except Exception as e:
+            logger.error(f"Failed to fetch methods from client {e}")
+            logger.debug(traceback.format_exc())
+            return []
+        
+    @classmethod
+    def _find_documentation_details(cls, client: str, method_name: str):
+        doc_url = (
+            f"https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/{client}.html"
+            if not method_name
+            else f"https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/{client}/client/{method_name}.html"
+        )
+        return {
+            # Uncomment In case of helucination
+            # "urls": [doc_url],
+            "urls": [],
+            "content": None,
+            "client": client,
+            "method_name": method_name
+        }
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask,
                                             client_definitions: List[SDKClient]) -> list:

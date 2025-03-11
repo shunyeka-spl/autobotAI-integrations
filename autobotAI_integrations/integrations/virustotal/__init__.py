@@ -104,6 +104,16 @@ class VirusTotalService(BaseService):
             conf_path=conf_path,
             config=config,
         )
+        
+    @classmethod
+    def _find_documentation_details(cls, client: str, method_name: str):
+        method_details = super()._find_documentation_details().get('content') + ", To convert vt object to dictionary use `ip_info = client.get_object('/ip_addresses/{ip}')\nresult = ip_info.to_dict()`",
+        return {
+            "urls": [],
+            "content": method_details,
+            "client": client,
+            "method_name": method_name
+        }
 
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]

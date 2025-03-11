@@ -109,6 +109,22 @@ class CoralogixService(BaseService):
             # ConnectionInterfaces.REST_API
         ]
 
+    @classmethod
+    def _find_all_methods_from_client(cls, client) -> List[Union[str, dict]]:
+        return ["run_query"]
+
+    @classmethod
+    def _find_documentation_details(cls, client: str, method_name: str):
+        return {
+            "urls": [
+                "https://cloud.ibm.com/docs/cloud-logs?topic=cloud-logs-dataprime-qs",
+                "https://cloud.ibm.com/docs/cloud-logs?topic=cloud-logs-dataprime-ref",
+            ],
+            "content": None,
+            "client": client,
+            "method_name": method_name,
+        }
+
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:

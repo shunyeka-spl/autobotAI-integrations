@@ -7,8 +7,6 @@
 - is_regional: true
   name: acm-pca
 - is_regional: true
-  name: alexaforbusiness
-- is_regional: true
   name: amp
 - is_regional: true
   name: amplify
@@ -56,8 +54,6 @@
   name: backup
 - is_regional: true
   name: backup-gateway
-- is_regional: true
-  name: backupstorage
 - is_regional: true
   name: batch
 - is_regional: false
@@ -114,8 +110,6 @@
   name: codeguruprofiler
 - is_regional: true
   name: codepipeline
-- is_regional: true
-  name: codestar
 - is_regional: true
   name: codestar-connections
 - is_regional: false
@@ -199,8 +193,6 @@
 - is_regional: true
   name: eks
 - is_regional: true
-  name: elastic-inference
-- is_regional: true
   name: elasticache
 - is_regional: true
   name: elasticbeanstalk
@@ -243,8 +235,6 @@
 - is_regional: true
   name: gamelift
 - is_regional: true
-  name: gamesparks
-- is_regional: true
   name: glacier
 - is_regional: false
   name: globalaccelerator
@@ -264,8 +254,6 @@
   name: health
 - is_regional: true
   name: healthlake
-- is_regional: true
-  name: honeycode
 - is_regional: false
   name: iam
 - is_regional: true
@@ -284,10 +272,6 @@
   name: iot-data
 - is_regional: true
   name: iot-jobs-data
-- is_regional: false
-  name: iot1click-devices
-- is_regional: true
-  name: iot1click-projects
 - is_regional: true
   name: iotanalytics
 - is_regional: true
@@ -369,8 +353,6 @@
 - is_regional: true
   name: machinelearning
 - is_regional: true
-  name: macie
-- is_regional: true
   name: macie2
 - is_regional: true
   name: managedblockchain
@@ -410,8 +392,6 @@
   name: migrationhub-config
 - is_regional: true
   name: migrationhubstrategy
-- is_regional: false
-  name: mobile
 - is_regional: true
   name: mq
 - is_regional: true
@@ -424,8 +404,6 @@
   name: network-firewall
 - is_regional: false
   name: networkmanager
-- is_regional: true
-  name: nimble
 - is_regional: true
   name: opensearch
 - is_regional: true
@@ -616,8 +594,6 @@
   name: wisdom
 - is_regional: true
   name: workdocs
-- is_regional: false
-  name: worklink
 - is_regional: true
   name: workmail
 - is_regional: false

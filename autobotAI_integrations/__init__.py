@@ -222,7 +222,14 @@ def executor(context):
         current_installation = set()
 
         use_system_python = type(payload_task.context.integration).__name__ == "LinuxIntegration"
-        python_exec = shutil.which("python3") or shutil.which("python") if use_system_python else sys.executable
+        
+        # Get system Python for LinuxIntegration or fall back to sys.executable otherwise
+        if use_system_python:
+            python_exec = shutil.which("python3") or shutil.which("python")
+            if not python_exec:
+                raise RuntimeError("Python executable not found on the system for LinuxIntegration.")
+        else:
+            python_exec = sys.executable    
 
         # Installation dir by 'idx' to prevent packages co-interference
         for idx, client in enumerate(client_definitions):

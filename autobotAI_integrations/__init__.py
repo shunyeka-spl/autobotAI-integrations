@@ -1,4 +1,5 @@
 import importlib
+import shutil
 import os
 import subprocess
 import sys
@@ -219,10 +220,14 @@ def executor(context):
     def build_python_exec_combinations(self, payload_task: PayloadTask):
         client_definitions = self.find_client_definitions(payload_task.clients)
         current_installation = set()
+
+        use_system_python = type(payload_task.context.integration).__name__ == "LinuxIntegration"
+        python_exec = shutil.which("python3") or shutil.which("python") if use_system_python else sys.executable
+
         # Installation dir by 'idx' to prevent packages co-interference
         for idx, client in enumerate(client_definitions):
             if client.pip_package_names and not set(client.pip_package_names).issubset(current_installation):
-                logger.info(f"Installing {client.pip_package_names}")
+                logger.info(f"Installing {client.pip_package_names} with {python_exec}")
                 try:
                     # prevents the reinstallation of the same package for different tasks
                     subprocess.check_call(
@@ -232,7 +237,7 @@ def executor(context):
                 except subprocess.CalledProcessError:
                     subprocess.check_call(
                         [
-                            sys.executable, "-m",
+                             python_exec, "-m",
                             "pip", "install", " ".join(client.pip_package_names),
                             "-t", f"/tmp/{idx}/", "--no-cache-dir", "--upgrade"
                         ]

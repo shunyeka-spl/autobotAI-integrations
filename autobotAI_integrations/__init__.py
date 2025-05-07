@@ -1,5 +1,6 @@
 import importlib
 import os
+import shutil
 import subprocess
 import sys
 import inspect
@@ -219,6 +220,38 @@ def executor(context):
     def build_python_exec_combinations(self, payload_task: PayloadTask):
         client_definitions = self.find_client_definitions(payload_task.clients)
         current_installation = set()
+
+        # Check if running in a frozen state (e.g., bundled with PyInstaller for linux integration).
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            # attempt to locate the system's Python executable.
+            python_exec = shutil.which("python3") or shutil.which("python")
+            exec_mode = "frozen"
+            if not python_exec:
+                raise RuntimeError("Python executable not found on the system.")
+        else:
+            python_exec = sys.executable
+            exec_mode = "source"  
+
+
+        # Extract user packages for python integration
+        user_packages = []
+        integration = payload_task.context.integration
+
+        if getattr(integration, "cspName", "").lower() == "python":
+            user_packages_raw = getattr(integration, "packages", "")
+
+            if isinstance(user_packages_raw, str):
+                user_packages = [
+                    line.strip() for line in user_packages_raw.splitlines()
+                    if line.strip() and not line.strip().startswith("#")
+                ]
+            else:
+                logger.warning("User packages are not a valid string.")
+
+        for client in client_definitions:
+            if user_packages:
+                client.pip_package_names = list(set(client.pip_package_names or []) | set(user_packages))         
+
         # Installation dir by 'idx' to prevent packages co-interference
         for idx, client in enumerate(client_definitions):
             if client.pip_package_names and not set(client.pip_package_names).issubset(current_installation):

@@ -6,6 +6,7 @@ import sys
 import inspect
 import platform
 import json
+import urllib.parse
 from copy import deepcopy
 import traceback
 from enum import Enum
@@ -672,6 +673,17 @@ def executor(context):
             logger.info(f"Request URL: {request_url}")
 
             logger.info("Making request..")
+            query_params = {
+                    **(payload_task.creds.query_params or {}),
+                    **(params.get("query_parameters") or {}),
+                }
+            for key, value in query_params.items():
+                try:
+                    if not isinstance(value, str):
+                        value = json.dumps(value, default=str)
+                except:
+                    value = str(value)
+                query_params[key] = urllib.parse.quote(value)
 
             if payload_task.creds.request_body_type == RestAPIRequestBodyType.FORM_DATA.value:  # noqa: F405
                 params["form_data"] = params.get("json_data", None)

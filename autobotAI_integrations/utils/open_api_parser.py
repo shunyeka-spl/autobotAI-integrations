@@ -220,6 +220,63 @@ class OpenApiParser:
             return schema
         return _schema
 
+    def _extract_response_fields(self, responses: dict) -> List[dict]:
+        """Extract response fields from OpenAPI responses for UI field selection"""
+        fields = []
+        
+        # Look for 200 response first, then any 2xx response
+        success_response = responses.get("200") or next(
+            (resp for code, resp in responses.items() if code.startswith("2")), None
+        )
+        
+        if not success_response:
+            return fields
+            
+        content = success_response.get("content", {})
+        json_content = content.get("application/json", {})
+        schema = json_content.get("schema", {})
+        
+        if schema:
+            fields = self._parse_schema_fields(schema)
+            
+        return fields
+    
+    def _parse_schema_fields(self, schema: dict, path: str = "") -> List[dict]:
+        """Recursively parse schema to extract field information"""
+        fields = []
+        
+        # Resolve references
+        if "$ref" in schema:
+            ref_schema = self._get_reference_to_dict(schema["$ref"])
+            if ref_schema:
+                return self._parse_schema_fields(ref_schema, path)
+        
+        if schema.get("type") == "object":
+            properties = schema.get("properties", {})
+            for field_name, field_schema in properties.items():
+                field_path = f"{path}.{field_name}" if path else field_name
+                field_type = field_schema.get("type", "unknown")
+                description = field_schema.get("description", "")
+                
+                fields.append({
+                    "name": field_name,
+                    "path": field_path,
+                    "type": field_type,
+                    "description": description
+                })
+                
+                # Recursively parse nested objects
+                if field_type == "object":
+                    nested_fields = self._parse_schema_fields(field_schema, field_path)
+                    fields.extend(nested_fields)
+                elif field_type == "array":
+                    items_schema = field_schema.get("items", {})
+                    if items_schema.get("type") == "object":
+                        nested_fields = self._parse_schema_fields(items_schema, f"{field_path}[]")
+                        fields.extend(nested_fields)
+        
+        return fields
+
     def parse_file(self, file_path: str):
         """Parses the openapi or swagger file
 
@@ -300,6 +357,9 @@ class OpenApiParser:
             action_name = re.sub(r"[^A-Za-z0-9\- ]", "", str(action_name))
             action_name = re.sub(r"\s+", " ", action_name).strip()
             
+            # Extract response fields for UI selection
+            response_fields = self._extract_response_fields(path.responses or {})
+            
             actions.append(
                 OpenAPIAction(
                     name=action_name,
@@ -310,6 +370,7 @@ class OpenApiParser:
                     integration_type=integration_type,
                     parameters_definition=parameters,
                     header_details=self.security,
+                    response_fields=response_fields,
                 )
             )
         return actions

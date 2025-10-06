@@ -48,7 +48,7 @@ class DATADOGService(BaseService):
             }
 
             # Make the API request
-            url = self.integration.api_url + "" if str(self.integration.api_url).endswith("/") else "/"
+            url = self.integration.api_url + ("" if str(self.integration.api_url).endswith("/") else "/")
             response = requests.get(f"{url}api/v1/validate", headers=headers)
             if response.status_code == 200:
                 return {"success": True}

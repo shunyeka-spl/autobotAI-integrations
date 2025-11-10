@@ -80,7 +80,7 @@ class ServiceNowService(BaseService):
         return {
             "label": "ServiceNow",
             "type": "form",
-            "children": 
+            "children": [
                 {
                     "label": "Basic Auth Integration",
                     "type": "form",
@@ -110,6 +110,7 @@ class ServiceNowService(BaseService):
                         },
                     ],
                 },
+            ]
         }
 
     @staticmethod

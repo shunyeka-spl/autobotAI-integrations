@@ -109,7 +109,7 @@ class ServiceNowService(BaseService):
                             "required": True,
                         },
                     ],
-                },
+                }
             ]
         }
 

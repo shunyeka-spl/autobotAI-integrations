@@ -330,6 +330,7 @@ def executor(context):
                         f"/tmp/{idx}/",
                         "--no-cache-dir",
                         "--upgrade",
+                        "--no-build-isolation",
                     ]
                 )
                 sys.path.insert(1, f"/tmp/{idx}/")

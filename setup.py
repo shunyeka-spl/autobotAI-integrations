@@ -60,7 +60,7 @@ setup(
             "llama-index",
             "llama-index-llms-openai==0.7.3",
             "llama-index-llms-bedrock",
-            "llama-index-embeddings-openai>=0.5.0,<0.6.0",
+            "llama-index-embeddings-openai",
             "llama-index-embeddings-bedrock",
             "ark-sdk-python",
         ],

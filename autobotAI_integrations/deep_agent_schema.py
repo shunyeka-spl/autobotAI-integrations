@@ -393,6 +393,14 @@ class DeepAgentPayload(Payload):
         default_factory=list, description="Remote MCP servers to connect"
     )
 
+    # --- Platform capabilities -----------------------------------------------
+    platform_catalog: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Discovery catalog of platform capabilities: "
+        "[{slug, name, description, enabled}] — capabilities the account "
+        "could have, tagged whether each is currently enabled.",
+    )
+
     # --- Workspace S3 URLs -------------------------------------------------
     workspace_url: Optional[str] = Field(
         None, description="Presigned GET URL to download prior workspace archive"

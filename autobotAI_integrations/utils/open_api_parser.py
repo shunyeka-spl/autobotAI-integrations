@@ -292,7 +292,7 @@ class OpenApiParser:
                 if (
                     getattr(parameter, "in_", None) == "body"
                     and not parameter.values
-                    and parameter.example
+                    and parameter.example is not None
                 ):
                     parameter.values = parameter.example
                 parameters.append(parameter)

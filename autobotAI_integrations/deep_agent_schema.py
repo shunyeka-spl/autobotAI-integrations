@@ -246,6 +246,11 @@ class GoalResolution(str, Enum):
     NO_ACTION = "no_action"
     BLOCKED_AUTO = "blocked_auto"
     BLOCKED_APPROVED = "blocked_approved"
+    # Handed to a human/owner; the run is over but the outcome is undetermined.
+    # Must stay in sync with GoalResolutionLiteral in the agent repo
+    # (agent_core/agent.py) — the Literal is duplicated there deliberately for
+    # PyArmor, so adding a member here alone is not enough.
+    ESCALATED = "escalated"
     FAILED = "failed"
     TIMED_OUT = "timed_out"
 

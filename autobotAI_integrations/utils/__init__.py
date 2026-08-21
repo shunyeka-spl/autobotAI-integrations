@@ -288,7 +288,7 @@ def oscf_based_steampipe_json(data, integration_type, integration_id, query):
             )
     return result
 
-def get_restapi_validated_params(params: List[Param]):
+def get_restapi_validated_params(params: List[Union[Param, dict]]):
     filtered_params = {
         "headers": {},
         "query_parameters": {},
@@ -296,49 +296,60 @@ def get_restapi_validated_params(params: List[Param]):
         "json_data": {},
         "method": None,
     }
-    for param in params:
-        if getattr(param, "in_") == "headers":
-            for key, value in param.values.items():
-                if key.lower() == "authorization":
-                    raise ValueError("Authorization header is not allowed.")
-                filtered_params["headers"][key] = value
-        elif getattr(param, "in_") == "header":
-            if param.name.lower() == "authorization":
+    for param in params or []:
+        p_in = getattr(param, "in_", None) or getattr(param, "in", None)
+        if p_in is None and isinstance(param, dict):
+            p_in = param.get("in_") or param.get("in")
+        p_name = getattr(param, "name", None) if not isinstance(param, dict) else param.get("name")
+        p_values = getattr(param, "values", None) if not isinstance(param, dict) else param.get("values")
+
+        if p_in == "headers":
+            if isinstance(p_values, dict):
+                for key, value in p_values.items():
+                    if key.lower() == "authorization":
+                        raise ValueError("Authorization header is not allowed.")
+                    filtered_params["headers"][key] = value
+        elif p_in == "header":
+            if p_name and p_name.lower() == "authorization":
                 raise ValueError("Authorization header is not allowed.")
-            filtered_params["headers"][param.name] = param.values
-        elif getattr(param, "in_") == "method":
-            if not isinstance(param.values, str):
+            if p_name:
+                filtered_params["headers"][p_name] = p_values
+        elif p_in == "method":
+            if p_values is not None and not isinstance(p_values, str):
                 raise ValueError("Method must be a string.")
-            filtered_params["method"] = param.values.upper() if param.values else param.values
-        elif getattr(param, "in_") == "query":
-            if param.values is None:
+            filtered_params["method"] = p_values.upper() if p_values else p_values
+        elif p_in == "query":
+            if p_values is None:
                 continue
-            if param.name == "q": # Decoding query parameters, as passing encoded params for q will get double enccoded by requests. params
+            if p_name == "q" and isinstance(p_values, str): # Decoding query parameters, as passing encoded params for q will get double encoded by requests. params
                 try:
-                    param.values = urllib.parse.unquote_plus(param.values)
-                except Exception as e:
-                    print(traceback.print_exc())
-            filtered_params["query_parameters"][param.name] = param.values
-        elif getattr(param, "in_") == "path":
-            if param.name.lower() == "base_url":
+                    p_values = urllib.parse.unquote_plus(p_values)
+                except Exception:
+                    pass
+            if p_name:
+                filtered_params["query_parameters"][p_name] = p_values
+        elif p_in == "path":
+            if p_name and p_name.lower() == "base_url":
                 raise ValueError(
                     "The path parameter 'base_url' is not allowed. Please use a different name."
                 )
-            filtered_params["path_parameters"][param.name] = param.values
-        elif getattr(param, "in_") == "body":
+            if p_name:
+                filtered_params["path_parameters"][p_name] = p_values
+        elif p_in == "body":
             if filtered_params["json_data"]:
                 raise ValueError("Only one JSON body parameter is Allowed")
-            if isinstance(param.values, str):
+            if isinstance(p_values, str):
                 try:
-                    param.values = json.loads(param.values)
+                    p_values = json.loads(p_values)
                 except json.JSONDecodeError:
                     raise ValueError("Invalid JSON Body string provided.")
-            filtered_params["json_data"] = param.values
-        elif getattr(param, "in_") == "timeout":
-            if not isinstance(param.values, int):
+            filtered_params["json_data"] = p_values
+        elif p_in == "timeout":
+            if not isinstance(p_values, int):
                 raise ValueError("Timeout must be an integer.")
-            filtered_params["timeout"] = param.values
+            filtered_params["timeout"] = p_values
     return filtered_params
+
 
 
 def load_actions_from_mcp_server_config(server_config) -> List[MCPServerAction]:

@@ -58,6 +58,6 @@ Below is a comprehensive overview of the support for both No-Code and Code Actio
 | <img src="../autobotAI_integrations/integrations/uptimerobot/logo-img/light.svg" alt="Uptimerobot" width="40" height="40"><br>**Uptimerobot** | ✅ | ❌ | [link](./uptimerobot/Integrate.md)|
 | <img src="../autobotAI_integrations/integrations/urlscan/logo-img/light.svg" alt="URLScan" width="40" height="40"><br>**URLScan** | ✅ | ❌ | [link](./urlscan/Integrate.md)|
 | <img src="../autobotAI_integrations/integrations/virustotal/logo-img/light.svg" alt="VirusTotal" width="40" height="40"><br>**VirusTotal** | ✅ | ✅ | [link](./virustotal/Integrate.md)|
-| <img src="../autobotAI_integrations/integrations/whois/logo-img/light.svg" alt="WHOIS" width="40" height="40"><br>**WHOIS** | ✅ | ❌ | [link](./whois/Integrate.md)|
+| <img src="../autobotAI_integrations/integrations/whois/logo-img/light.svg" alt="WHOIS" width="40" height="40"><br>**WHOIS** | ✅ | ✅ | [link](./whois/Integrate.md)|
 | <img src="../autobotAI_integrations/integrations/wiz/logo-img/light.svg" alt="Wiz" width="40" height="40"><br>**Wiz** | ✅ | ❌ | [link](./wiz/Integrate.md)|
 -->

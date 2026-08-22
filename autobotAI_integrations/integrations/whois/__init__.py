@@ -4,7 +4,11 @@ from autobotAI_integrations import (
     BaseService,
     ConnectionInterfaces,
 )
-from autobotAI_integrations.models import IntegrationCategory, SteampipeCreds
+from autobotAI_integrations.models import (
+    IntegrationCategory,
+    SteampipeCreds,
+    RestAPICreds,
+)
 
 
 class WhoisIntegrations(BaseSchema):
@@ -71,3 +75,13 @@ class WhoisService(BaseService):
             conf_path=conf_path,
             config=config,
         )
+
+    def generate_rest_api_creds(self) -> RestAPICreds:
+        return RestAPICreds(
+            base_url="https://rdap.org",
+            headers={
+                "Accept": "application/rdap+json, application/json",
+                "User-Agent": "autobotAI/1.0",
+            },
+        )
+

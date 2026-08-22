@@ -350,11 +350,21 @@ class OffensiveSecurityConfig(BaseModel):
     engagement_type: EngagementType = Field(
         EngagementType.PENTEST, description="pentest | red_team | ai_red_team"
     )
+    application_id: Optional[str] = Field(
+        None,
+        description=(
+            "Id of the registered application every finding this scan records is "
+            "filed under. The authoritative binding: the runtime sends it with "
+            "each recorded task so the platform routes findings to that "
+            "application's resolver without re-matching an application name."
+        ),
+    )
     application: Optional[str] = Field(
         None,
         description=(
-            "Workload/application slug findings are recorded under (drives task "
-            "creation via the guardian task register)."
+            "Slug of the same application — carried for display and for the older "
+            "record paths that key on it. Derived from application_id, never an "
+            "independent value."
         ),
     )
     instructions_file: Optional[str] = Field(

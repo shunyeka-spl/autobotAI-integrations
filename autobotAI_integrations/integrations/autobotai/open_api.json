@@ -766,6 +766,378 @@
           }
         }
       }
+    },
+    "/guardian/tasks/record": {
+      "post": {
+        "summary": "Record Guardian Tasks",
+        "description": "Batch create or update discovered work items (tasks) in the Guardian task register. Idempotent based on source, source_event_id, and application.",
+        "operationId": "recordGuardianTasks",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": { "type": "string" },
+                        "name": { "type": "string" },
+                        "domain": { "type": "string", "enum": ["security", "cloud_ops", "observability", "cost", "identity", "compliance"] },
+                        "category": { "type": "string" },
+                        "source_event_id": { "type": "string" },
+                        "description": { "type": "string" },
+                        "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"] },
+                        "application": { "type": "string" },
+                        "team": { "type": "string" },
+                        "owner_ref": { "type": "string" },
+                        "assignee_ref": { "type": "string" }
+                      },
+                      "required": ["source", "name", "domain", "category"]
+                    }
+                  }
+                },
+                "required": ["tasks"],
+                "example": {
+                  "tasks": [
+                    {
+                      "source": "my-scanner",
+                      "name": "Unencrypted S3 Bucket",
+                      "domain": "security",
+                      "category": "cloud_misconfig",
+                      "source_event_id": "event-12345",
+                      "description": "Found a public bucket",
+                      "severity": "High",
+                      "application": "my-payment-service"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/guardian/tasks": {
+      "get": {
+        "summary": "List/Filter Guardian Tasks",
+        "description": "Retrieves a list of Guardian tasks with rich filters and pagination.",
+        "operationId": "listGuardianTasks",
+        "parameters": [
+          { "name": "domain", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "description": "Comma-separated statuses to filter", "required": false, "schema": { "type": "string" } },
+          { "name": "severity", "in": "query", "description": "Comma-separated severities to filter", "required": false, "schema": { "type": "string" } },
+          { "name": "application", "in": "query", "description": "Filter by application/workload name. Supports comma-separated list of multiple names.", "required": false, "schema": { "type": "string" } },
+          { "name": "team", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "owner_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "assignee_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "disposition", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "outcome", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "parent_task_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "open_only", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "waiting_only", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "sla_breached", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "unowned", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "unassigned", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "sort_by", "in": "query", "required": false, "schema": { "type": "string", "default": "sla_deadline" } },
+          { "name": "descending", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "number_of_items", "in": "query", "required": false, "schema": { "type": "integer", "default": 25 } },
+          { "name": "page_number", "in": "query", "required": false, "schema": { "type": "integer", "default": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Guardian Task Details",
+        "description": "Retrieves the full details of a specific Guardian task.",
+        "operationId": "getGuardianTask",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      },
+      "delete": {
+        "summary": "Delete Guardian Task",
+        "description": "Permanently deletes a Guardian task from the task register.",
+        "operationId": "deleteGuardianTask",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/related": {
+      "get": {
+        "summary": "Get Related Tasks and Subgraph",
+        "description": "Retrieves sibling tasks and the associated entity relationship subgraph for a specific Guardian task.",
+        "operationId": "getRelatedGuardianTasks",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/transition": {
+      "post": {
+        "summary": "Transition Guardian Task Status",
+        "description": "Manually transitions a Guardian task to a new workflow status (e.g., COMPLETED, FAILED, IN_PROGRESS).",
+        "operationId": "transitionGuardianTask",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to_status": { "type": "string", "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"] },
+                  "note": { "type": "string" },
+                  "disposition": { "type": "string", "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"] },
+                  "outcome": { "type": "string", "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"] }
+                },
+                "required": ["to_status"],
+                "example": {
+                  "to_status": "COMPLETED",
+                  "note": "Issue resolved successfully",
+                  "disposition": "auto_remediated",
+                  "outcome": "TRUE_POSITIVE"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/assign": {
+      "post": {
+        "summary": "Assign Guardian Task",
+        "description": "Assigns a Guardian task to an analyst email reference.",
+        "operationId": "assignGuardianTask",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assignee_ref": { "type": "string" }
+                },
+                "example": {
+                  "assignee_ref": "analyst@company.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/comment": {
+      "post": {
+        "summary": "Comment on Guardian Task",
+        "description": "Appends an audit comment or note to the task timeline.",
+        "operationId": "commentGuardianTask",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": { "type": "string" }
+                },
+                "required": ["note"],
+                "example": {
+                  "note": "Checking the scanner logs..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/apply": {
+      "post": {
+        "summary": "Apply Completion to Guardian Task",
+        "description": "Applies multiple completion updates (owner, outcome, disposition, etc.) in a single call.",
+        "operationId": "applyGuardianTaskCompletion",
+        "parameters": [
+          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to_status": { "type": "string" },
+                  "note": { "type": "string" },
+                  "disposition": { "type": "string" },
+                  "outcome": { "type": "string" },
+                  "owner_ref": { "type": "string" },
+                  "owner_resolution": { "type": "object" },
+                  "entities": { "type": "array", "items": { "type": "object" } },
+                  "links": { "type": "object" },
+                  "final_action": { "type": "string" },
+                  "final_action_target": { "type": "string" },
+                  "actor": { "type": "string" }
+                },
+                "example": {
+                  "to_status": "COMPLETED",
+                  "note": "Resolved by automation",
+                  "disposition": "auto_remediated",
+                  "outcome": "TRUE_POSITIVE",
+                  "owner_ref": "agent@autobot.live"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/apps": {
+      "get": {
+        "summary": "List AppSec Workloads",
+        "description": "Retrieves the list of all registered AppSec harness workloads for the tenant.",
+        "operationId": "listAppsecWorkloads",
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      },
+      "post": {
+        "summary": "Register AppSec Workload",
+        "description": "Registers or updates a workload harness config for automatic scanning, routing, and deepagent resolution.",
+        "operationId": "registerAppsecWorkload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "application": { "type": "string" },
+                  "resolver_listener_id": { "type": "string" },
+                  "resolver_bot_id": { "type": "string" },
+                  "pentest_bot_id": { "type": "string" },
+                  "sweeper_bot_id": { "type": "string" },
+                  "repo_integration_id": { "type": "string" },
+                  "repos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "repo_url": { "type": "string" },
+                        "base_branch": { "type": "string" }
+                      },
+                      "required": ["repo_url"]
+                    }
+                  },
+                  "scan_targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["image", "code", "url"] },
+                        "ref": { "type": "string" },
+                        "scanner": { "type": "string" }
+                      },
+                      "required": ["type", "ref"]
+                    }
+                  },
+                  "external_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "default_approver": { "type": "string" },
+                  "min_severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"] },
+                  "default_sla_hours": { "type": "integer" },
+                  "goal_details": { "type": "object" }
+                },
+                "required": ["application", "resolver_listener_id"],
+                "example": {
+                  "application": "test-app",
+                  "resolver_listener_id": "listener-12345",
+                  "resolver_bot_id": "bot-12345",
+                  "repos": [
+                    {
+                      "repo_url": "https://github.com/org/repo.git",
+                      "base_branch": "main"
+                    }
+                  ],
+                  "scan_targets": [
+                    {
+                      "type": "code",
+                      "ref": "main",
+                      "scanner": "trivy"
+                    }
+                  ],
+                  "default_approver": "approver@company.com",
+                  "min_severity": "High",
+                  "default_sla_hours": 24
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/apps/{application}": {
+      "delete": {
+        "summary": "Deregister AppSec Workload",
+        "description": "Permanently removes a workload harness configuration from the registry.",
+        "operationId": "deregisterAppsecWorkload",
+        "parameters": [
+          { "name": "application", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
     }
   }
 }

@@ -773,6 +773,7 @@
         "description": "Batch create or update discovered work items (tasks) in the Guardian task register. Idempotent based on source, source_event_id, and application.",
         "operationId": "recordGuardianTasks",
         "requestBody": {
+          "description": "Payload schema:\n- application_id: (Optional) Unique ID of the workload application (find via 'List AppSec Workloads').\n- thread_id: (Optional) Unique thread ID of the active bot execution context.\n- tasks: (Required) List of findings to record:\n  - source: (Required) Detector/tool name (e.g. trivy, snyk, manual).\n  - name: (Required) Title of the finding.\n  - domain: (Required) security, cloud_ops, observability, cost, identity, compliance.\n  - category: (Required) Finding category (e.g. vulnerability, cloud_misconfig).\n  - source_event_id: (Optional) Scanner finding ID.\n  - description: (Optional) Finding details.\n  - severity: (Optional) Critical, High, Medium, Low, Informational.\n  - application: (Optional) Workload name.\n  - team: (Optional) Owner team slug.\n  - owner_ref: (Optional) Owner email.\n  - assignee_ref: (Optional) Assignee email.",
           "required": true,
           "content": {
             "application/json": {
@@ -939,6 +940,7 @@
           }
         ],
         "requestBody": {
+          "description": "Payload schema:\n- to_status: (Required) Target workflow status (NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED).\n- note: (Optional) Explanatory comment/note for the task audit timeline.\n- disposition: (Optional) Workflow resolution verdict (pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated).\n- outcome: (Optional) Scan verification verdict (TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN).",
           "required": true,
           "content": {
             "application/json": {
@@ -996,6 +998,7 @@
           }
         ],
         "requestBody": {
+          "description": "Request payload containing the assignee analyst email reference.",
           "required": true,
           "content": {
             "application/json": {
@@ -1034,6 +1037,7 @@
           }
         ],
         "requestBody": {
+          "description": "Request payload containing the timeline note/comment string.",
           "required": true,
           "content": {
             "application/json": {
@@ -1073,6 +1077,7 @@
           }
         ],
         "requestBody": {
+          "description": "Payload schema:\n- to_status: (Optional) Target workflow status (NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED).\n- note: (Optional) Explanatory audit comment note for the timeline.\n- disposition: (Optional) Workflow resolution verdict (pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated).\n- outcome: (Optional) Scan verification verdict (TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN).\n- owner_ref: (Optional) Risk owner email reference.\n- assignee_ref: (Optional) Assignee email reference.\n- final_action: (Optional) Final remediative action title/command.\n- actor: (Optional) System component/actor name.",
           "required": true,
           "content": {
             "application/json": {
@@ -1158,6 +1163,7 @@
         "description": "Registers or updates a workload harness config for automatic scanning, routing, and deepagent resolution.",
         "operationId": "registerAppsecWorkload",
         "requestBody": {
+          "description": "Payload schema:\n- application: (Required) Unique workload name/slug (e.g. test-app).\n- resolver_listener_id: (Required) Event listener ID to trigger resolver runs.\n- resolver_bot_id: (Optional) DeepAgent bot ID (find via 'List Bots').\n- repo_integration_id: (Optional) VCS account integration ID (find via 'List Integrations').\n- default_approver: (Optional) Fallback reviewer email.\n- repos: (Optional) VCS repository URLs and base branches.\n- scan_targets: (Optional) Scan definitions (type, ref, scanner).\n- default_sla_hours: (Optional) Task resolution SLA in hours.",
           "required": true,
           "content": {
             "application/json": {

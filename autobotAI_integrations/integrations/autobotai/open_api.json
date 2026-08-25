@@ -779,22 +779,31 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "application_id": {
+                    "type": "string",
+                    "description": "Optional: Unique ID of the workload application. Retrieve via 'List AppSec Workloads' action. Required to trigger automatic resolver bot runs."
+                  },
+                  "thread_id": {
+                    "type": "string",
+                    "description": "Optional: Unique thread ID of the active bot execution context."
+                  },
                   "tasks": {
                     "type": "array",
+                    "description": "List of security findings/tasks to record.",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "source": { "type": "string" },
-                        "name": { "type": "string" },
-                        "domain": { "type": "string", "enum": ["security", "cloud_ops", "observability", "cost", "identity", "compliance"] },
-                        "category": { "type": "string" },
-                        "source_event_id": { "type": "string" },
-                        "description": { "type": "string" },
-                        "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"] },
-                        "application": { "type": "string" },
-                        "team": { "type": "string" },
-                        "owner_ref": { "type": "string" },
-                        "assignee_ref": { "type": "string" }
+                        "source": { "type": "string", "description": "The detector or tool name (e.g., trivy, snyk, manual)." },
+                        "name": { "type": "string", "description": "Title/name of the security finding." },
+                        "domain": { "type": "string", "enum": ["security", "cloud_ops", "observability", "cost", "identity", "compliance"], "description": "The OCSF-aligned task domain." },
+                        "category": { "type": "string", "description": "Finding category (e.g., vulnerability, cloud_misconfig)." },
+                        "source_event_id": { "type": "string", "description": "Optional: unique ID from the external scanner." },
+                        "description": { "type": "string", "description": "Optional: detailed writeup or remediation steps." },
+                        "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"], "description": "Severity level of the finding." },
+                        "application": { "type": "string", "description": "Optional: legacy application name slug." },
+                        "team": { "type": "string", "description": "Optional: owner team slug." },
+                        "owner_ref": { "type": "string", "description": "Optional: risk owner email." },
+                        "assignee_ref": { "type": "string", "description": "Optional: human analyst email." }
                       },
                       "required": ["source", "name", "domain", "category"]
                     }
@@ -802,6 +811,7 @@
                 },
                 "required": ["tasks"],
                 "example": {
+                  "application_id": "6a86a92e33930de81eea40d7",
                   "tasks": [
                     {
                       "source": "my-scanner",
@@ -810,8 +820,7 @@
                       "category": "cloud_misconfig",
                       "source_event_id": "event-12345",
                       "description": "Found a public bucket",
-                      "severity": "High",
-                      "application": "my-payment-service"
+                      "severity": "High"
                     }
                   ]
                 }
@@ -1072,7 +1081,8 @@
                 "properties": {
                   "to_status": { 
                     "type": "string",
-                    "description": "Optional: target status to transition the task to (e.g., COMPLETED, FAILED)."
+                    "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"],
+                    "description": "Optional target status. Must be one of: NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED."
                   },
                   "note": { 
                     "type": "string",
@@ -1080,11 +1090,13 @@
                   },
                   "disposition": { 
                     "type": "string",
-                    "description": "Optional workflow resolution type (e.g., auto_remediated, manual_ticket, exception)."
+                    "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"],
+                    "description": "Optional workflow resolution type: pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated."
                   },
                   "outcome": { 
                     "type": "string",
-                    "description": "Optional validation verdict (e.g., TRUE_POSITIVE, FALSE_POSITIVE, BENIGN)."
+                    "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"],
+                    "description": "Optional validation verdict: TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN."
                   },
                   "owner_ref": { 
                     "type": "string",
@@ -1218,6 +1230,7 @@
                   "application": "test-app",
                   "resolver_listener_id": "listener-12345",
                   "resolver_bot_id": "bot-12345",
+                  "repo_integration_id": "vcs-account-12345",
                   "repos": [
                     {
                       "repo_url": "https://github.com/org/repo.git",
@@ -1250,7 +1263,13 @@
         "description": "Permanently removes a workload harness configuration from the registry.",
         "operationId": "deregisterAppsecWorkload",
         "parameters": [
-          { "name": "application", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "application", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique name/slug of the application to deregister (e.g., test-app)."
+          }
         ],
         "responses": {
           "200": { "description": "Successful Response" }

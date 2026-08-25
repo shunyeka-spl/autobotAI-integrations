@@ -828,15 +828,15 @@
     },
     "/guardian/tasks": {
       "get": {
-        "summary": "List/Filter Guardian Tasks",
+        "summary": "List Guardian Tasks",
         "description": "Retrieves a list of Guardian tasks with rich filters and pagination.",
         "operationId": "listGuardianTasks",
         "parameters": [
+          { "name": "application", "in": "query", "description": "Filter by application/workload name. Supports comma-separated list of multiple names.", "required": false, "schema": { "type": "string" } },
+          { "name": "severity", "in": "query", "description": "Comma-separated severities to filter", "required": false, "schema": { "type": "string" } },
           { "name": "domain", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "category", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "status", "in": "query", "description": "Comma-separated statuses to filter", "required": false, "schema": { "type": "string" } },
-          { "name": "severity", "in": "query", "description": "Comma-separated severities to filter", "required": false, "schema": { "type": "string" } },
-          { "name": "application", "in": "query", "description": "Filter by application/workload name. Supports comma-separated list of multiple names.", "required": false, "schema": { "type": "string" } },
           { "name": "team", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "owner_ref", "in": "query", "required": false, "schema": { "type": "string" } },
           { "name": "assignee_ref", "in": "query", "required": false, "schema": { "type": "string" } },
@@ -866,7 +866,13 @@
         "description": "Retrieves the full details of a specific Guardian task.",
         "operationId": "getGuardianTask",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
         ],
         "responses": {
           "200": { "description": "Successful Response" }
@@ -877,7 +883,13 @@
         "description": "Permanently deletes a Guardian task from the task register.",
         "operationId": "deleteGuardianTask",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task to delete (e.g., TASK-b90f618553b3)."
+          }
         ],
         "responses": {
           "200": { "description": "Successful Response" }
@@ -890,7 +902,13 @@
         "description": "Retrieves sibling tasks and the associated entity relationship subgraph for a specific Guardian task.",
         "operationId": "getRelatedGuardianTasks",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
         ],
         "responses": {
           "200": { "description": "Successful Response" }
@@ -903,7 +921,13 @@
         "description": "Manually transitions a Guardian task to a new workflow status (e.g., COMPLETED, FAILED, IN_PROGRESS).",
         "operationId": "transitionGuardianTask",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task to transition (e.g., TASK-b90f618553b3)."
+          }
         ],
         "requestBody": {
           "required": true,
@@ -912,10 +936,25 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "to_status": { "type": "string", "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"] },
-                  "note": { "type": "string" },
-                  "disposition": { "type": "string", "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"] },
-                  "outcome": { "type": "string", "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"] }
+                  "to_status": { 
+                    "type": "string", 
+                    "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"],
+                    "description": "Target status. Must be one of: NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED."
+                  },
+                  "note": { 
+                    "type": "string", 
+                    "description": "Optional: explanatory text note describing the reason for this transition." 
+                  },
+                  "disposition": { 
+                    "type": "string", 
+                    "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"],
+                    "description": "Optional workflow resolution type: pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated."
+                  },
+                  "outcome": { 
+                    "type": "string", 
+                    "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"],
+                    "description": "Optional validation verdict: TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN."
+                  }
                 },
                 "required": ["to_status"],
                 "example": {
@@ -939,7 +978,13 @@
         "description": "Assigns a Guardian task to an analyst email reference.",
         "operationId": "assignGuardianTask",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
         ],
         "requestBody": {
           "required": true,
@@ -948,7 +993,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "assignee_ref": { "type": "string" }
+                  "assignee_ref": { 
+                    "type": "string",
+                    "description": "Unique identifier (typically an email address) of the human analyst to assign this task to."
+                  }
                 },
                 "example": {
                   "assignee_ref": "analyst@company.com"
@@ -968,7 +1016,13 @@
         "description": "Appends an audit comment or note to the task timeline.",
         "operationId": "commentGuardianTask",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
         ],
         "requestBody": {
           "required": true,
@@ -977,7 +1031,10 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "note": { "type": "string" }
+                  "note": { 
+                    "type": "string",
+                    "description": "The comment or update note to post to the task timeline."
+                  }
                 },
                 "required": ["note"],
                 "example": {
@@ -998,7 +1055,13 @@
         "description": "Applies multiple completion updates (owner, outcome, disposition, etc.) in a single call.",
         "operationId": "applyGuardianTaskCompletion",
         "parameters": [
-          { "name": "task_id", "in": "path", "required": true, "schema": { "type": "string" } }
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
         ],
         "requestBody": {
           "required": true,
@@ -1007,17 +1070,51 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "to_status": { "type": "string" },
-                  "note": { "type": "string" },
-                  "disposition": { "type": "string" },
-                  "outcome": { "type": "string" },
-                  "owner_ref": { "type": "string" },
-                  "owner_resolution": { "type": "object" },
-                  "entities": { "type": "array", "items": { "type": "object" } },
-                  "links": { "type": "object" },
-                  "final_action": { "type": "string" },
-                  "final_action_target": { "type": "string" },
-                  "actor": { "type": "string" }
+                  "to_status": { 
+                    "type": "string",
+                    "description": "Optional: target status to transition the task to (e.g., COMPLETED, FAILED)."
+                  },
+                  "note": { 
+                    "type": "string",
+                    "description": "Optional: explanatory audit note summarizing the work completed."
+                  },
+                  "disposition": { 
+                    "type": "string",
+                    "description": "Optional workflow resolution type (e.g., auto_remediated, manual_ticket, exception)."
+                  },
+                  "outcome": { 
+                    "type": "string",
+                    "description": "Optional validation verdict (e.g., TRUE_POSITIVE, FALSE_POSITIVE, BENIGN)."
+                  },
+                  "owner_ref": { 
+                    "type": "string",
+                    "description": "Optional: email address of the risk owner."
+                  },
+                  "owner_resolution": { 
+                    "type": "object",
+                    "description": "Optional: custom owner-specific resolution metadata."
+                  },
+                  "entities": { 
+                    "type": "array", 
+                    "items": { "type": "object" },
+                    "description": "Optional: list of entity references (e.g., [{'type': 'file', 'ref': 'app/main.py'}]) to bind to the task's subgraph."
+                  },
+                  "links": { 
+                    "type": "object",
+                    "description": "Optional: external URLs/links associated with the fix (e.g., VCS PR URL)."
+                  },
+                  "final_action": { 
+                    "type": "string",
+                    "description": "Optional: final action description."
+                  },
+                  "final_action_target": { 
+                    "type": "string",
+                    "description": "Optional: target resource of the final action."
+                  },
+                  "actor": { 
+                    "type": "string",
+                    "description": "Optional: system actor identifier performing this update."
+                  }
                 },
                 "example": {
                   "to_status": "COMPLETED",
@@ -1055,12 +1152,30 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "application": { "type": "string" },
-                  "resolver_listener_id": { "type": "string" },
-                  "resolver_bot_id": { "type": "string" },
-                  "pentest_bot_id": { "type": "string" },
-                  "sweeper_bot_id": { "type": "string" },
-                  "repo_integration_id": { "type": "string" },
+                  "application": { 
+                    "type": "string", 
+                    "description": "The unique name/slug for the workload application (e.g., test-app)." 
+                  },
+                  "resolver_listener_id": { 
+                    "type": "string", 
+                    "description": "ID of the event listener configured to trigger the resolver run." 
+                  },
+                  "resolver_bot_id": { 
+                    "type": "string", 
+                    "description": "The unique ID of the resolver deepagent bot. Find via 'List Bots' action." 
+                  },
+                  "pentest_bot_id": { 
+                    "type": "string", 
+                    "description": "Optional: unique ID of the active pentesting/SAST bot." 
+                  },
+                  "sweeper_bot_id": { 
+                    "type": "string", 
+                    "description": "Optional: unique ID of the cleanup/sweeper bot." 
+                  },
+                  "repo_integration_id": { 
+                    "type": "string", 
+                    "description": "The account ID of the VCS integration (GitHub/GitLab). Find via 'List Integrations' action." 
+                  },
                   "repos": {
                     "type": "array",
                     "items": {
@@ -1090,7 +1205,10 @@
                       "type": "object"
                     }
                   },
-                  "default_approver": { "type": "string" },
+                  "default_approver": { 
+                    "type": "string",
+                    "description": "Fallback reviewer email/username when owner auto-resolution cannot be matched."
+                  },
                   "min_severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"] },
                   "default_sla_hours": { "type": "integer" },
                   "goal_details": { "type": "object" }

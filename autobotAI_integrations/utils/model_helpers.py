@@ -25,6 +25,7 @@ _BEDROCK_TEMPERATURE_REJECT_MARKERS = (
     "claude-fable-5",
     "claude-opus-4-7",
     "claude-opus-4-8",
+    "gpt-5-6",
 )
 
 

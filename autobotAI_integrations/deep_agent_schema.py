@@ -67,6 +67,7 @@ class MCPRemoteServer(BaseModel):
     headers: Dict[str, str] = Field(
         default_factory=dict, description="Additional HTTP headers"
     )
+    ignore_ssl: bool = False
     # Optional IAM auth for AWS MCP Server (SigV4)
     aws_access_key_id: Optional[str] = Field(
         None, description="Temporary AWS access key for AWS MCP Server"
@@ -245,6 +246,11 @@ class GoalResolution(str, Enum):
     NO_ACTION = "no_action"
     BLOCKED_AUTO = "blocked_auto"
     BLOCKED_APPROVED = "blocked_approved"
+    # Handed to a human/owner; the run is over but the outcome is undetermined.
+    # Must stay in sync with GoalResolutionLiteral in the agent repo
+    # (agent_core/agent.py) — the Literal is duplicated there deliberately for
+    # PyArmor, so adding a member here alone is not enough.
+    ESCALATED = "escalated"
     FAILED = "failed"
     TIMED_OUT = "timed_out"
 
@@ -354,11 +360,21 @@ class OffensiveSecurityConfig(BaseModel):
     engagement_type: EngagementType = Field(
         EngagementType.PENTEST, description="pentest | red_team | ai_red_team"
     )
+    application_id: Optional[str] = Field(
+        None,
+        description=(
+            "Id of the registered application every finding this scan records is "
+            "filed under. The authoritative binding: the runtime sends it with "
+            "each recorded task so the platform routes findings to that "
+            "application's resolver without re-matching an application name."
+        ),
+    )
     application: Optional[str] = Field(
         None,
         description=(
-            "Workload/application slug findings are recorded under (drives task "
-            "creation via the guardian task register)."
+            "Slug of the same application — carried for display and for the older "
+            "record paths that key on it. Derived from application_id, never an "
+            "independent value."
         ),
     )
     instructions_file: Optional[str] = Field(
@@ -401,6 +417,14 @@ class DeepAgentPayload(Payload):
     # --- MCP servers -------------------------------------------------------
     mcp_servers: List[MCPRemoteServer] = Field(
         default_factory=list, description="Remote MCP servers to connect"
+    )
+
+    # --- Platform capabilities -----------------------------------------------
+    platform_catalog: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Discovery catalog of platform capabilities: "
+        "[{slug, name, description, enabled}] — capabilities the account "
+        "could have, tagged whether each is currently enabled.",
     )
 
     # --- Workspace S3 URLs -------------------------------------------------

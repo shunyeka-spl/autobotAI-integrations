@@ -574,11 +574,12 @@
           }
         ],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "example": {},
                 "properties": {
                   "resources": {
                     "type": "object",
@@ -779,6 +780,13 @@
             "application/json": {
               "schema": {
                 "type": "array",
+                "example": [
+                  {
+                    "op": "add",
+                    "path": "/fields/System.State",
+                    "value": "Active"
+                  }
+                ],
                 "items": {
                   "type": "object",
                   "required": ["op", "path", "value"],
@@ -845,6 +853,9 @@
               "schema": {
                 "type": "object",
                 "required": ["query"],
+                "example": {
+                  "query": "SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.TeamProject] = 'MyProject' AND [System.WorkItemType] = 'Bug' ORDER BY [System.ChangedDate] DESC"
+                },
                 "properties": {
                   "query": {
                     "type": "string",

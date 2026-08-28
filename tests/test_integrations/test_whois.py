@@ -19,9 +19,22 @@ class TestClassWhois:
         result = handle_task(task)
         test_result_format(result)
 
+    def test_actions_generation(self):
+        service = integration_service_factory.get_service_cls("whois")
+        actions = service.get_all_rest_api_actions()
+        assert len(actions) == 5
+        action_names = [a.name for a in actions]
+        assert "Lookup domain RDAP WHOIS record" in action_names
+        assert "Lookup IP address RDAP WHOIS record" in action_names
+        assert "Lookup Autonomous System Number ASN RDAP WHOIS record" in action_names
+        assert "Lookup entity contact RDAP record" in action_names
+        assert "Lookup nameserver RDAP record" in action_names
+
+
     def test_integration_active(self, get_keys, sample_integration_dict):
         tokens = {}
         integration = sample_integration_dict("whois", tokens)
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
         assert res["success"]
+

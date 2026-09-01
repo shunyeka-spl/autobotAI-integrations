@@ -469,9 +469,13 @@ def executor(context):
         result, error = run_mod_func(mod.executor, context=context)
         resources = []
         if result:
+            exec_details = getattr(payload_task.context, "execution_details", None)
+            caller = getattr(exec_details, "caller", None) if exec_details else None
+            integration_user_id = getattr(payload_task.context.integration, "userId", None)
+
             default_data = {
-                "user_id": payload_task.context.execution_details.caller.user_id,
-                "root_user_id": payload_task.context.execution_details.caller.root_user_id,
+                "user_id": getattr(caller, "user_id", None) or integration_user_id,
+                "root_user_id": getattr(caller, "root_user_id", None) or integration_user_id,
             }
             if getattr(payload_task.context.integration, "category", None) not in [
                 IntegrationCategory.AI.value
@@ -858,6 +862,10 @@ def executor(context):
                     "message": "Operation completed successfully",
                 }
 
+            exec_details = getattr(payload_task.context, "execution_details", None)
+            caller = getattr(exec_details, "caller", None) if exec_details else None
+            integration_user_id = getattr(payload_task.context.integration, "userId", None)
+
             if isinstance(response, dict) and response.get("abAI-client-error"):
                 errors.append(
                     {
@@ -865,7 +873,7 @@ def executor(context):
                         + " "
                         + str(response.get("text", "")),
                         "other_details": {
-                            "execution_details": payload_task.context.execution_details
+                            "execution_details": exec_details
                         },
                     }
                 )
@@ -885,8 +893,8 @@ def executor(context):
                         **row,
                         "integration_id": payload_task.context.integration.accountId,
                         "integration_type": payload_task.context.integration.cspName,
-                        "user_id": payload_task.context.execution_details.caller.user_id,
-                        "root_user_id": payload_task.context.execution_details.caller.root_user_id,
+                        "user_id": getattr(caller, "user_id", None) or integration_user_id,
+                        "root_user_id": getattr(caller, "root_user_id", None) or integration_user_id,
                     }
                 )
         except Exception as e:
@@ -895,7 +903,7 @@ def executor(context):
                 {
                     "message": traceback.format_exc(chain=True, limit=1),
                     "other_details": {
-                        "execution_details": payload_task.context.execution_details
+                        "execution_details": getattr(payload_task.context, "execution_details", None)
                     },
                 }
             )

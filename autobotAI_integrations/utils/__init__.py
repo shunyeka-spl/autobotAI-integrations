@@ -111,8 +111,12 @@ def transform_inventory_resources(stdout: dict, payload_task: PayloadTask):
         )
         row["integration_id"] = payload_task.context.integration.accountId
         row["integration_type"] = payload_task.context.integration.cspName
-        row["user_id"] = payload_task.context.execution_details.caller.user_id
-        row["root_user_id"] = payload_task.context.execution_details.caller.root_user_id
+        exec_details = getattr(payload_task.context, "execution_details", None)
+        caller = getattr(exec_details, "caller", None) if exec_details else None
+        integration_user_id = getattr(payload_task.context.integration, "userId", None)
+
+        row["user_id"] = getattr(caller, "user_id", None) or integration_user_id
+        row["root_user_id"] = getattr(caller, "root_user_id", None) or integration_user_id
         if payload_task.context.integration.agent_ids:
             row["agent_id"] = payload_task.context.integration.agent_ids
 

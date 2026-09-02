@@ -874,7 +874,7 @@
         }
       }
     },
-    "/{project}/_apis/wit/workitems/${type}": {
+    "/{project}/_apis/wit/workitems/{type}": {
       "post": {
         "summary": "Create Work Item",
         "description": "Create a new Bug, Task, User Story, or Epic in a project using JSON Patch operations.",

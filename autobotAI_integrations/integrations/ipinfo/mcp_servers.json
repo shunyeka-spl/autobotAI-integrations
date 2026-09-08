@@ -1,0 +1,52 @@
+{
+    "ipinfo": {
+        "streamable_http": {
+            "document_link": "https://mcp.ipinfo.io/",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "IPinfo All Tools",
+                    "description": "All available IPinfo MCP tools: ipinfo_lookup, ipinfo_geolocate, ipinfo_asn, ipinfo_check_privacy, ipinfo_check_residential_proxy, and ipinfo_quota.",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo Lookup",
+                    "description": "Look up geolocation, network, and metadata for one or more IP addresses (lite and detailed modes supported).",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo Geolocate",
+                    "description": "Get geographic location data (country, continent, city, region, coordinates, timezone, postal code) for IP addresses.",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo ASN",
+                    "description": "Get autonomous system (network ownership) information for IP addresses: ASN, name, domain, and network type.",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo Privacy Check",
+                    "description": "Check whether IP addresses are using privacy or anonymity services: VPN, proxy, relay, Tor, anycast, hosting, mobile, or satellite.",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo Residential Proxy Check",
+                    "description": "Check whether IP addresses are known residential proxies, returning service name, last seen date, and observation frequency.",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                },
+                {
+                    "name": "IPinfo Quota Check",
+                    "description": "Check your IPinfo API usage and remaining quota (daily and monthly request counts and plan limit).",
+                    "url": "https://mcp.ipinfo.io/",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

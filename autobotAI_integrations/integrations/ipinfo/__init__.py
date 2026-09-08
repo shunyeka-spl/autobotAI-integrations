@@ -71,7 +71,8 @@ class IPinfoService(BaseService):
     def supported_connection_interfaces():
         return [
             ConnectionInterfaces.REST_API,
-            ConnectionInterfaces.STEAMPIPE
+            ConnectionInterfaces.STEAMPIPE,
+            ConnectionInterfaces.MCP_SERVER,
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -90,3 +91,21 @@ class IPinfoService(BaseService):
             conf_path=conf_path,
             config=config,
         )
+
+    def generate_rest_api_creds(self) -> RestAPICreds:
+        headers = {}
+        if self.integration.token and self.integration.token not in [None, "None"]:
+            headers["Authorization"] = f"Bearer {self.integration.token}"
+        return RestAPICreds(
+            base_url="https://ipinfo.io",
+            headers=headers,
+        )
+
+    def generate_mcp_creds(self) -> MCPCreds:
+        headers = {}
+        if self.integration.token and self.integration.token not in [None, "None"]:
+            headers["Authorization"] = f"Bearer {self.integration.token}"
+        return MCPCreds(
+            headers=headers,
+        )
+

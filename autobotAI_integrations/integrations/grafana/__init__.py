@@ -92,7 +92,6 @@ class GrafanaService(BaseService):
     def supported_connection_interfaces():
         return [
             ConnectionInterfaces.STEAMPIPE,
-            ConnectionInterfaces.REST_API,
             ConnectionInterfaces.CLI,
         ]
 

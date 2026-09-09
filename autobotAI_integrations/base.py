@@ -67,6 +67,49 @@ class BaseService:
     def supported_connection_interfaces():
         return [ConnectionInterfaces.PYTHON_SDK]
 
+    @classmethod
+    def _integration_folder(cls) -> str:
+        return os.path.dirname(inspect.getfile(cls))
+
+    @classmethod
+    def _has_integration_file(cls, filename: str) -> bool:
+        return os.path.isfile(os.path.join(cls._integration_folder(), filename))
+
+    @classmethod
+    def _is_method_implemented(cls, method_name: str) -> bool:
+        for klass in cls.__mro__:
+            if klass is BaseService:
+                return False
+            if method_name in klass.__dict__:
+                return True
+        return False
+
+    @classmethod
+    def _python_sdk_supported(cls) -> bool:
+        client_built = cls._is_method_implemented("build_python_exec_combinations_hook")
+        sdk_creds = cls._is_method_implemented("generate_python_sdk_creds")
+        sdk_catalog = cls._has_integration_file("python_sdk_clients.yml")
+        # The builtin Python integration executes user code without a vendor SDK catalog.
+        if cls.get_integration_type() == "python":
+            return client_built and sdk_creds
+        return client_built and sdk_creds and sdk_catalog
+
+    @classmethod
+    def _rest_api_supported(cls) -> bool:
+        return cls._has_integration_file("open_api.json") and cls._is_method_implemented(
+            "generate_rest_api_creds"
+        )
+
+    @classmethod
+    def _mcp_server_supported(cls) -> bool:
+        # autobotAI MCP server details are provided by the internal backend,
+        # so a local mcp_servers.json catalog is not required.
+        if cls.get_integration_type() == "autobotai":
+            return cls._is_method_implemented("generate_mcp_creds")
+        return cls._has_integration_file("mcp_servers.json") and cls._is_method_implemented(
+            "generate_mcp_creds"
+        )
+
     @staticmethod
     def get_forms():
         """

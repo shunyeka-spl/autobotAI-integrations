@@ -53,7 +53,6 @@ class KubernetesService(BaseService):
     @staticmethod
     def supported_connection_interfaces():
         return [
-            ConnectionInterfaces.REST_API,
             ConnectionInterfaces.CLI,
             ConnectionInterfaces.PYTHON_SDK,
             ConnectionInterfaces.STEAMPIPE,

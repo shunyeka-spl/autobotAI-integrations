@@ -134,6 +134,8 @@ override-dependencies = [
     "pyasn1>=0.6.4",
     "setuptools>=83.0.0",
     "h2==4.4.1",
+    "httpcore2>=2.10.0",
+    "httpx2>=2.12.0",
     "pypdf>=6.16.2",
     "snowflake-connector-python>=4.7.1"
 ]

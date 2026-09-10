@@ -4,7 +4,11 @@ from autobotAI_integrations import (
     BaseService,
     ConnectionInterfaces,
 )
-from autobotAI_integrations.models import IntegrationCategory, SteampipeCreds
+from autobotAI_integrations.models import (
+    IntegrationCategory,
+    SteampipeCreds,
+    MCPCreds,
+)
 
 
 class TrivyIntegrations(BaseSchema):
@@ -53,6 +57,7 @@ class TrivyService(BaseService):
         return [
             ConnectionInterfaces.STEAMPIPE,
             ConnectionInterfaces.CLI,
+            ConnectionInterfaces.MCP_SERVER,
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -67,4 +72,9 @@ class TrivyService(BaseService):
             connection_name="trivy",
             conf_path=conf_path,
             config=config,
+        )
+
+    def generate_mcp_creds(self) -> MCPCreds:
+        return MCPCreds(
+            headers={},
         )

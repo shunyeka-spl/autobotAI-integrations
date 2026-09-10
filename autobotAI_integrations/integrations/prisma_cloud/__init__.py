@@ -7,7 +7,11 @@ from autobotAI_integrations import (
 import requests
 from pydantic import Field
 
-from autobotAI_integrations.models import IntegrationCategory, SteampipeCreds
+from autobotAI_integrations.models import (
+    IntegrationCategory,
+    SteampipeCreds,
+    RestAPICreds,
+)
 
 
 class PrismaCloudIntegrations(BaseSchema):
@@ -36,26 +40,21 @@ class PrismaCloudService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
-            # Test Prisma Cloud API connectivity
-            # Authenticate and get token
-            auth_url = f"{self.integration.url}/login"
+            base_url = (self.integration.url or "https://api.prismacloud.io").rstrip("/")
+            auth_url = f"{base_url}/login"
             auth_payload = {
                 "username": self.integration.access_key_id,
-                "password": self.integration.secret_key
+                "password": self.integration.secret_key,
             }
-            
-            # TODO: Uncomment when ready to test with actual API
-            return {"success": True}
-            
-            # response = requests.post(auth_url, json=auth_payload, timeout=10)
-            # if response.status_code == 200:
-            #     return {"success": True}
-            # else:
-            #     return {
-            #         "success": False,
-            #         "error": f"Authentication failed. Status code: {response.status_code}",
-            #     }
-        except requests.exceptions.ConnectionError as e:
+            response = requests.post(auth_url, json=auth_payload, timeout=10)
+            if response.status_code == 200:
+                return {"success": True}
+            else:
+                return {
+                    "success": False,
+                    "error": f"Authentication failed with status code: {response.status_code}",
+                }
+        except requests.exceptions.ConnectionError:
             return {"success": False, "error": "Connection is unreachable"}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -109,6 +108,7 @@ class PrismaCloudService(BaseService):
     @staticmethod
     def supported_connection_interfaces():
         return [
+            ConnectionInterfaces.REST_API,
             ConnectionInterfaces.CLI,
         ]
 
@@ -133,4 +133,26 @@ class PrismaCloudService(BaseService):
             connection_name="prisma_cloud",
             conf_path=conf_path,
             config=config,
+        )
+
+    def generate_rest_api_creds(self) -> RestAPICreds:
+        base_url = (self.integration.url or "https://api.prismacloud.io").rstrip("/")
+        headers = {}
+        if self.integration.access_key_id and self.integration.secret_key:
+            try:
+                auth_url = f"{base_url}/login"
+                payload = {
+                    "username": self.integration.access_key_id,
+                    "password": self.integration.secret_key,
+                }
+                resp = requests.post(auth_url, json=payload, timeout=10)
+                if resp.status_code == 200:
+                    token = resp.json().get("token")
+                    if token:
+                        headers["x-redlock-auth"] = token
+            except Exception:
+                pass
+        return RestAPICreds(
+            base_url=base_url,
+            headers=headers,
         )

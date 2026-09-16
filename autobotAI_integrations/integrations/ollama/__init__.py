@@ -55,6 +55,55 @@ class OllamaService(AIBaseService):
         except Exception:
             return {"success": False, "error": "Request Failed with Connection Error"}
 
+    def test_model(self, model: str) -> dict:
+        """Lightweight live verification of a specific model on the Ollama host."""
+        import time
+        try:
+            start_t = time.time()
+            url = f"{self.integration.base_url.rstrip('/')}/api/generate"
+            response = requests.post(
+                url,
+                json={
+                    "model": model,
+                    "prompt": "ping",
+                    "stream": False,
+                    "options": {"num_predict": 1},
+                },
+                timeout=30,
+            )
+            if response.status_code == 200:
+                latency_ms = int((time.time() - start_t) * 1000)
+                return {
+                    "success": True,
+                    "model": model,
+                    "latency_ms": latency_ms,
+                }
+            else:
+                try:
+                    err_data = response.json()
+                    err_msg = err_data.get("error", response.text)
+                except Exception:
+                    err_msg = response.text or f"HTTP {response.status_code}"
+                return {
+                    "success": False,
+                    "model": model,
+                    "error": f"Ollama Error ({response.status_code}): {err_msg}",
+                }
+        except requests.exceptions.ConnectionError:
+            return {
+                "success": False,
+                "model": model,
+                "error": f"Could not connect to Ollama host at {self.integration.base_url}",
+            }
+        except requests.exceptions.Timeout:
+            return {
+                "success": False,
+                "model": model,
+                "error": f"Connection to Ollama host at {self.integration.base_url} timed out",
+            }
+        except Exception as e:
+            return {"success": False, "model": model, "error": str(e)}
+
     def get_integration_specific_details(self) -> dict:
         try:
             # TODO: Fetch through API
@@ -189,3 +238,19 @@ def executor(context):
 
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()
+
+    def get_pydantic_agent(
+        self, model: str, tools, system_prompt: str, options: dict = {}, credentials: Optional[dict] = None
+    ):
+        from pydantic_ai import Agent
+        model_instance = self.get_pydantic_model(model, credentials)
+        return Agent(model_instance, system_prompt=system_prompt, tools=tools, **options)
+
+    def get_pydantic_model(self, model_name: str, credentials: Optional[dict] = None):
+        from pydantic_ai.models.openai import OpenAIChatModel
+        from pydantic_ai.providers.openai import OpenAIProvider
+        base_url = f"{self.integration.base_url.rstrip('/')}/v1"
+        return OpenAIChatModel(
+            model_name=model_name,
+            provider=OpenAIProvider(base_url=base_url, api_key="ollama"),
+        )

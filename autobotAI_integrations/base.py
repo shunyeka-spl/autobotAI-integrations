@@ -1071,3 +1071,19 @@ class AIBaseService(BaseService):
                 "model_context_window": 15000,
                 "is_within_limit": estimated_tokens < 15000,
             }
+
+    def test_model(self, model: str) -> dict:
+        """Lightweight live verification of a specific model for this AI integration."""
+        import time
+        try:
+            start_t = time.time()
+            self.prompt_executor(
+                model=model,
+                prompt="ping",
+                params="chat",
+                options={"max_tokens": 16},
+            )
+            latency_ms = int((time.time() - start_t) * 1000)
+            return {"success": True, "model": model, "latency_ms": latency_ms}
+        except Exception as e:
+            return {"success": False, "model": model, "error": str(e)}

@@ -139,3 +139,196 @@ class TestAwsBedrock:
         result = handle_task(task)
         test_result_format(result)
         assert False
+
+    def test_test_integration_success_with_live_model(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_sts = MagicMock()
+        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+        mock_runtime = MagicMock()
+        mock_runtime.converse.return_value = {
+            "output": {"message": {"content": [{"text": "pong"}]}}
+        }
+
+        def fake_get_client(client_name):
+            if client_name == "sts":
+                return mock_sts
+            if client_name == "bedrock-runtime":
+                return mock_runtime
+            return MagicMock()
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        result = service._test_integration()
+        assert result["success"] is True
+        assert "message" in result
+        assert service.integration.account_id == "123456789012"
+        mock_runtime.converse.assert_called_once()
+
+    def test_test_integration_fallback_with_warning_on_model_failure(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from botocore.exceptions import ClientError
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_sts = MagicMock()
+        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+        mock_runtime = MagicMock()
+        mock_runtime.converse.side_effect = ClientError(
+            {"Error": {"Code": "ResourceNotFoundException", "Message": "Model deprecated or not found"}},
+            "Converse",
+        )
+
+        mock_bedrock = MagicMock()
+        mock_bedrock.list_foundation_models.return_value = {"modelSummaries": []}
+
+        def fake_get_client(client_name):
+            if client_name == "sts":
+                return mock_sts
+            if client_name == "bedrock-runtime":
+                return mock_runtime
+            if client_name == "bedrock":
+                return mock_bedrock
+            return MagicMock()
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        result = service._test_integration()
+        assert result["success"] is True
+        assert "warning" in result
+        assert result["warning_title"] == "Bedrock Model Warning"
+        assert "ResourceNotFoundException" in result["warning"]
+        mock_bedrock.list_foundation_models.assert_called_once()
+
+    def test_test_integration_failure_when_fallback_also_fails(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from botocore.exceptions import ClientError
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_sts = MagicMock()
+        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+
+        mock_runtime = MagicMock()
+        mock_runtime.converse.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Not authorized on bedrock-runtime"}},
+            "Converse",
+        )
+
+        mock_bedrock = MagicMock()
+        mock_bedrock.list_foundation_models.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Not authorized on bedrock"}},
+            "ListFoundationModels",
+        )
+
+        def fake_get_client(client_name):
+            if client_name == "sts":
+                return mock_sts
+            if client_name == "bedrock-runtime":
+                return mock_runtime
+            if client_name == "bedrock":
+                return mock_bedrock
+            return MagicMock()
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        result = service._test_integration()
+        assert result["success"] is False
+        assert "AccessDeniedException" in result["error"]
+
+    def test_test_model_success(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_runtime = MagicMock()
+        mock_runtime.converse.return_value = {
+            "output": {"message": {"content": [{"text": "pong"}]}},
+            "metrics": {"latencyMs": 135},
+        }
+
+        def fake_get_client(client_name, *args, **kwargs):
+            if client_name == "bedrock-runtime":
+                return mock_runtime
+            return MagicMock()
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        result = service.test_model("global.amazon.nova-2-lite-v1:0")
+        assert result["success"] is True
+        assert result["model"] == "global.amazon.nova-2-lite-v1:0"
+        assert result["latency_ms"] == 135
+        mock_runtime.converse.assert_called_once()
+
+    def test_test_model_access_denied_failure(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from botocore.exceptions import ClientError
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_runtime = MagicMock()
+        mock_runtime.converse.side_effect = ClientError(
+            {"Error": {"Code": "AccessDeniedException", "Message": "Model access is not granted"}},
+            "Converse",
+        )
+
+        def fake_get_client(client_name, *args, **kwargs):
+            if client_name == "bedrock-runtime":
+                return mock_runtime
+            return MagicMock()
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        result = service.test_model("global.anthropic.claude-opus-4-6-v1")
+        assert result["success"] is False
+        assert result["model"] == "global.anthropic.claude-opus-4-6-v1"
+        assert "AccessDeniedException" in result["error"]

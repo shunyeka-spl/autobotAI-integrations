@@ -243,7 +243,11 @@ class AWSBedrockService(AIBaseService):
                         for x in [
                             "fable",
                             "claude-3-5-haiku",
+                            "claude-3-haiku-20240307",
                             "claude-3-sonnet-20240229",
+                            "claude-3-opus-20240229",
+                            "claude-v2",
+                            "claude-instant",
                             "embed",
                             "upscale",
                             "inpaint",
@@ -265,26 +269,24 @@ class AWSBedrockService(AIBaseService):
                     f"Error listing inference profiles in {self.integration.region}: {e}"
                 )
 
-            # Priority ranking: regional models first (which have active model access), followed by latest global models
+            # Priority ranking: latest generation models (Sonnet 3.7, 3.5, Haiku 4.5, Nova Pro/Lite/Micro, Sonnet 5/4.6, Opus 4.6)
             priority_rank = {
                 f"{prefix}anthropic.claude-3-7-sonnet-20250219-v1:0": 1,
                 f"{prefix}anthropic.claude-3-5-sonnet-20241022-v2:0": 2,
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0": 3,
-                f"{prefix}anthropic.claude-3-haiku-20240307-v1:0": 4,
-                f"{prefix}amazon.nova-pro-v1:0": 5,
-                f"{prefix}amazon.nova-lite-v1:0": 6,
-                f"{prefix}amazon.nova-micro-v1:0": 7,
-                "global.anthropic.claude-sonnet-5": 8,
-                "global.anthropic.claude-sonnet-4-6": 9,
-                "global.anthropic.claude-opus-4-6-v1": 10,
-                "global.amazon.nova-2-lite-v1:0": 11,
+                f"{prefix}amazon.nova-pro-v1:0": 4,
+                f"{prefix}amazon.nova-lite-v1:0": 5,
+                f"{prefix}amazon.nova-micro-v1:0": 6,
+                "global.anthropic.claude-sonnet-5": 7,
+                "global.anthropic.claude-sonnet-4-6": 8,
+                "global.anthropic.claude-opus-4-6-v1": 9,
+                "global.amazon.nova-2-lite-v1:0": 10,
             }
 
             default_top_models = [
                 f"{prefix}anthropic.claude-3-7-sonnet-20250219-v1:0",
                 f"{prefix}anthropic.claude-3-5-sonnet-20241022-v2:0",
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0",
-                f"{prefix}anthropic.claude-3-haiku-20240307-v1:0",
                 f"{prefix}amazon.nova-pro-v1:0",
                 f"{prefix}amazon.nova-lite-v1:0",
                 f"{prefix}amazon.nova-micro-v1:0",
@@ -294,12 +296,15 @@ class AWSBedrockService(AIBaseService):
                 "global.amazon.nova-2-lite-v1:0",
             ]
 
-            # Filter out any fable, legacy claude-3-sonnet, or unavailable claude-3-5-haiku model and sort by priority
+            # Filter out any fable, legacy Claude 3 models, or unavailable claude-3-5-haiku
             filtered_models = [
                 m for m in models
                 if "fable" not in m.lower()
                 and "claude-3-5-haiku" not in m.lower()
+                and "claude-3-haiku-20240307" not in m.lower()
                 and "claude-3-sonnet-20240229" not in m.lower()
+                and "claude-3-opus-20240229" not in m.lower()
+                and "claude-v2" not in m.lower()
             ]
             if filtered_models:
                 filtered_models.sort(key=lambda m: priority_rank.get(m, 99))

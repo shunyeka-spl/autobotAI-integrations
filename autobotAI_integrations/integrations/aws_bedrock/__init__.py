@@ -268,17 +268,6 @@ class AWSBedrockService(AIBaseService):
                     f"Error listing inference profiles in {self.integration.region}: {e}"
                 )
 
-            # Priority ranking: latest generation models >= 4.5 (Haiku 4.5, Sonnet 5, Opus 5, Sonnet 4.6, Opus 4.6, Nova Lite, Nova 2 Lite)
-            priority_rank = {
-                "global.anthropic.claude-haiku-4-5-20251001-v1:0": 1,
-                "global.anthropic.claude-sonnet-5": 2,
-                "global.anthropic.claude-opus-5": 3,
-                "global.anthropic.claude-sonnet-4-6": 4,
-                "global.anthropic.claude-opus-4-6-v1": 5,
-                f"{prefix}amazon.nova-lite-v1:0": 6,
-                "global.amazon.nova-2-lite-v1:0": 7,
-            }
-
             default_top_models = [
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                 "global.anthropic.claude-sonnet-5",
@@ -289,28 +278,7 @@ class AWSBedrockService(AIBaseService):
                 "global.amazon.nova-2-lite-v1:0",
             ]
 
-            # Filter out any fable, legacy Claude 3 (< 4.5) models, Nova Pro/Micro, or deprecated profiles
-            filtered_models = [
-                m for m in models
-                if "fable" not in m.lower()
-                and "claude-3" not in m.lower()
-                and "claude-v2" not in m.lower()
-                and "claude-instant" not in m.lower()
-                and "nova-pro" not in m.lower()
-                and "nova-micro" not in m.lower()
-            ]
-            if filtered_models:
-                filtered_models.sort(key=lambda m: priority_rank.get(m, 99))
-                # Ensure top defaults are represented if discovered set is partial
-                seen = set(filtered_models)
-                for fallback_m in default_top_models:
-                    if fallback_m not in seen:
-                        filtered_models.append(fallback_m)
-                        seen.add(fallback_m)
-                filtered_models.sort(key=lambda m: priority_rank.get(m, 99))
-                available_models = filtered_models
-            else:
-                available_models = default_top_models
+            available_models = default_top_models
 
             try:
                 from autobotAI_integrations.utils.boto3_helper import regions as standard_aws_regions

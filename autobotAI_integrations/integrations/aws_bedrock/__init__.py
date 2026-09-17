@@ -243,6 +243,7 @@ class AWSBedrockService(AIBaseService):
                         for x in [
                             "fable",
                             "claude-3-5-haiku",
+                            "claude-3-sonnet-20240229",
                             "embed",
                             "upscale",
                             "inpaint",
@@ -270,14 +271,13 @@ class AWSBedrockService(AIBaseService):
                 f"{prefix}anthropic.claude-3-5-sonnet-20241022-v2:0": 2,
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0": 3,
                 f"{prefix}anthropic.claude-3-haiku-20240307-v1:0": 4,
-                f"{prefix}anthropic.claude-3-sonnet-20240229-v1:0": 5,
-                f"{prefix}amazon.nova-pro-v1:0": 6,
-                f"{prefix}amazon.nova-lite-v1:0": 7,
-                f"{prefix}amazon.nova-micro-v1:0": 8,
-                "global.anthropic.claude-sonnet-5": 9,
-                "global.anthropic.claude-sonnet-4-6": 10,
-                "global.anthropic.claude-opus-4-6-v1": 11,
-                "global.amazon.nova-2-lite-v1:0": 12,
+                f"{prefix}amazon.nova-pro-v1:0": 5,
+                f"{prefix}amazon.nova-lite-v1:0": 6,
+                f"{prefix}amazon.nova-micro-v1:0": 7,
+                "global.anthropic.claude-sonnet-5": 8,
+                "global.anthropic.claude-sonnet-4-6": 9,
+                "global.anthropic.claude-opus-4-6-v1": 10,
+                "global.amazon.nova-2-lite-v1:0": 11,
             }
 
             default_top_models = [
@@ -285,7 +285,6 @@ class AWSBedrockService(AIBaseService):
                 f"{prefix}anthropic.claude-3-5-sonnet-20241022-v2:0",
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                 f"{prefix}anthropic.claude-3-haiku-20240307-v1:0",
-                f"{prefix}anthropic.claude-3-sonnet-20240229-v1:0",
                 f"{prefix}amazon.nova-pro-v1:0",
                 f"{prefix}amazon.nova-lite-v1:0",
                 f"{prefix}amazon.nova-micro-v1:0",
@@ -295,10 +294,12 @@ class AWSBedrockService(AIBaseService):
                 "global.amazon.nova-2-lite-v1:0",
             ]
 
-            # Filter out any fable or unavailable claude-3-5-haiku model and sort by priority
+            # Filter out any fable, legacy claude-3-sonnet, or unavailable claude-3-5-haiku model and sort by priority
             filtered_models = [
                 m for m in models
-                if "fable" not in m.lower() and "claude-3-5-haiku" not in m.lower()
+                if "fable" not in m.lower()
+                and "claude-3-5-haiku" not in m.lower()
+                and "claude-3-sonnet-20240229" not in m.lower()
             ]
             if filtered_models:
                 filtered_models.sort(key=lambda m: priority_rank.get(m, 99))

@@ -245,6 +245,8 @@ class AWSBedrockService(AIBaseService):
                             "claude-3",
                             "claude-v2",
                             "claude-instant",
+                            "nova-pro",
+                            "nova-micro",
                             "embed",
                             "upscale",
                             "inpaint",
@@ -266,36 +268,36 @@ class AWSBedrockService(AIBaseService):
                     f"Error listing inference profiles in {self.integration.region}: {e}"
                 )
 
-            # Priority ranking: latest generation models >= 4.5 (Haiku 4.5, Sonnet 5, Sonnet 4.6, Opus 4.6, Nova Pro/Lite/Micro, Nova 2 Lite)
+            # Priority ranking: latest generation models >= 4.5 (Haiku 4.5, Sonnet 5, Opus 5, Sonnet 4.6, Opus 4.6, Nova Lite, Nova 2 Lite)
             priority_rank = {
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0": 1,
                 "global.anthropic.claude-sonnet-5": 2,
-                "global.anthropic.claude-sonnet-4-6": 3,
-                "global.anthropic.claude-opus-4-6-v1": 4,
-                f"{prefix}amazon.nova-pro-v1:0": 5,
+                "global.anthropic.claude-opus-5": 3,
+                "global.anthropic.claude-sonnet-4-6": 4,
+                "global.anthropic.claude-opus-4-6-v1": 5,
                 f"{prefix}amazon.nova-lite-v1:0": 6,
-                f"{prefix}amazon.nova-micro-v1:0": 7,
-                "global.amazon.nova-2-lite-v1:0": 8,
+                "global.amazon.nova-2-lite-v1:0": 7,
             }
 
             default_top_models = [
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                 "global.anthropic.claude-sonnet-5",
+                "global.anthropic.claude-opus-5",
                 "global.anthropic.claude-sonnet-4-6",
                 "global.anthropic.claude-opus-4-6-v1",
-                f"{prefix}amazon.nova-pro-v1:0",
                 f"{prefix}amazon.nova-lite-v1:0",
-                f"{prefix}amazon.nova-micro-v1:0",
                 "global.amazon.nova-2-lite-v1:0",
             ]
 
-            # Filter out any fable, legacy Claude 3 (< 4.5) models, or deprecated profiles
+            # Filter out any fable, legacy Claude 3 (< 4.5) models, Nova Pro/Micro, or deprecated profiles
             filtered_models = [
                 m for m in models
                 if "fable" not in m.lower()
                 and "claude-3" not in m.lower()
                 and "claude-v2" not in m.lower()
                 and "claude-instant" not in m.lower()
+                and "nova-pro" not in m.lower()
+                and "nova-micro" not in m.lower()
             ]
             if filtered_models:
                 filtered_models.sort(key=lambda m: priority_rank.get(m, 99))

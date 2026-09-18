@@ -80,20 +80,23 @@ class TestClassIPinfo:
             assert action.executable_type == "mcp_server"
             assert action.transport == "streamable_http"
 
-        integration = sample_integration_dict("ipinfo", {"token": "0102f6572aed78"})
+        integration = sample_integration_dict("ipinfo", {"token": "dummy_test_token"})
         service = integration_service_factory.get_service(None, integration)
         mcp_creds = service.generate_mcp_creds()
-        assert mcp_creds.headers.get("Authorization") == "Bearer 0102f6572aed78"
+        assert mcp_creds.headers.get("Authorization") == "Bearer dummy_test_token"
 
     def test_rest_api_creds(self, sample_integration_dict):
-        integration = sample_integration_dict("ipinfo", {"token": "0102f6572aed78"})
+        integration = sample_integration_dict("ipinfo", {"token": "dummy_test_token"})
         service = integration_service_factory.get_service(None, integration)
         rest_creds = service.generate_rest_api_creds()
         assert rest_creds.base_url == "https://ipinfo.io"
-        assert rest_creds.headers.get("Authorization") == "Bearer 0102f6572aed78"
+        assert rest_creds.headers.get("Authorization") == "Bearer dummy_test_token"
 
-    def test_rest_api_run(self, sample_integration_dict, sample_restapi_task, test_result_format):
-        integration = sample_integration_dict("ipinfo", {"token": "0102f6572aed78"})
+    def test_rest_api_run(self, get_keys, sample_integration_dict, sample_restapi_task, test_result_format):
+        tokens = {}
+        if get_keys.get("IPINFO_TOKEN"):
+            tokens["token"] = get_keys["IPINFO_TOKEN"]
+        integration = sample_integration_dict("ipinfo", tokens)
         service = integration_service_factory.get_service(None, integration)
         actions = service.get_all_rest_api_actions()
         lookup_action = next(a for a in actions if a.code == "https://ipinfo.io/{ip}")

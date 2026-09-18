@@ -81,7 +81,6 @@ class ShodanService(BaseService):
     def supported_connection_interfaces():
         return [
             ConnectionInterfaces.STEAMPIPE,
-            ConnectionInterfaces.REST_API,
             ConnectionInterfaces.PYTHON_SDK
         ]
 

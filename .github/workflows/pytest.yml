@@ -57,7 +57,7 @@ jobs:
     - name: Run specific tests
       run: |
         # Run only specific test files - modify this list as needed
-        pytest --disable-warnings tests/test_handlers -v
+        pytest --disable-warnings tests/test_handlers tests/test_base_service.py -v
 
     - name: Scan dependencies for vulnerabilities
       uses: aquasecurity/trivy-action@v0.36.0

@@ -109,7 +109,6 @@ class PrismaCloudService(BaseService):
     @staticmethod
     def supported_connection_interfaces():
         return [
-            ConnectionInterfaces.REST_API,
             ConnectionInterfaces.CLI,
         ]
 

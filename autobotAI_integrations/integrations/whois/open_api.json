@@ -1,0 +1,205 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "WHOIS / RDAP API",
+        "description": "Registration Data Access Protocol (RDAP) REST API for querying WHOIS registration data including domains, IP addresses, autonomous system numbers (ASNs), entities, and nameservers.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://rdap.org"
+        }
+    ],
+    "paths": {
+        "/domain/{domain}": {
+            "get": {
+                "summary": "Lookup domain RDAP / WHOIS record",
+                "operationId": "getDomainInfo",
+                "tags": [
+                    "Domain"
+                ],
+                "parameters": [
+                    {
+                        "name": "domain",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Fully qualified domain name to query (e.g., example.com)"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/rdap+json, application/json",
+                        "description": "Accept header format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Domain registration details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Domain not found"
+                    }
+                }
+            }
+        },
+        "/ip/{ip}": {
+            "get": {
+                "summary": "Lookup IP address RDAP / WHOIS record",
+                "operationId": "getIpInfo",
+                "tags": [
+                    "IP Address"
+                ],
+                "parameters": [
+                    {
+                        "name": "ip",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "IPv4 or IPv6 address to query (e.g., 8.8.8.8 or 2001:4860:4860::8888)"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/rdap+json, application/json",
+                        "description": "Accept header format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "IP network registration details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "IP address not found"
+                    }
+                }
+            }
+        },
+        "/autnum/{autnum}": {
+            "get": {
+                "summary": "Lookup Autonomous System Number (ASN) RDAP / WHOIS record",
+                "operationId": "getAsnInfo",
+                "tags": [
+                    "ASN"
+                ],
+                "parameters": [
+                    {
+                        "name": "autnum",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Autonomous System Number without 'AS' prefix (e.g., 15169)"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/rdap+json, application/json",
+                        "description": "Accept header format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ASN registration details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "ASN not found"
+                    }
+                }
+            }
+        },
+        "/entity/{entity}": {
+            "get": {
+                "summary": "Lookup entity / contact RDAP record",
+                "operationId": "getEntityInfo",
+                "tags": [
+                    "Entity"
+                ],
+                "parameters": [
+                    {
+                        "name": "entity",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Entity identifier or handle"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/rdap+json, application/json",
+                        "description": "Accept header format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entity details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Entity not found"
+                    }
+                }
+            }
+        },
+        "/nameserver/{nameserver}": {
+            "get": {
+                "summary": "Lookup nameserver RDAP record",
+                "operationId": "getNameserverInfo",
+                "tags": [
+                    "Nameserver"
+                ],
+                "parameters": [
+                    {
+                        "name": "nameserver",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Nameserver domain name (e.g., ns1.google.com)"
+                    },
+                    {
+                        "name": "accept",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "default": "application/rdap+json, application/json",
+                        "description": "Accept header format"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Nameserver details retrieved successfully"
+                    },
+                    "404": {
+                        "description": "Nameserver not found"
+                    }
+                }
+            }
+        }
+    }
+}

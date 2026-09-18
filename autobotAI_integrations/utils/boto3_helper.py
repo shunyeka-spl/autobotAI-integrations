@@ -69,7 +69,7 @@ class Boto3Helper:
                 session = boto3.Session(region_name=self.get_autobot_ai_region())
         return session
 
-    def get_client(self, resource, region_name=None, endpoint_url=None):
+    def get_client(self, resource, region_name=None, endpoint_url=None, config=None):
         if region_name is None:
             region_name = self.get_autobot_ai_region()
         self.ctx.logger.debug("get_client called for resource=%s, region=%s, autobot_resource=%s", resource,
@@ -83,7 +83,8 @@ class Boto3Helper:
                                       aws_access_key_id=self.get_access_key(),
                                       aws_secret_access_key=self.get_secret_key(),
                                       region_name=region_name if region_name else self.get_autobot_ai_region(),
-                                      aws_session_token=self.get_session_token()
+                                      aws_session_token=self.get_session_token(),
+                                      config=config
                                       )
             else:
                 client = boto3.client(resource,
@@ -91,13 +92,14 @@ class Boto3Helper:
                                       aws_access_key_id=self.get_access_key(),
                                       aws_secret_access_key=self.get_secret_key(),
                                       region_name=region_name if region_name else self.get_autobot_ai_region(),
-                                      aws_session_token=self.get_session_token()
+                                      aws_session_token=self.get_session_token(),
+                                      config=config
                                       )
         else:
             if resource == "s3":
-                client = boto3.client(resource, region_name=region, endpoint_url=f"https://s3.{region}.amazonaws.com")
+                client = boto3.client(resource, region_name=region, endpoint_url=f"https://s3.{region}.amazonaws.com", config=config)
             else:
-                client = boto3.client(resource, region_name=region, endpoint_url=endpoint_url)
+                client = boto3.client(resource, region_name=region, endpoint_url=endpoint_url, config=config)
         return client
 
     def get_dynamo_db_table(self, table_name, live=False):
@@ -122,29 +124,29 @@ class Boto3Helper:
     def refresh_sts_creds(self):
         while True:
             try:
-                arn = self.csp.get('roleArn', None)
+                arn = self.csp.get('roleArn', None) if self.csp else None
+                sts_region = (self.csp.get('region') if self.csp else None) or self.get_autobot_ai_region() or 'ap-south-1'
                 if arn and arn != 'None':
-                    sts_client = self.ctx.autobot_aws_context.boto3_helper.get_client('sts',
-                                                                                        region_name='us-east-1',
-                                                                                        endpoint_url="https://sts.us-east-1.amazonaws.com"
-                                                                                      )
+                    sts_client = self.ctx.autobot_aws_context.boto3_helper.get_client(
+                        'sts',
+                        region_name=sts_region,
+                        endpoint_url=f"https://sts.{sts_region}.amazonaws.com"
+                    )
                     assumerole = sts_client.assume_role(
                         RoleArn=self.csp['roleArn'],
                         RoleSessionName=arn[13:25] + arn[31:],
-                        ExternalId=self.csp['externalId'],
+                        ExternalId=self.csp.get('externalId'),
                         DurationSeconds=3600
                     )
-
                 else:
                     sts_client = boto3.client(
                         'sts',
-                        aws_access_key_id=self.csp['access_key'],
-                        aws_secret_access_key=self.csp['secret_key'],
-                        aws_session_token=self.csp["session_token"] or None,
-                        region_name='us-east-1',
-                        endpoint_url="https://sts.us-east-1.amazonaws.com"
+                        aws_access_key_id=self.csp.get('access_key') if self.csp else None,
+                        aws_secret_access_key=self.csp.get('secret_key') if self.csp else None,
+                        aws_session_token=(self.csp.get('session_token') if self.csp else None) or None,
+                        region_name=sts_region,
+                        endpoint_url=f"https://sts.{sts_region}.amazonaws.com"
                     )
-
                     # Get temporary credentials
                     assumerole = sts_client.get_session_token()
                 self.credentials = assumerole['Credentials']

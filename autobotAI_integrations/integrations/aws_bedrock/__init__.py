@@ -3,6 +3,7 @@ import traceback
 from typing import Any, Dict, List, Optional, Type, Union
 
 import json
+from botocore.config import Config as BotocoreConfig
 from botocore.exceptions import ClientError
 from pydantic import Field, model_validator
 from pathlib import Path
@@ -77,17 +78,30 @@ class AWSBedrockService(AIBaseService):
         if not isinstance(integration, AWSBedrockIntegration):
             integration = AWSBedrockIntegration(**integration)
         super().__init__(ctx, integration)
+        self._boto3_helper = None
+        self._clients = {}
 
-    def _get_aws_client(self, aws_client_name: str):
+    def _get_aws_client(
+        self,
+        aws_client_name: str,
+        region_name: Optional[str] = None,
+        botocore_config: Optional[BotocoreConfig] = None,
+    ):
+        target_region = region_name or self.integration.region
+        cache_key = f"{aws_client_name}:{target_region}:{id(botocore_config) if botocore_config else 'default'}"
+        if cache_key in self._clients:
+            return self._clients[cache_key]
+
         if self.integration.roleArn not in ["None", None]:
-            boto3_helper = Boto3Helper(
-                self.ctx, integration=self.integration.dump_all_data()
-            )
-            return boto3_helper.get_client(
-                aws_client_name, region_name=self.integration.region
+            if not self._boto3_helper:
+                self._boto3_helper = Boto3Helper(
+                    self.ctx, integration=self.integration.dump_all_data()
+                )
+            client = self._boto3_helper.get_client(
+                aws_client_name, region_name=target_region, config=botocore_config
             )
         else:
-            return _boto3().client(
+            client = _boto3().client(
                 aws_client_name,
                 aws_access_key_id=str(self.integration.access_key),
                 aws_secret_access_key=str(self.integration.secret_key),
@@ -96,46 +110,188 @@ class AWSBedrockService(AIBaseService):
                     if self.integration.session_token not in [None, "None"]
                     else None
                 ),
-                region_name=self.integration.region,
+                region_name=target_region,
+                config=botocore_config,
             )
+        self._clients[cache_key] = client
+        return client
 
     def _test_integration(self) -> dict:
         try:
-            bedrock_client = self._get_aws_client("bedrock")
-            models = [
-                {**model, "name": model["modelId"]}
-                for model in bedrock_client.list_foundation_models()["modelSummaries"]
-            ]
+            # 1. Retrieve and set AWS Account ID via STS
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
             account_id = str(identity_data["Account"])
             self.integration.account_id = account_id
-            return {"success": True}
+
+            # 2. Primary check: Live inference call to Nova 2 Lite (global inference profile)
+            nova_model = "global.amazon.nova-2-lite-v1:0"
+            bedrock_runtime = self._get_aws_client("bedrock-runtime")
+            nova_error_msg = None
+
+            try:
+                response = bedrock_runtime.converse(
+                    modelId=nova_model,
+                    messages=[{"role": "user", "content": [{"text": "ping"}]}],
+                    inferenceConfig={"maxTokens": 1, "temperature": 0.0},
+                )
+                logger.info(
+                    f"AWS Bedrock Nova 2 Lite live response: output={response.get('output')} "
+                    f"usage={response.get('usage')} metrics={response.get('metrics')} "
+                    f"status_code={response.get('ResponseMetadata', {}).get('HTTPStatusCode')}"
+                )
+                return {
+                    "success": True,
+                    "message": "AWS Bedrock integration active (verified via Nova 2 Lite live invocation).",
+                }
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "ClientError")
+                msg = e.response.get("Error", {}).get("Message", str(e))
+                nova_error_msg = f"{code}: {msg}"
+                logger.warning(
+                    f"AWS Bedrock live model test failed for '{nova_model}' ({code}): {msg}. Attempting fallback..."
+                )
+            except Exception as e:
+                nova_error_msg = str(e)
+                logger.warning(
+                    f"AWS Bedrock live model test failed for '{nova_model}': {e}. Attempting fallback..."
+                )
+
+            # 3. Fallback check: List foundation models to verify control-plane access
+            bedrock_client = self._get_aws_client("bedrock")
+            bedrock_client.list_foundation_models()
+
+            return {
+                "success": True,
+                "warning_title": "Bedrock Model Warning",
+                "warning": (
+                    f"Live model test for '{nova_model}' failed ({nova_error_msg}). "
+                    "Integration is active via fallback verification (ListFoundationModels). "
+                    "The model may be deprecated, updated, or missing Model Access in your AWS Bedrock console."
+                ),
+            }
         except ClientError as e:
-            logger.error(str(e))
-            logger.error(traceback.format_exc())
-            return {"success": False, "error": "Integration Failed!"}
+            error_code = e.response.get("Error", {}).get("Code", "ClientError")
+            error_msg = e.response.get("Error", {}).get("Message", str(e))
+            logger.error(f"AWS Bedrock integration test failed ({error_code}): {error_msg}")
+            return {"success": False, "error": f"{error_code}: {error_msg}"}
         except Exception as e:
             logger.error(str(e))
             logger.error(traceback.format_exc())
-            return {"success": False, "error": "Integration Failed!"}
+            return {"success": False, "error": f"Integration Test Failed: {str(e)}"}
+
+    def test_model(self, model: str) -> dict:
+        """Lightweight live verification of a specific model on AWS Bedrock."""
+        import time
+        try:
+            target_region = self.integration.region or "ap-south-1"
+            if model.startswith("us.") and not (target_region or "").startswith("us-"):
+                target_region = "us-east-1"
+            elif model.startswith("eu.") and not (target_region or "").startswith("eu-"):
+                target_region = "eu-central-1"
+            elif model.startswith("apac.") or model.startswith("in."):
+                target_region = "ap-south-1"
+
+            fast_config = BotocoreConfig(
+                connect_timeout=6,
+                read_timeout=15,
+                retries={"max_attempts": 1},
+            )
+            bedrock_runtime = self._get_aws_client(
+                "bedrock-runtime",
+                region_name=target_region,
+                botocore_config=fast_config,
+            )
+            start_t = time.time()
+            response = bedrock_runtime.converse(
+                modelId=model,
+                messages=[{"role": "user", "content": [{"text": "ping"}]}],
+                inferenceConfig={"maxTokens": 16},
+            )
+            latency_ms = response.get("metrics", {}).get("latencyMs") or int(
+                (time.time() - start_t) * 1000
+            )
+            return {
+                "success": True,
+                "model": model,
+                "latency_ms": latency_ms,
+            }
+        except ClientError as e:
+            code = e.response.get("Error", {}).get("Code", "ClientError")
+            msg = e.response.get("Error", {}).get("Message", str(e))
+            return {"success": False, "model": model, "error": f"{code}: {msg}"}
+        except Exception as e:
+            return {"success": False, "model": model, "error": str(e)}
 
     def get_integration_specific_details(self) -> dict:
         try:
-            available_models = [
+            bedrock = self._get_aws_client("bedrock")
+            prefix = (
+                "apac."
+                if (self.integration.region or "").startswith("ap-")
+                else ("eu." if (self.integration.region or "").startswith("eu-") else "us.")
+            )
+
+            models = []
+            # 1. Dynamically fetch system inference profiles available for this region
+            try:
+                profiles_res = bedrock.list_inference_profiles(typeEquals="SYSTEM_DEFINED")
+                for p in profiles_res.get("inferenceProfileSummaries", []):
+                    pid = p.get("inferenceProfileId")
+                    if pid and not any(
+                        x in pid.lower()
+                        for x in [
+                            "fable",
+                            "claude-3",
+                            "claude-v2",
+                            "claude-instant",
+                            "nova-pro",
+                            "nova-micro",
+                            "embed",
+                            "upscale",
+                            "inpaint",
+                            "outpaint",
+                            "canvas",
+                            "reel",
+                            "style",
+                            "erase",
+                            "search-replace",
+                            "sonic",
+                            "pegasus",
+                            "marengo",
+                            "video",
+                        ]
+                    ):
+                        models.append(pid)
+            except Exception as e:
+                logger.warn(
+                    f"Error listing inference profiles in {self.integration.region}: {e}"
+                )
+
+            default_top_models = [
+                "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                 "global.anthropic.claude-sonnet-5",
-                "global.anthropic.claude-fable-5",
+                "global.anthropic.claude-opus-5",
                 "global.anthropic.claude-sonnet-4-6",
                 "global.anthropic.claude-opus-4-6-v1",
-                "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+                f"{prefix}amazon.nova-lite-v1:0",
                 "global.amazon.nova-2-lite-v1:0",
             ]
-            regions = [
-                region["RegionName"]
-                for region in self._get_aws_client("ec2").describe_regions()["Regions"]
-            ]
 
-            if self.integration.region not in regions:
+            available_models = default_top_models
+
+            try:
+                from autobotAI_integrations.utils.boto3_helper import regions as standard_aws_regions
+                regions = [r["id"] for r in standard_aws_regions] if standard_aws_regions else []
+            except Exception:
+                regions = []
+
+            if not regions:
+                regions = [
+                    "us-east-1", "us-west-2", "ap-south-1", "ap-southeast-1", "ap-northeast-1", "eu-central-1", "eu-west-1"
+                ]
+
+            if self.integration.region and self.integration.region not in regions:
                 regions.append(self.integration.region)
 
             return {

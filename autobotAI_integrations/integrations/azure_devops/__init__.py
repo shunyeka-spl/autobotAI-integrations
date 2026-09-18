@@ -26,8 +26,7 @@ class AzureDevOpsIntegration(BaseSchema):
         default=None,
         description="Azure DevOps organization name (e.g., 'myorg' for cloud https://dev.azure.com/myorg)",
     )
-    personal_access_token: Optional[str] = Field(
-        default=None,
+    personal_access_token: str = Field(
         exclude=True,
         description="Personal Access Token (PAT) with required scopes",
     )
@@ -59,6 +58,32 @@ class AzureDevOpsIntegration(BaseSchema):
         kwargs.setdefault("alias", kwargs.get("organization") or "Azure DevOps")
         super().__init__(**kwargs)
 
+    @field_validator("personal_access_token", mode="before")
+    @classmethod
+    def validate_pat(cls, v):
+        if not v or not str(v).strip():
+            raise ValueError("Personal Access Token (PAT) is required")
+        return str(v).strip()
+
+    @field_validator("organization", mode="before")
+    @classmethod
+    def validate_organization(cls, v):
+        """Normalize organization to a plain slug.
+
+        Users sometimes paste the full org URL
+        (e.g. ``https://dev.azure.com/myorg``) into this field.
+        We extract just the trailing path component so the URL
+        construction in :meth:`_get_organization_url` stays correct.
+        """
+        if not v:
+            return v
+        v = str(v).strip().rstrip("/")
+        if v.lower().startswith("http://") or v.lower().startswith("https://"):
+            # e.g. https://dev.azure.com/myorg  ->  myorg
+            slug = v.split("/")[-1].strip()
+            return slug if slug else v
+        return v
+
     @field_validator("base_url", mode="before")
     @classmethod
     def validate_base_url(cls, v):
@@ -79,9 +104,18 @@ class AzureDevOpsService(BaseService):
     def _get_organization_url(self) -> str:
         """
         Helper method to construct the full Azure DevOps organization or server URL.
+
+        Handles the edge-case where a user accidentally stored a full URL in the
+        ``organization`` field (the :meth:`validate_organization` validator normally
+        prevents this, but we guard here as a safety net).
         """
         base = (self.integration.base_url or "https://dev.azure.com").rstrip("/")
         org = (self.integration.organization or "").strip().strip("/")
+
+        # Safety net: if org still looks like a full URL, extract just the slug
+        if org.lower().startswith("http://") or org.lower().startswith("https://"):
+            org = org.split("/")[-1].strip()
+
         if org:
             if base.lower().endswith(f"/{org.lower()}"):
                 return base
@@ -193,8 +227,8 @@ class AzureDevOpsService(BaseService):
                     "type": "text/password",
                     "label": "Personal Access Token (PAT)",
                     "placeholder": "Enter your Azure DevOps PAT",
-                    "description": "Personal Access Token with required scopes (Code Read/Write, Work Items Read/Write, Build Read/Execute). Optional if using Service Principal below.",
-                    "required": False,
+                    "description": "Personal Access Token with required scopes (Code Read/Write, Work Items Read/Write, Build Read/Execute).",
+                    "required": True,
                 },
                 {
                     "name": "client_id",

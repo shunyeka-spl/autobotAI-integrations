@@ -228,13 +228,12 @@ class NessusService(BaseService):
 
     @staticmethod
     def supported_connection_interfaces() -> List[ConnectionInterfaces]:
-        return [ConnectionInterfaces.REST_API, ConnectionInterfaces.PYTHON_SDK]
+        return [ConnectionInterfaces.REST_API]
 
     @staticmethod
     def connection_interface_mapping() -> dict:
         return {
             ConnectionInterfaces.REST_API: NessusIntegration,
-            ConnectionInterfaces.PYTHON_SDK: NessusIntegration,
         }
 
     @classmethod

@@ -17,7 +17,6 @@ from pydantic import Field
 from autobotAI_integrations import (
     BaseSchema,
     BaseService,
-    ConnectionInterfaces,
     RestAPICreds,
     SDKCreds,
 )
@@ -110,7 +109,7 @@ class MsTeamsBotService(BaseService):
 
     @staticmethod
     def supported_connection_interfaces():
-        return [ConnectionInterfaces.REST_API]
+        return []
 
     @staticmethod
     def get_forms():

@@ -99,7 +99,6 @@ class GoogleChatService(BaseService):
     def supported_connection_interfaces():
         return [
             ConnectionInterfaces.PYTHON_SDK,
-            ConnectionInterfaces.REST_API,
         ]
 
     def generate_cli_creds(self) -> CLICreds:

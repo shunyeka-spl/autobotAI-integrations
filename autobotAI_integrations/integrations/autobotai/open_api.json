@@ -766,6 +766,521 @@
           }
         }
       }
+    },
+    "/guardian/tasks/record": {
+      "post": {
+        "summary": "Record Guardian Tasks",
+        "description": "Batch create or update discovered work items (tasks) in the Guardian task register. Idempotent based on source, source_event_id, and application.",
+        "operationId": "recordGuardianTasks",
+        "requestBody": {
+          "description": "Payload schema:\n- application_id: (Optional) Unique ID of the workload application (find via 'List AppSec Workloads').\n- thread_id: (Optional) Unique thread ID of the active bot execution context.\n- tasks: (Required) List of findings to record:\n  - source: (Required) Detector/tool name (e.g. trivy, snyk, manual).\n  - name: (Required) Title of the finding.\n  - domain: (Required) security, cloud_ops, observability, cost, identity, compliance.\n  - category: (Required) Finding category (e.g. vulnerability, cloud_misconfig).\n  - source_event_id: (Optional) Scanner finding ID.\n  - description: (Optional) Finding details.\n  - severity: (Optional) Critical, High, Medium, Low, Informational.\n  - application: (Optional) Workload name.\n  - team: (Optional) Owner team slug.\n  - owner_ref: (Optional) Owner email.\n  - assignee_ref: (Optional) Assignee email.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "application_id": {
+                    "type": "string",
+                    "description": "Optional: Unique ID of the workload application. Retrieve via 'List AppSec Workloads' action. Required to trigger automatic resolver bot runs."
+                  },
+                  "thread_id": {
+                    "type": "string",
+                    "description": "Optional: Unique thread ID of the active bot execution context."
+                  },
+                  "tasks": {
+                    "type": "array",
+                    "description": "List of security findings/tasks to record.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "source": { "type": "string", "description": "The detector or tool name (e.g., trivy, snyk, manual)." },
+                        "name": { "type": "string", "description": "Title/name of the security finding." },
+                        "domain": { "type": "string", "enum": ["security", "cloud_ops", "observability", "cost", "identity", "compliance"], "description": "The OCSF-aligned task domain." },
+                        "category": { "type": "string", "description": "Finding category (e.g., vulnerability, cloud_misconfig)." },
+                        "source_event_id": { "type": "string", "description": "Optional: unique ID from the external scanner." },
+                        "description": { "type": "string", "description": "Optional: detailed writeup or remediation steps." },
+                        "severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"], "description": "Severity level of the finding." },
+                        "application": { "type": "string", "description": "Optional: legacy application name slug." },
+                        "team": { "type": "string", "description": "Optional: owner team slug." },
+                        "owner_ref": { "type": "string", "description": "Optional: risk owner email." },
+                        "assignee_ref": { "type": "string", "description": "Optional: human analyst email." }
+                      },
+                      "required": ["source", "name", "domain", "category"]
+                    }
+                  }
+                },
+                "required": ["tasks"],
+                "example": {
+                  "application_id": "6a86a92e33930de81eea40d7",
+                  "tasks": [
+                    {
+                      "source": "my-scanner",
+                      "name": "Unencrypted S3 Bucket",
+                      "domain": "security",
+                      "category": "cloud_misconfig",
+                      "source_event_id": "event-12345",
+                      "description": "Found a public bucket",
+                      "severity": "High"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/guardian/tasks": {
+      "get": {
+        "summary": "List Guardian Tasks",
+        "description": "Retrieves a list of Guardian tasks with rich filters and pagination.",
+        "operationId": "listGuardianTasks",
+        "parameters": [
+          { "name": "application", "in": "query", "description": "Filter by application/workload name. Supports comma-separated list of multiple names.", "required": false, "schema": { "type": "string" } },
+          { "name": "severity", "in": "query", "description": "Comma-separated severities to filter", "required": false, "schema": { "type": "string" } },
+          { "name": "domain", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "category", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "description": "Comma-separated statuses to filter", "required": false, "schema": { "type": "string" } },
+          { "name": "team", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "owner_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "assignee_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "disposition", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "outcome", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "parent_task_ref", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "required": false, "schema": { "type": "string" } },
+          { "name": "open_only", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "waiting_only", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "sla_breached", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "unowned", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "unassigned", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "sort_by", "in": "query", "required": false, "schema": { "type": "string", "default": "sla_deadline" } },
+          { "name": "descending", "in": "query", "required": false, "schema": { "type": "boolean", "default": false } },
+          { "name": "number_of_items", "in": "query", "required": false, "schema": { "type": "integer", "default": 25 } },
+          { "name": "page_number", "in": "query", "required": false, "schema": { "type": "integer", "default": 1 } }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Guardian Task Details",
+        "description": "Retrieves the full details of a specific Guardian task.",
+        "operationId": "getGuardianTask",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      },
+      "delete": {
+        "summary": "Delete Guardian Task",
+        "description": "Permanently deletes a Guardian task from the task register.",
+        "operationId": "deleteGuardianTask",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task to delete (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/related": {
+      "get": {
+        "summary": "Get Related Tasks and Subgraph",
+        "description": "Retrieves sibling tasks and the associated entity relationship subgraph for a specific Guardian task.",
+        "operationId": "getRelatedGuardianTasks",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/transition": {
+      "post": {
+        "summary": "Transition Guardian Task Status",
+        "description": "Manually transitions a Guardian task to a new workflow status (e.g., COMPLETED, FAILED, IN_PROGRESS).",
+        "operationId": "transitionGuardianTask",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task to transition (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "requestBody": {
+          "description": "Payload schema:\n- to_status: (Required) Target workflow status (NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED).\n- note: (Optional) Explanatory comment/note for the task audit timeline.\n- disposition: (Optional) Workflow resolution verdict (pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated).\n- outcome: (Optional) Scan verification verdict (TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN).",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to_status": { 
+                    "type": "string", 
+                    "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"],
+                    "description": "Target status. Must be one of: NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED."
+                  },
+                  "note": { 
+                    "type": "string", 
+                    "description": "Optional: explanatory text note describing the reason for this transition." 
+                  },
+                  "disposition": { 
+                    "type": "string", 
+                    "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"],
+                    "description": "Optional workflow resolution type: pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated."
+                  },
+                  "outcome": { 
+                    "type": "string", 
+                    "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"],
+                    "description": "Optional validation verdict: TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN."
+                  }
+                },
+                "required": ["to_status"],
+                "example": {
+                  "to_status": "COMPLETED",
+                  "note": "Issue resolved successfully",
+                  "disposition": "auto_remediated",
+                  "outcome": "TRUE_POSITIVE"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/assign": {
+      "post": {
+        "summary": "Assign Guardian Task",
+        "description": "Assigns a Guardian task to an analyst email reference.",
+        "operationId": "assignGuardianTask",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "requestBody": {
+          "description": "Request payload containing the assignee analyst email reference.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assignee_ref": { 
+                    "type": "string",
+                    "description": "Unique identifier (typically an email address) of the human analyst to assign this task to."
+                  }
+                },
+                "example": {
+                  "assignee_ref": "analyst@company.com"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/comment": {
+      "post": {
+        "summary": "Comment on Guardian Task",
+        "description": "Appends an audit comment or note to the task timeline.",
+        "operationId": "commentGuardianTask",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "requestBody": {
+          "description": "Request payload containing the timeline note/comment string.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": { 
+                    "type": "string",
+                    "description": "The comment or update note to post to the task timeline."
+                  }
+                },
+                "required": ["note"],
+                "example": {
+                  "note": "Checking the scanner logs..."
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/apply": {
+      "post": {
+        "summary": "Apply Completion to Guardian Task",
+        "description": "Applies multiple completion updates (owner, outcome, disposition, etc.) in a single call.",
+        "operationId": "applyGuardianTaskCompletion",
+        "parameters": [
+          { 
+            "name": "task_id", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique ID of the Guardian task (e.g., TASK-b90f618553b3)."
+          }
+        ],
+        "requestBody": {
+          "description": "Payload schema:\n- to_status: (Optional) Target workflow status (NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED).\n- note: (Optional) Explanatory audit comment note for the timeline.\n- disposition: (Optional) Workflow resolution verdict (pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated).\n- outcome: (Optional) Scan verification verdict (TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN).\n- owner_ref: (Optional) Risk owner email reference.\n- assignee_ref: (Optional) Assignee email reference.\n- final_action: (Optional) Final remediative action title/command.\n- actor: (Optional) System component/actor name.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to_status": { 
+                    "type": "string",
+                    "enum": ["NEW", "IN_PROGRESS", "WAITING_HUMAN", "WAITING_SYSTEM", "WAITING_APPROVAL", "ESCALATED", "COMPLETED", "FAILED"],
+                    "description": "Optional target status. Must be one of: NEW, IN_PROGRESS, WAITING_HUMAN, WAITING_SYSTEM, WAITING_APPROVAL, ESCALATED, COMPLETED, FAILED."
+                  },
+                  "note": { 
+                    "type": "string",
+                    "description": "Optional: explanatory audit note summarizing the work completed."
+                  },
+                  "disposition": { 
+                    "type": "string",
+                    "enum": ["pending", "auto_remediated", "manual_ticket", "exception", "suppressed", "no_action", "escalated"],
+                    "description": "Optional workflow resolution type: pending, auto_remediated, manual_ticket, exception, suppressed, no_action, escalated."
+                  },
+                  "outcome": { 
+                    "type": "string",
+                    "enum": ["TRUE_POSITIVE", "FALSE_POSITIVE", "BENIGN", "CONFIRMED", "NEEDS_INVESTIGATION", "UNKNOWN"],
+                    "description": "Optional validation verdict: TRUE_POSITIVE, FALSE_POSITIVE, BENIGN, CONFIRMED, NEEDS_INVESTIGATION, UNKNOWN."
+                  },
+                  "owner_ref": { 
+                    "type": "string",
+                    "description": "Optional: email address of the risk owner."
+                  },
+                  "owner_resolution": { 
+                    "type": "object",
+                    "description": "Optional: custom owner-specific resolution metadata."
+                  },
+                  "entities": { 
+                    "type": "array", 
+                    "items": { "type": "object" },
+                    "description": "Optional: list of entity references (e.g., [{'type': 'file', 'ref': 'app/main.py'}]) to bind to the task's subgraph."
+                  },
+                  "links": { 
+                    "type": "object",
+                    "description": "Optional: external URLs/links associated with the fix (e.g., VCS PR URL)."
+                  },
+                  "final_action": { 
+                    "type": "string",
+                    "description": "Optional: final action description."
+                  },
+                  "final_action_target": { 
+                    "type": "string",
+                    "description": "Optional: target resource of the final action."
+                  },
+                  "actor": { 
+                    "type": "string",
+                    "description": "Optional: system actor identifier performing this update."
+                  }
+                },
+                "example": {
+                  "to_status": "COMPLETED",
+                  "note": "Resolved by automation",
+                  "disposition": "auto_remediated",
+                  "outcome": "TRUE_POSITIVE",
+                  "owner_ref": "agent@autobot.live"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/apps": {
+      "get": {
+        "summary": "List AppSec Workloads",
+        "description": "Retrieves the list of all registered AppSec harness workloads for the tenant.",
+        "operationId": "listAppsecWorkloads",
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      },
+      "post": {
+        "summary": "Register AppSec Workload",
+        "description": "Registers or updates a workload harness config for automatic scanning, routing, and deepagent resolution.",
+        "operationId": "registerAppsecWorkload",
+        "requestBody": {
+          "description": "Payload schema:\n- application: (Required) Unique workload name/slug (e.g. test-app).\n- resolver_listener_id: (Required) Event listener ID to trigger resolver runs.\n- resolver_bot_id: (Optional) DeepAgent bot ID (find via 'List Bots').\n- repo_integration_id: (Optional) VCS account integration ID (find via 'List Integrations').\n- default_approver: (Optional) Fallback reviewer email.\n- repos: (Optional) VCS repository URLs and base branches.\n- scan_targets: (Optional) Scan definitions (type, ref, scanner).\n- default_sla_hours: (Optional) Task resolution SLA in hours.",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "application": { 
+                    "type": "string", 
+                    "description": "The unique name/slug for the workload application (e.g., test-app)." 
+                  },
+                  "resolver_listener_id": { 
+                    "type": "string", 
+                    "description": "ID of the event listener configured to trigger the resolver run." 
+                  },
+                  "resolver_bot_id": { 
+                    "type": "string", 
+                    "description": "The unique ID of the resolver deepagent bot. Find via 'List Bots' action." 
+                  },
+                  "pentest_bot_id": { 
+                    "type": "string", 
+                    "description": "Optional: unique ID of the active pentesting/SAST bot." 
+                  },
+                  "sweeper_bot_id": { 
+                    "type": "string", 
+                    "description": "Optional: unique ID of the cleanup/sweeper bot." 
+                  },
+                  "repo_integration_id": { 
+                    "type": "string", 
+                    "description": "The account ID of the VCS integration (GitHub/GitLab). Find via 'List Integrations' action." 
+                  },
+                  "repos": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "repo_url": { "type": "string" },
+                        "base_branch": { "type": "string" }
+                      },
+                      "required": ["repo_url"]
+                    }
+                  },
+                  "scan_targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": { "type": "string", "enum": ["image", "code", "url"] },
+                        "ref": { "type": "string" },
+                        "scanner": { "type": "string" }
+                      },
+                      "required": ["type", "ref"]
+                    }
+                  },
+                  "external_sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "default_approver": { 
+                    "type": "string",
+                    "description": "Fallback reviewer email/username when owner auto-resolution cannot be matched."
+                  },
+                  "min_severity": { "type": "string", "enum": ["Critical", "High", "Medium", "Low", "Informational"] },
+                  "default_sla_hours": { "type": "integer" },
+                  "goal_details": { "type": "object" }
+                },
+                "required": ["application", "resolver_listener_id"],
+                "example": {
+                  "application": "test-app",
+                  "resolver_listener_id": "listener-12345",
+                  "resolver_bot_id": "bot-12345",
+                  "repo_integration_id": "vcs-account-12345",
+                  "repos": [
+                    {
+                      "repo_url": "https://github.com/org/repo.git",
+                      "base_branch": "main"
+                    }
+                  ],
+                  "scan_targets": [
+                    {
+                      "type": "code",
+                      "ref": "main",
+                      "scanner": "trivy"
+                    }
+                  ],
+                  "default_approver": "approver@company.com",
+                  "min_severity": "High",
+                  "default_sla_hours": 24
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
+    },
+    "/guardian/apps/{application}": {
+      "delete": {
+        "summary": "Deregister AppSec Workload",
+        "description": "Permanently removes a workload harness configuration from the registry.",
+        "operationId": "deregisterAppsecWorkload",
+        "parameters": [
+          { 
+            "name": "application", 
+            "in": "path", 
+            "required": true, 
+            "schema": { "type": "string" },
+            "description": "The unique name/slug of the application to deregister (e.g., test-app)."
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" }
+        }
+      }
     }
   }
 }

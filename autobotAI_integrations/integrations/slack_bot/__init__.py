@@ -18,7 +18,6 @@ from pydantic import Field
 from autobotAI_integrations import (
     BaseSchema,
     BaseService,
-    ConnectionInterfaces,
     RestAPICreds,
     SDKCreds,
 )
@@ -93,8 +92,8 @@ class SlackBotService(BaseService):
 
     @staticmethod
     def supported_connection_interfaces():
-        # REST-only; agent slack tools read SLACK_BOT_TOKEN from injected env.
-        return [ConnectionInterfaces.REST_API]
+        # No OpenAPI spec; agent slack tools read SLACK_BOT_TOKEN from injected env.
+        return []
 
     @staticmethod
     def get_forms():

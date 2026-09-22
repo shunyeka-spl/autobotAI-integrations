@@ -14,13 +14,18 @@ from autobotAI_integrations.utils.model_helpers import (
 
 
 class TestTemperatureRejection(unittest.TestCase):
-    def test_grok_4_6_rejects_temperature(self):
+    def test_every_grok_rejects_temperature(self):
         # "This model doesn't support the temperature field. Remove
-        # temperature and try again."
+        # temperature and try again." Matched on the family: grok-4.6 is the
+        # one that broke production, the rest are the ones that would have.
         for model in (
             "global.xai.grok-4.6",
             "us.xai.grok-4.6",
             "xai.grok-4.6",
+            "global.xai.grok-4",
+            "xai.grok-4-fast",
+            "us.xai.grok-3",
+            "global.xai.grok-5",
         ):
             self.assertTrue(bedrock_model_rejects_temperature(model), model)
 
@@ -28,7 +33,6 @@ class TestTemperatureRejection(unittest.TestCase):
         for model in (
             "global.amazon.nova-2-lite-v1:0",
             "us.meta.llama4-maverick-17b-instruct-v1:0",
-            "global.xai.grok-4-fast",
             "",
         ):
             self.assertFalse(bedrock_model_rejects_temperature(model), model)

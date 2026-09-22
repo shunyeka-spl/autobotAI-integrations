@@ -26,9 +26,14 @@ _BEDROCK_TEMPERATURE_REJECT_MARKERS = (
     "claude-opus-4-7",
     "claude-opus-4-8",
     "gpt-5-6",
-    # xAI Grok 4.6 on Bedrock: "This model doesn't support the temperature
-    # field. Remove temperature and try again." (ValidationException, 400).
-    "grok-4-6",
+    # Every xAI Grok model on Bedrock: "This model doesn't support the
+    # temperature field. Remove temperature and try again."
+    # (ValidationException, 400). Matched on the family, not one version:
+    # grok-4.6 broke production, and a narrow marker means the next grok id
+    # breaks it again. Omitting temperature on a grok that would have accepted
+    # it costs sampling determinism; sending it to one that does not costs the
+    # whole call.
+    "grok",
 )
 
 

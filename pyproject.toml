@@ -137,5 +137,6 @@ override-dependencies = [
     "httpcore2>=2.10.0",
     "httpx2>=2.12.0",
     "pypdf>=6.16.2",
-    "snowflake-connector-python>=4.7.1"
+    "snowflake-connector-python>=4.7.1",
+    "anyio>=4.14.2"
 ]

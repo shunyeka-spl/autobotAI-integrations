@@ -530,13 +530,17 @@ class AWSBedrockService(AIBaseService):
         )
 
     def get_pydantic_model(self, model_name: str, credentials: Optional[dict] = None):
-        from pydantic_ai.models.bedrock import BedrockConverseModel
         from pydantic_ai.providers.bedrock import BedrockProvider
+
+        from autobotAI_integrations.utils.bedrock_fallback import build_model
 
         if not credentials:
             credentials = self._temp_credentials()
-  
-        model = BedrockConverseModel(
+
+        # build_model, not BedrockConverseModel: a 400 that names an
+        # unsupported inference field is retried once without that field
+        # instead of failing the run. See utils/bedrock_fallback.py.
+        model = build_model(
             model_name=model_name,
             provider=BedrockProvider(
                 aws_access_key_id=credentials.get("AWS_ACCESS_KEY_ID"),
@@ -549,10 +553,11 @@ class AWSBedrockService(AIBaseService):
 
     @staticmethod
     def build_model_from_credentials(model_name: str, credentials: dict):
-        from pydantic_ai.models.bedrock import BedrockConverseModel
         from pydantic_ai.providers.bedrock import BedrockProvider
 
-        return BedrockConverseModel(
+        from autobotAI_integrations.utils.bedrock_fallback import build_model
+
+        return build_model(
             model_name=model_name,
             provider=BedrockProvider(
                 aws_access_key_id=credentials.get("access_key"),

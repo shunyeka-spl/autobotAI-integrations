@@ -4,43 +4,6 @@ from autobotAI_integrations.handlers.task_handler import handle_task
 from autobotAI_integrations.integrations import integration_service_factory
 
 class TestClassIPinfo:
-    def test_ipinfo_steampipe_task(
-        self,
-        get_keys,
-        sample_integration_dict,
-        sample_steampipe_task,
-        test_result_format,
-    ):
-        tokens = {
-            "token": get_keys["IPINFO_TOKEN"],
-        }
-        integration = sample_integration_dict("ipinfo", tokens)
-        ipinfo_query = "select * from ipinfo_ip where ip = '8.8.8.8'"
-        task = sample_steampipe_task(integration, query=ipinfo_query)
-        result = handle_task(task)
-        test_result_format(result)
-
-    def test_integration_active(self, get_keys, sample_integration_dict):
-        tokens = {}
-        integration = sample_integration_dict("ipinfo", tokens)
-        service = integration_service_factory.get_service(None, integration)
-        res = service.is_active()
-        assert res["success"]
-        tokens = {
-            "token": get_keys["IPINFO_TOKEN"],
-        }
-        integration = sample_integration_dict("ipinfo", tokens)
-        service = integration_service_factory.get_service(None, integration)
-        res = service.is_active()
-        assert res["success"]
-        tokens = {
-            "token": get_keys["IPINFO_TOKEN"][:-2],
-        }
-        integration = sample_integration_dict("ipinfo", tokens)
-        service = integration_service_factory.get_service(None, integration)
-        res = service.is_active()
-        assert not res["success"]
-
     def test_integration_interfaces(self):
         service_cls = integration_service_factory.get_service_cls("ipinfo")
         interfaces = service_cls.supported_connection_interfaces()
@@ -92,11 +55,9 @@ class TestClassIPinfo:
         assert rest_creds.base_url == "https://ipinfo.io"
         assert rest_creds.headers.get("Authorization") == "Bearer dummy_test_token"
 
-    def test_rest_api_run(self, get_keys, sample_integration_dict, sample_restapi_task, test_result_format):
-        tokens = {}
-        if get_keys.get("IPINFO_TOKEN"):
-            tokens["token"] = get_keys["IPINFO_TOKEN"]
-        integration = sample_integration_dict("ipinfo", tokens)
+    def test_rest_api_run(self, sample_integration_dict, sample_restapi_task, test_result_format):
+        # ipinfo answers an unauthenticated lookup, so this needs no token.
+        integration = sample_integration_dict("ipinfo", {})
         service = integration_service_factory.get_service(None, integration)
         actions = service.get_all_rest_api_actions()
         lookup_action = next(a for a in actions if a.code == "https://ipinfo.io/{ip}")

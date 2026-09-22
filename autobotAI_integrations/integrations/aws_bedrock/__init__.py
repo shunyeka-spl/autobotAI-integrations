@@ -473,7 +473,10 @@ class AWSBedrockService(AIBaseService):
         self, model: str, tools, system_prompt: str, options: dict = {}, credentials: Optional[dict] = None
     ):
         from pydantic_ai import Agent
-        from autobotAI_integrations.utils.model_helpers import bedrock_model_rejects_temperature
+        from autobotAI_integrations.utils.model_helpers import (
+            bedrock_model_rejects_temperature,
+            bedrock_model_supports_extended_cache_ttl,
+        )
 
         options = options.copy() if options else {}
 
@@ -492,12 +495,32 @@ class AWSBedrockService(AIBaseService):
         if enable_caching:
             try:
                 from pydantic_ai.models.bedrock import BedrockModelSettings
+
+                # `True` emits a bare `{"cachePoint": {"type": "default"}}`,
+                # whose TTL is already Bedrock's 5-minute default. Passing the
+                # STRING "5m" instead adds an explicit `ttl` field, which
+                # Bedrock reads as *extended TTL* caching and rejects on every
+                # non-Anthropic model:
+                #     ValidationException: Extended TTL prompt caching is only
+                #     supported for Anthropic models
+                # (hit on global.amazon.nova-2-lite-v1:0). Only Anthropic model
+                # ids get a ttl string, and only when one is explicitly asked
+                # for via `prompt_cache_ttl`.
+                requested_ttl = provider_settings.pop("prompt_cache_ttl", None)
+                if requested_ttl in ("5m", "1h") and bedrock_model_supports_extended_cache_ttl(
+                    model
+                ):
+                    cache_setting = requested_ttl
+                else:
+                    cache_setting = True
                 provider_settings.update(BedrockModelSettings(
-                    bedrock_cache_instructions='5m',
-                    bedrock_cache_tool_definitions='5m'
+                    bedrock_cache_instructions=cache_setting,
+                    bedrock_cache_tool_definitions=cache_setting
                 ))
             except ImportError:
                 pass
+        else:
+            provider_settings.pop("prompt_cache_ttl", None)
 
         if provider_settings:
             options["model_settings"] = provider_settings
@@ -507,13 +530,17 @@ class AWSBedrockService(AIBaseService):
         )
 
     def get_pydantic_model(self, model_name: str, credentials: Optional[dict] = None):
-        from pydantic_ai.models.bedrock import BedrockConverseModel
         from pydantic_ai.providers.bedrock import BedrockProvider
+
+        from autobotAI_integrations.utils.bedrock_fallback import build_model
 
         if not credentials:
             credentials = self._temp_credentials()
-  
-        model = BedrockConverseModel(
+
+        # build_model, not BedrockConverseModel: a 400 that names an
+        # unsupported inference field is retried once without that field
+        # instead of failing the run. See utils/bedrock_fallback.py.
+        model = build_model(
             model_name=model_name,
             provider=BedrockProvider(
                 aws_access_key_id=credentials.get("AWS_ACCESS_KEY_ID"),
@@ -526,10 +553,11 @@ class AWSBedrockService(AIBaseService):
 
     @staticmethod
     def build_model_from_credentials(model_name: str, credentials: dict):
-        from pydantic_ai.models.bedrock import BedrockConverseModel
         from pydantic_ai.providers.bedrock import BedrockProvider
 
-        return BedrockConverseModel(
+        from autobotAI_integrations.utils.bedrock_fallback import build_model
+
+        return build_model(
             model_name=model_name,
             provider=BedrockProvider(
                 aws_access_key_id=credentials.get("access_key"),

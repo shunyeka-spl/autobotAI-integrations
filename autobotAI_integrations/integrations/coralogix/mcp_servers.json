@@ -6,8 +6,8 @@
             "servers": [
                 {
                     "name": "All",
-                    "description": "All available Coralogix MCP tools, check your coralogix mcp endpoint at 'https://coralogix.com/docs/integrations/coralogix-endpoints/#management-endpoints' before moving forward.",
-                    "url": "https://api.eu2.coralogix.com/mgmt/api/v1/mcp/",
+                    "description": "All available Coralogix MCP tools. Connects to the region set in the integration's API URL (e.g. https://api.eu2.coralogix.com), see https://coralogix.com/docs/integrations/coralogix-endpoints/#management-endpoints. Note: Coralogix MCP queries only archive storage, so logs kept only in Frequent Search return no results. Connect an S3 archive to your Coralogix account, see https://coralogix.com/docs/user-guides/mcp-server/limitations/.",
+                    "url": "{base_url}/mgmt/api/v1/mcp",
                     "headers": {}
                 }
             ]

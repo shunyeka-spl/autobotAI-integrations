@@ -143,11 +143,14 @@ class ZohoMcpService(BaseService):
             headers["apikey"] = token
             headers["zapikey"] = token
 
+        mcp_url = self.integration.mcp_base_url
         envs = {
-            "ZOHO_MCP_URL": self.integration.mcp_base_url,
+            "ZOHO_MCP_URL": mcp_url,
             "ZOHO_MCP_TOKEN": token,
         }
         return MCPCreds(
+            url=mcp_url,
             headers=headers,
             envs=envs,
         )
+

@@ -1,0 +1,28 @@
+{
+    "zoho_mcp": {
+        "streamable_http": {
+            "document_link": "https://www.zoho.com/cliq/help/restapi/",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "Zoho MCP All Tools",
+                    "description": "Dynamic discovery and execution of all tools configured on the Zoho MCP server (Cliq messaging, CRM records, Projects tasks, and organization members).",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Zoho Cliq Messaging Tools",
+                    "description": "Zoho Cliq messaging tools: post_message_in_chat, post_message_to_channel, send_direct_message.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Zoho Organization Tools",
+                    "description": "Zoho organizational discovery tools: list_channels, get_channel_details, list_users, get_user_details.",
+                    "url": "{base_url}",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

@@ -242,9 +242,9 @@ class OpenRouterService(AIBaseService):
         return Agent(model_instance, system_prompt=system_prompt, tools=tools, **options)
 
     def get_pydantic_model(self, model_name: str):
-        from pydantic_ai.models.openai import OpenAIModel
+        from pydantic_ai.models.openai import OpenAIChatModel
         from pydantic_ai.providers.openai import OpenAIProvider
-        model = OpenAIModel(
+        model = OpenAIChatModel(
             model_name=model_name,
             provider=OpenAIProvider(
                 api_key=self.integration.api_key,

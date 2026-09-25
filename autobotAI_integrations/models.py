@@ -94,6 +94,7 @@ class CLICreds(BaseCreds):
 class MCPCreds(BaseCreds):
     connection_interface: ClassVar[ConnectionInterfaces] = ConnectionInterfaces.MCP_SERVER
     creds_type: str = ConnectionInterfaces.MCP_SERVER.value
+    url: Optional[str] = None
     envs: dict = {}
     headers: dict = {}
     ignore_ssl: bool = False

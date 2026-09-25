@@ -1,5 +1,6 @@
 import pytest
 
+from autobotAI_integrations import ConnectionInterfaces
 from autobotAI_integrations.handlers.task_handler import handle_task
 from autobotAI_integrations.integrations import integration_service_factory
 
@@ -35,6 +36,17 @@ def executor(context):
 
 
 class TestClassCoralogix:
+    def test_mcp_server_url_follows_integration_api_url(self):
+        service_cls = integration_service_factory.get_service_cls("coralogix")
+        assert ConnectionInterfaces.MCP_SERVER in service_cls.supported_connection_interfaces()
+
+        actions = service_cls.get_all_mcp_server_actions()
+        assert [action.name for action in actions] == ["All"]
+        for action in actions:
+            # The region host comes from the integration's api_url, not the catalog.
+            assert action.code == "{base_url}/mgmt/api/v1/mcp"
+            assert action.executable_type == "mcp_server"
+
     def test_coralogix_python_task(
         self, get_keys, sample_integration_dict, sample_python_task, test_result_format
     ):

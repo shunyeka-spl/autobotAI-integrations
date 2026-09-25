@@ -23,7 +23,7 @@ class SlackAuthTypes(str, Enum):
     TOKEN_INTEGRATION = "token_integration"
 
 class SlackIntegration(BaseSchema):
-    webhook: Optional[str] = None
+    webhook: Optional[str] = Field(default=None, exclude=True)  # a webhook URL is a posting credential; mask it like bot_token
     workspace: Optional[str] = None
     bot_token: Optional[str] = Field(default=None, exclude=True)
 

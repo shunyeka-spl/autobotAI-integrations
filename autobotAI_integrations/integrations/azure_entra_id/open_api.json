@@ -111,6 +111,24 @@
                             "type": "string",
                             "example": "Department eq 'Finance'"
                         }
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "description": "Page size (max 999). Responses hold at most $top items in `value`; follow `@odata.nextLink` for the next page.",
+                        "schema": {
+                            "type": "string",
+                            "example": "100"
+                        }
+                    },
+                    {
+                        "name": "$select",
+                        "in": "query",
+                        "description": "Comma-separated properties to return.",
+                        "schema": {
+                            "type": "string",
+                            "example": "id,displayName,userPrincipalName,accountEnabled"
+                        }
                     }
                 ],
                 "security": [
@@ -402,7 +420,7 @@
                                 "properties": {
                                     "description": {
                                         "type": "string",
-                                        "example": "My Sample Team\u2019s Description"
+                                        "example": "My Sample Team’s Description"
                                     },
                                     "displayName": {
                                         "type": "string",
@@ -426,7 +444,7 @@
                                 },
                                 "Create team": {
                                     "value": {
-                                        "description": "My Sample Team\u2019s Description",
+                                        "description": "My Sample Team’s Description",
                                         "displayName": "My Sample Team",
                                         "template@odata.bind": "https://graph.microsoft.com/v1.0/teamsTemplates('standard')"
                                     }
@@ -2270,6 +2288,74 @@
                         "schema": {
                             "type": "string"
                         }
+                    }
+                ]
+            }
+        },
+        "/v1.0/users/{UserId}": {
+            "get": {
+                "summary": "Get a user",
+                "description": "Get one user by object id or userPrincipalName. The user is the response body itself (no `value` wrapper).",
+                "operationId": "getUser",
+                "parameters": [
+                    {
+                        "name": "UserId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "jane@contoso.com"
+                        }
+                    },
+                    {
+                        "name": "$select",
+                        "in": "query",
+                        "description": "Comma-separated properties to return. signInActivity needs AuditLog.Read.All.",
+                        "schema": {
+                            "type": "string",
+                            "example": "id,displayName,userPrincipalName,accountEnabled,lastPasswordChangeDateTime,signInActivity"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "https://graph.microsoft.com/.default"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/v1.0/auditLogs/signIns": {
+            "get": {
+                "summary": "List sign-ins",
+                "description": "List Entra ID sign-in events (newest first). Filter on the server with $filter, e.g. by user and time. Responses hold at most $top items in `value`; follow `@odata.nextLink` for the next page. Needs AuditLog.Read.All. The events are in the response's `value` list (set output_selector 'value' on the step).",
+                "operationId": "listSignIns",
+                "parameters": [
+                    {
+                        "name": "$filter",
+                        "in": "query",
+                        "description": "OData filter: userId, userPrincipalName, createdDateTime, ipAddress, status/errorCode, appDisplayName.",
+                        "schema": {
+                            "type": "string",
+                            "example": "userPrincipalName eq 'jane@contoso.com' and createdDateTime ge 2026-09-01T00:00:00Z"
+                        }
+                    },
+                    {
+                        "name": "$top",
+                        "in": "query",
+                        "description": "Page size (max 1000).",
+                        "schema": {
+                            "type": "string",
+                            "example": "50"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "oauth2": [
+                            "https://graph.microsoft.com/.default"
+                        ]
                     }
                 ]
             }

@@ -12,6 +12,7 @@ def executor(context):
 
     if not isinstance(resources, list):
         resources = [resources]
+    resources, named_here = name_resources(resources)
 
     sample_json = """
     {
@@ -97,7 +98,7 @@ def executor(context):
                 if message_content.startswith('```json') and message_content.endswith('```'):
                     message_content = message_content.strip('```').strip('json')
                 results = json.loads(message_content)
-                return combine_resources_with_decision(resources, results)
+                return combine_resources_with_decision(resources, results, named_here)
         except json.decoder.JSONDecodeError as e:
             results = {
                 "error": "Response too large or invalid JSON format.",
@@ -113,14 +114,52 @@ def executor(context):
     return results
 
 
-def combine_resources_with_decision(resources, decisions):
+_NAME_KEYS = ("id", "Id", "ID", "arn", "Arn", "ARN")
+
+
+def name_resources(resources):
+    """Give every resource a unique 'name' for the model to answer by.
+
+    The model's decisions are matched back to resources by name. A resource
+    without one (an SNS topic carries only TopicArn) used to fail the whole
+    step. Returns the resources and the ids of those named here, so the
+    temporary name can be removed again afterwards.
+    """
+    named, named_here, seen = [], set(), set()
+    for index, resource in enumerate(resources):
+        if not isinstance(resource, dict):
+            resource = {"name": str(resource)}
+        elif not resource.get("name"):
+            key = next(
+                (k for k in _NAME_KEYS if isinstance(resource.get(k), (str, int)) and resource.get(k) != ""),
+                None,
+            ) or next(
+                (
+                    k for k, v in resource.items()
+                    if isinstance(v, (str, int)) and v != ""
+                    and (k.endswith(("Arn", "Id", "_id", "_arn", "ARN", "ID")))
+                ),
+                None,
+            )
+            resource["name"] = str(resource[key]) if key else f"item-{index + 1}"
+            named_here.add(id(resource))
+        if id(resource) in named_here and str(resource["name"]) in seen:
+            resource["name"] = f"{resource['name']}#{index + 1}"
+        seen.add(str(resource["name"]))
+        named.append(resource)
+    return named, named_here
+
+
+def combine_resources_with_decision(resources, decisions, named_here=()):
     results = []
     if isinstance(decisions, dict):
         decisions = [decisions]
     for resource in resources:
         for decision in decisions:
-            if resource["name"] == decision["name"]:
+            if isinstance(decision, dict) and str(resource.get("name")) == str(decision.get("name")):
                 resource["decision"] = decision
+                if id(resource) in named_here:
+                    resource.pop("name", None)
                 results.append(resource)
                 break
     if results:

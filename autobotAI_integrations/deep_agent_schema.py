@@ -508,6 +508,12 @@ class DeepAgentPayload(Payload):
         # A goal_driven run is meaningless without a goal — mirror the same
         # invariant enforced on core's OptimusConfigBaseSchema so the contract
         # can't be violated from either side.
+        #
+        # Offensive-security runs are the exception: they are forced goal_driven
+        # for finalization, but the goal is synthesized by the payload builder
+        # (operators never write one).
+        if self.agent_kind == AgentKind.OFFENSIVE_SECURITY:
+            return self
         if self.run_mode == RunMode.GOAL_DRIVEN and not (self.goal and self.goal.strip()):
             raise ValueError("run_mode=goal_driven requires a non-empty goal")
         return self

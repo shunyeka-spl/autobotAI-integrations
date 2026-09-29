@@ -210,10 +210,15 @@ def executor(context):
             return []
         base_path = os.path.dirname(inspect.getfile(cls))
         integration_type = cls.get_integration_type()
-        with open(path.join(base_path, "inventory.json")) as f:
+        inv_path = path.join(base_path, "inventory.json")
+        if not os.path.exists(inv_path):
+            return []
+        with open(inv_path, "r", encoding="utf-8-sig") as f:
             clients_data = f.read()
+            if not clients_data.strip():
+                return []
             data = json.loads(clients_data)
-        return data[integration_type]
+        return data.get(integration_type, [])
 
     @classmethod
     def get_all_python_sdk_clients(cls, integration_type=None):
@@ -223,8 +228,12 @@ def executor(context):
         if integration_type is not None:
             base_path = base_path + f"/integrations/{integration_type}"
             logger.info("base path is %s", base_path)
-        with open(path.join(base_path, ".", "python_sdk_clients.yml")) as f:
-            return yaml.safe_load(f)
+        sdk_path = path.join(base_path, ".", "python_sdk_clients.yml")
+        if not os.path.exists(sdk_path):
+            return []
+        with open(sdk_path, "r", encoding="utf-8-sig") as f:
+            res = yaml.safe_load(f)
+            return res if res else []
 
     @classmethod
     def get_all_rest_api_actions(cls) -> List[OpenAPIAction]:
@@ -254,8 +263,11 @@ def executor(context):
         base_path = os.path.dirname(inspect.getfile(cls))
         if not os.path.exists(os.path.join(base_path, "mcp_servers.json")):
             return []
-        with open(path.join(base_path, "mcp_servers.json")) as f:
-            server_config = json.load(f)
+        with open(path.join(base_path, "mcp_servers.json"), "r", encoding="utf-8-sig") as f:
+            content = f.read()
+            if not content.strip():
+                return []
+            server_config = json.loads(content)
             mcp_server_action = load_actions_from_mcp_server_config(server_config)
             return mcp_server_action
         return []
@@ -271,8 +283,11 @@ def executor(context):
         if not os.path.exists(open_api_path):
             return None
         try:
-            with open(open_api_path, "r") as f:
-                data = json.load(f)
+            with open(open_api_path, "r", encoding="utf-8-sig") as f:
+                content = f.read()
+                if not content.strip():
+                    return None
+                data = json.loads(content)
                 doc_url = data.get("externalDocs", {}).get("url")
                 if not doc_url:
                     servers = data.get("servers", [])
@@ -1120,12 +1135,19 @@ class AIBaseService(BaseService):
         import time
         try:
             start_t = time.time()
-            self.prompt_executor(
+            res = self.prompt_executor(
                 model=model,
                 prompt="ping",
                 params="chat",
                 options={"max_tokens": 16},
             )
+            if isinstance(res, str):
+                try:
+                    parsed = json.loads(res)
+                    if isinstance(parsed, dict) and "error" in parsed:
+                        return {"success": False, "model": model, "error": parsed["error"]}
+                except Exception:
+                    pass
             latency_ms = int((time.time() - start_t) * 1000)
             return {"success": True, "model": model, "latency_ms": latency_ms}
         except Exception as e:

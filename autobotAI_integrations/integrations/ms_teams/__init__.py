@@ -1,10 +1,22 @@
 from typing import List, Optional, Type, Union
 
 from autobotAI_integrations.models import BaseSchema, CLICreds, ConnectionInterfaces, IntegrationCategory, SDKClient, SDKCreds
-import re
 
 from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask
 import importlib
+
+from .webhook import (
+    WorkflowConnectorCard,
+    classify_teams_webhook,
+    post_workflow_message,
+)
+
+
+def _user_initiated(ctx) -> bool:
+    meta = getattr(ctx, "meta", None)
+    if meta is None and isinstance(ctx, dict):
+        meta = ctx.get("meta")
+    return bool(meta and meta.get("user_initiated_request"))
 
 
 class MsTeamsIntegration(BaseSchema):
@@ -32,16 +44,40 @@ class MsTeamsService(BaseService):
         super().__init__(ctx, integration)
 
     def _test_integration(self) -> dict:
-        import pymsteams
-        pattern = re.compile(
-            "https:\\/\\/[\\w\\-\\.]+\\/webhookb2\\/[\\w\\d\\-\\@]+\\/IncomingWebhook\\/[\\w\\d\\-\\@]+\\/[\\w\\d\\-\\@]+")
-        result = pattern.match(self.integration.webhook)
-        if result is None:
-            return {'success': False, "error": "Webhook is not valid MS Teams webhook URL"}
+        kind = classify_teams_webhook(self.integration.webhook)
+        if kind is None:
+            return {
+                "success": False,
+                "error": (
+                    "Webhook is not a valid Microsoft Teams webhook URL. "
+                    "Use an Incoming Webhook URL or the full URL from a Teams Workflow."
+                ),
+            }
+        if kind == "workflow":
+            # Background health checks must not post into the channel.
+            # A user-initiated test sends the Adaptive Card the Workflow expects.
+            if not _user_initiated(self.ctx):
+                return {"success": True}
+            try:
+                post_workflow_message(
+                    self.integration.webhook,
+                    {
+                        "title": "autobotAI",
+                        "text": "Microsoft Teams webhook is connected.",
+                    },
+                )
+                return {"success": True}
+            except Exception as exc:
+                return {
+                    "success": False,
+                    "error": f"Unable to send message to Webhook: {exc}",
+                }
         try:
+            import pymsteams
+
             client = pymsteams.connectorcard(self.integration.webhook)
             client.send()
-            return {'success': True}
+            return {"success": True}
         except Exception as e:
             if str(e).startswith("Summary or Text is required"):
                 return {"success": True}
@@ -59,7 +95,7 @@ class MsTeamsService(BaseService):
                     "label": "Webhook URL",
                     "placeholder": "Enter your Webhook URL",
                     "required": True,
-                    "help_url": "https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook",
+                    "help_url": "https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498",
                     "help_url_text": "Create Webhook ↗",
                 }
             ],
@@ -120,10 +156,16 @@ class MsTeamsService(BaseService):
 
     def build_python_exec_combinations_hook(self, payload_task: PayloadTask, client_definitions: List[SDKClient]) -> list:
         pymsteams = importlib.import_module(client_definitions[0].import_library_names[0], package=None)
+        webhook = self.integration.webhook
+        client = (
+            WorkflowConnectorCard(webhook)
+            if classify_teams_webhook(webhook) == "workflow"
+            else pymsteams.connectorcard(webhook)
+        )
         return [
             {
                 "clients": {
-                    "pymsteams": pymsteams.connectorcard(self.integration.webhook)
+                    "pymsteams": client
                 },
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context

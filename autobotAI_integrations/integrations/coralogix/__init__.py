@@ -77,7 +77,7 @@ class CoralogixService(BaseService):
                     "type": "text/url",
                     "label": "API URL",
                     "placeholder": "Enter your domain api url (e.g., https://ng-api-http.coralogix.in)",
-                    "description": "Enter your domain api url, for more info: https://coralogix.com/docs/coralogix-endpoints/#data-prime",
+                    "description": "Enter your domain api url, for more info: https://coralogix.com/docs/coralogix-endpoints/#data-prime. The Coralogix MCP server also connects through this URL, so it must match your Coralogix region.",
                     "required": True,
                 },
                 {

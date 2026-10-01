@@ -23,6 +23,19 @@ class IntegrationStates(str, Enum):
         return self.value
 
 
+def _to_str(value: Any) -> Optional[str]:
+    # boto3's DynamoDB Binary.__str__ returns bytes, so str() raises TypeError.
+    # Decode raw bytes; anything undecodable (e.g. ciphertext that was never
+    # decrypted) becomes None instead of failing the whole model.
+    raw = getattr(value, "value", value)
+    if isinstance(raw, (bytes, bytearray)):
+        try:
+            return bytes(raw).decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+    return str(value)
+
+
 class IntegrationSchema(BaseModel):
     userId: str  # The user creating the Integration
     accountId: str  # Unique ID for the integration, For AWS it is Account ID, Azure it is subscription id and GCP it is project id, if no unique id available we generate an unique id.
@@ -58,7 +71,7 @@ class IntegrationSchema(BaseModel):
             annotation = cls.model_fields[field].annotation                        
             if annotation == str or (get_origin(annotation) in [Optional, Union] and str in get_args(annotation)):
                 if field in values and values[field] is not None:
-                    values[field] = str(values[field])
+                    values[field] = _to_str(values[field])
         return values
 
     @classmethod

@@ -1,0 +1,22 @@
+{
+    "grafana": {
+        "streamable_http": {
+            "document_link": "https://github.com/grafana/mcp-grafana",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "Grafana Observability MCP Server",
+                    "description": "Official Grafana Model Context Protocol server enabling AI assistants to query metrics, analyze logs and traces, manage dashboards, and inspect alerts.",
+                    "url": "{host_url}/api/mcp",
+                    "headers": {}
+                },
+                {
+                    "name": "Grafana Local MCP Server",
+                    "description": "Local/sidecar deployment of official mcp-grafana server over Streamable HTTP.",
+                    "url": "http://localhost:8000/mcp",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

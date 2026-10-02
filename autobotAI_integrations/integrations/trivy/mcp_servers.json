@@ -1,0 +1,16 @@
+{
+    "trivy": {
+        "streamable_http": {
+            "document_link": "https://github.com/aquasecurity/trivy-mcp",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "Trivy Security Scanner MCP Server",
+                    "description": "Official Aqua Security Trivy Model Context Protocol server enabling natural language vulnerability scanning, SBOM generation, license compliance, and security policy checks.",
+                    "url": "http://localhost:8080",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

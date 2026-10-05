@@ -3,7 +3,7 @@
   "info": {
     "title": "Devo Query & Alerts API",
     "version": "2.0",
-    "description": "Devo SIEM Query API (LINQ log search, tables, query jobs) and Alerts API (alert definitions). Triggered alerts are stored in the siem.logtrust.alert.info table and are retrieved with Run Query."
+    "description": "Devo SIEM Query API (LINQ log search, table schemas, query jobs; 'Query API' token) and Alerts API (alert definitions and triggered alerts; separate 'Alert API' token)."
   },
   "servers": [
     {
@@ -14,7 +14,7 @@
     "/search/query": {
       "post": {
         "summary": "Run Query",
-        "description": "Run a LINQ query against Devo and return the matching events. 'from'/'to' are UTC epoch seconds (or relative expressions such as '1h', '2d', 'now', 'today'). Use mode.type 'json' for an array of objects. Example queries: 'from siem.logtrust.alert.info select *' (triggered alerts), 'from firewall.all.traffic where srcIp = \"10.0.0.1\" select *'.",
+        "description": "Run a LINQ query against Devo and return the matching events. 'from' is required and 'to' is recommended (omitting 'to' makes the query continuous): UTC epoch seconds or relative expressions such as '1h', '2d', 'today', 'now'. The token's target tables must include the queried table. Response mode defaults to json (status 0 = success, otherwise msg/error and object describe the failure).",
         "requestBody": {
           "required": true,
           "description": "Query request. Either 'query' (LINQ) or 'queryId' (saved query) is required, plus 'from'.",
@@ -23,14 +23,13 @@
               "schema": {
                 "type": "object",
                 "example": {
-                  "query": "from siem.logtrust.alert.info select eventdate, alertHost, context, extraData",
+                  "query": "from siem.logtrust.web.activity select eventdate, username, url",
                   "from": "1h",
                   "to": "now",
                   "limit": 100,
                   "mode": {
                     "type": "json"
                   },
-                  "timeZone": "GMT",
                   "ipAsString": true
                 }
               }
@@ -69,7 +68,7 @@
     "/search/jobs": {
       "get": {
         "summary": "List Query Jobs",
-        "description": "List the status of all query jobs (e.g. queries sent to a destination such as S3/HDFS) in the domain.",
+        "description": "List the status of all query jobs (e.g. queries sent to a destination such as S3/HDFS) in the domain. Jobs exist only for queries whose results are forwarded to a destination (HDFS, S3, Kafka, email, SNMP).",
         "responses": {
           "200": {
             "description": "Successful response"
@@ -80,7 +79,7 @@
     "/search/job/{jobId}": {
       "get": {
         "summary": "Get Query Job",
-        "description": "Get the status of a single query job.",
+        "description": "Get the status of a single query job. Jobs exist only for queries whose results are forwarded to a destination (HDFS, S3, Kafka, email, SNMP).",
         "parameters": [
           {
             "name": "jobId",
@@ -102,7 +101,7 @@
     "/search/job/stop/{jobId}": {
       "get": {
         "summary": "Stop Query Job",
-        "description": "Stop a running query job; it resumes from where it stopped when started again.",
+        "description": "Stop a running query job; it resumes from where it stopped when started again. Jobs exist only for queries whose results are forwarded to a destination (HDFS, S3, Kafka, email, SNMP).",
         "parameters": [
           {
             "name": "jobId",
@@ -124,7 +123,7 @@
     "/search/job/start/{jobId}": {
       "get": {
         "summary": "Start Query Job",
-        "description": "Start (resume) a stopped query job.",
+        "description": "Start (resume) a stopped query job. Jobs exist only for queries whose results are forwarded to a destination (HDFS, S3, Kafka, email, SNMP).",
         "parameters": [
           {
             "name": "jobId",
@@ -146,7 +145,7 @@
     "/search/job/remove/{jobId}": {
       "get": {
         "summary": "Remove Query Job",
-        "description": "Remove a query job.",
+        "description": "Remove a query job. Jobs exist only for queries whose results are forwarded to a destination (HDFS, S3, Kafka, email, SNMP).",
         "parameters": [
           {
             "name": "jobId",
@@ -362,6 +361,189 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alerts/list": {
+      "get": {
+        "summary": "List Triggered Alerts",
+        "description": "List alerts triggered in the domain within a time range. 'from'/'to' are epoch milliseconds. Closed and false-positive alerts are excluded unless showAll=true.",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": true,
+            "description": "Maximum number of alerts returned",
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": true,
+            "description": "Position of the first alert returned (0 for the start)",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "description": "Alerts triggered after this time, epoch milliseconds",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "description": "Alerts triggered before this time, epoch milliseconds",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderby",
+            "in": "query",
+            "required": false,
+            "description": "Sort field: id, domain, priority, context, category, srcIp, srcHost, dstIp, dstHost, username, application, status, createDate, updateDate, ...",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orderasc",
+            "in": "query",
+            "required": false,
+            "description": "true for ascending order",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "showAll",
+            "in": "query",
+            "required": false,
+            "description": "true to include closed and false-positive alerts",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alerts/get": {
+      "get": {
+        "summary": "Get Triggered Alert",
+        "description": "Get a triggered alert by ID. Keep tags=false: Devo only accepts the tags parameter with a Query API token, not the Alert API token.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "description": "Triggered alert ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "required": false,
+            "description": "Include alert tags (requires a Query API token; leave false)",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "annotations",
+            "in": "query",
+            "required": false,
+            "description": "Include alert annotations",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alerts/updateStatus": {
+      "put": {
+        "summary": "Update Triggered Alert Status",
+        "description": "Set the status of a triggered alert: 0 Unread, 1 Updated, 2 False Positive, 100 Watched, 300 Closed, 800 Suppressed.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "description": "Triggered alert ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "description": "New status code (0, 1, 2, 100, 300, 800)",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alerts/{alertID}/priority": {
+      "put": {
+        "summary": "Update Triggered Alert Priority",
+        "description": "Set the priority of a triggered alert (1 very low ... 10 very high).",
+        "parameters": [
+          {
+            "name": "alertID",
+            "in": "path",
+            "required": true,
+            "description": "Triggered alert ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": true,
+            "description": "New priority, 1-10",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful response"

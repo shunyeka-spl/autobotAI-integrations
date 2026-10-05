@@ -1,0 +1,373 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Devo Query & Alerts API",
+    "version": "2.0",
+    "description": "Devo SIEM Query API (LINQ log search, tables, query jobs) and Alerts API (alert definitions). Triggered alerts are stored in the siem.logtrust.alert.info table and are retrieved with Run Query."
+  },
+  "servers": [
+    {
+      "url": "{base_url}"
+    }
+  ],
+  "paths": {
+    "/search/query": {
+      "post": {
+        "summary": "Run Query",
+        "description": "Run a LINQ query against Devo and return the matching events. 'from'/'to' are UTC epoch seconds (or relative expressions such as '1h', '2d', 'now', 'today'). Use mode.type 'json' for an array of objects. Example queries: 'from siem.logtrust.alert.info select *' (triggered alerts), 'from firewall.all.traffic where srcIp = \"10.0.0.1\" select *'.",
+        "requestBody": {
+          "required": true,
+          "description": "Query request. Either 'query' (LINQ) or 'queryId' (saved query) is required, plus 'from'.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "query": "from siem.logtrust.alert.info select eventdate, alertHost, context, extraData",
+                  "from": "1h",
+                  "to": "now",
+                  "limit": 100,
+                  "mode": {
+                    "type": "json"
+                  },
+                  "timeZone": "GMT",
+                  "ipAsString": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/table/{tableName}": {
+      "get": {
+        "summary": "Get Table Schema",
+        "description": "Return the field names and types of a Devo table (e.g. firewall.all.traffic) to help build queries.",
+        "parameters": [
+          {
+            "name": "tableName",
+            "in": "path",
+            "required": true,
+            "description": "Full Devo table name, e.g. siem.logtrust.web.activity",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/jobs": {
+      "get": {
+        "summary": "List Query Jobs",
+        "description": "List the status of all query jobs (e.g. queries sent to a destination such as S3/HDFS) in the domain.",
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/job/{jobId}": {
+      "get": {
+        "summary": "Get Query Job",
+        "description": "Get the status of a single query job.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Query job ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/job/stop/{jobId}": {
+      "get": {
+        "summary": "Stop Query Job",
+        "description": "Stop a running query job; it resumes from where it stopped when started again.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Query job ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/job/start/{jobId}": {
+      "get": {
+        "summary": "Start Query Job",
+        "description": "Start (resume) a stopped query job.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Query job ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/search/job/remove/{jobId}": {
+      "get": {
+        "summary": "Remove Query Job",
+        "description": "Remove a query job.",
+        "parameters": [
+          {
+            "name": "jobId",
+            "in": "path",
+            "required": true,
+            "description": "Query job ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alertDefinitions": {
+      "get": {
+        "summary": "List Alert Definitions",
+        "description": "List the alert definitions of the domain, optionally filtered by name or ID.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page index, starting at 0",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "description": "Items per page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nameFilter",
+            "in": "query",
+            "required": false,
+            "description": "Case-insensitive filter on alert name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "description": "Return only the alert definition with this ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Alert Definition",
+        "description": "Create an alert definition. correlationTrigger.kind is one of each, several, low, inactivity, rolling, deviation, gradient. message/description may reference $columnName.",
+        "requestBody": {
+          "required": true,
+          "description": "Alert definition",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "name": "Suspicious login burst",
+                  "subcategory": "lib.my.security",
+                  "message": "Failed logins from $srcIp",
+                  "description": "More than 20 failed logins in 5 minutes",
+                  "isActive": true,
+                  "alertCorrelationContext": {
+                    "querySourceCode": "from auth.all.events where result = \"failure\" group every 5m by srcIp select count() as failures where failures > 20",
+                    "priority": 7,
+                    "correlationTrigger": {
+                      "kind": "each"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Alert Definition",
+        "description": "Update an alert definition. 'id', and the original 'name' and 'subcategory' (not editable) are required.",
+        "requestBody": {
+          "required": true,
+          "description": "Alert definition fields to update",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "id": "123456",
+                  "name": "Suspicious login burst",
+                  "subcategory": "lib.my.security",
+                  "message": "Failed logins from $srcIp",
+                  "alertCorrelationContext": {
+                    "priority": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Alert Definitions",
+        "description": "Delete one or more alert definitions.",
+        "parameters": [
+          {
+            "name": "alertIds",
+            "in": "query",
+            "required": true,
+            "description": "Alert definition ID. Repeat for several IDs (alertIds=1&alertIds=2).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alertDefinitions/status": {
+      "put": {
+        "summary": "Enable or Disable Alert Definitions",
+        "description": "Enable (enable=true) or disable (enable=false) one or more alert definitions.",
+        "parameters": [
+          {
+            "name": "alertIds",
+            "in": "query",
+            "required": true,
+            "description": "Alert definition ID. Repeat for several IDs (alertIds=1&alertIds=2).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "enable",
+            "in": "query",
+            "required": true,
+            "description": "true to enable, false to disable",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "https://{devo_alerts_host}/alerts/v1/alertDefinitions/{id}/deliveryPolicy": {
+      "put": {
+        "summary": "Set Alert Delivery Policy",
+        "description": "Assign sending policies to an alert definition. type is POLICY_BASED, NO_NOTIFICATION or DEFAULT_POLICY.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Alert definition ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Delivery policy",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "example": {
+                  "type": "POLICY_BASED",
+                  "policies": [
+                    {
+                      "id": "policy-id"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  }
+}

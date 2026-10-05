@@ -183,3 +183,10 @@ def test_devo_test_integration_skips_alerts_without_token():
     ) as get:
         assert service._test_integration() == {"success": True}
     assert get.call_count == 1
+
+
+def test_devo_skip_test_makes_no_requests():
+    service = DevoService({}, _integration(skip_test=True))
+    with mock.patch("autobotAI_integrations.integrations.devo.requests.get") as get:
+        assert service._test_integration() == {"success": True}
+    get.assert_not_called()

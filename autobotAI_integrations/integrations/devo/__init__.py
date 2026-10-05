@@ -38,6 +38,7 @@ class DevoIntegration(BaseSchema):
     token: Optional[str] = Field(default=None, exclude=True)
     alerts_token: Optional[str] = Field(default=None, exclude=True)
     test_table: Optional[str] = Field(default=DEFAULT_TEST_TABLE)
+    skip_test: Optional[bool] = Field(default=False)
     query_api_url: Optional[str] = Field(
         default=None,
         description="Overrides the region's Query API URL (e.g. https://apiv2-us.devo.com)",
@@ -131,6 +132,8 @@ class DevoService(BaseService):
         return f"Alerts API request failed ({response.status_code}): {response.text[:300]}"
 
     def _test_integration(self) -> dict:
+        if self.integration.skip_test:
+            return {"success": True}
         try:
             error = self._test_query_token()
             if not error and self.integration.alerts_token:
@@ -199,6 +202,20 @@ class DevoService(BaseService):
                     "token's target tables.",
                     "required": False,
                     "default": DEFAULT_TEST_TABLE,
+                },
+                {
+                    "name": "skip_test",
+                    "type": "select",
+                    "label": "Skip Test Integration",
+                    "placeholder": "Skip the integration test",
+                    "description": "If enabled, skips the connection test (useful when the API is "
+                    "not reachable from autobotAI at setup time).",
+                    "required": True,
+                    "options": [
+                        {"label": "No", "value": False},
+                        {"label": "Yes", "value": True},
+                    ],
+                    "default": False,
                 },
                 {
                     "name": "query_api_url",

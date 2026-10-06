@@ -105,6 +105,7 @@ class OpenRouterService(AIBaseService):
                 "nvidia/nemotron-3-super-120b-a12b:free",
                 "openai/gpt-oss-120b",
                 "z-ai/glm-5.1",
+                "moonshotai/kimi-k3"
             ]
             return {
                 "integration_id": self.integration.accountId,
@@ -306,4 +307,3 @@ class OpenRouterService(AIBaseService):
             **kwargs,
         )
         return embed_model
-

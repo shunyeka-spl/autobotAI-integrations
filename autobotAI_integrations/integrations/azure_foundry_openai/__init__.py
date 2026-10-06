@@ -89,6 +89,7 @@ class AzureOpenAIService(AIBaseService):
             # Hardcoded models first so canonical names win over a
             # case-variant test_model; then append test_model if unique.
             model_candidates = [
+                "gpt-5.6-sol",
                 "gpt-5.5",
                 "gpt-5",
                 "gpt-5-mini",

@@ -72,6 +72,7 @@ class OpenRouterService(AIBaseService):
     def get_integration_specific_details(self) -> dict:
         try:
             available_models = [
+                "openai/gpt-5.6-sol",
                 "openai/gpt-5.5",
                 "anthropic/claude-sonnet-5",
                 "anthropic/claude-fable-5",

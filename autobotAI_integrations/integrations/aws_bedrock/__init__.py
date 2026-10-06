@@ -269,6 +269,8 @@ class AWSBedrockService(AIBaseService):
                 )
 
             default_top_models = [
+                "global.anthropic.claude-opus-5-5",
+                "global.openai.gpt-5.6-sol",
                 "global.anthropic.claude-haiku-4-5-20251001-v1:0",
                 "global.anthropic.claude-sonnet-5",
                 "global.anthropic.claude-opus-5",

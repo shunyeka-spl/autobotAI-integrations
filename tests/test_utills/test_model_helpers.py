@@ -29,6 +29,23 @@ class TestTemperatureRejection(unittest.TestCase):
         ):
             self.assertTrue(bedrock_model_rejects_temperature(model), model)
 
+    def test_claude_opus_5_5_rejects_temperature_on_every_geo(self):
+        for model in (
+            "global.anthropic.claude-opus-5-5",
+            "us.anthropic.claude-opus-5-5",
+            "eu.anthropic.claude-opus-5-5",
+            "anthropic.claude-opus-5-5",
+        ):
+            self.assertTrue(bedrock_model_rejects_temperature(model), model)
+
+    def test_gpt_5_6_sol_rejects_temperature(self):
+        for model in (
+            "global.openai.gpt-5.6-sol",
+            "us.openai.gpt-5.6-sol",
+            "openai.gpt-5.6-sol",
+        ):
+            self.assertTrue(bedrock_model_rejects_temperature(model), model)
+
     def test_other_models_still_take_temperature(self):
         for model in (
             "global.amazon.nova-2-lite-v1:0",

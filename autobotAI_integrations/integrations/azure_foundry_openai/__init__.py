@@ -89,6 +89,7 @@ class AzureOpenAIService(AIBaseService):
             # Hardcoded models first so canonical names win over a
             # case-variant test_model; then append test_model if unique.
             model_candidates = [
+                "gpt-6-luna",
                 "gpt-5.6-sol",
                 "gpt-5.5",
                 "gpt-5",
@@ -320,12 +321,15 @@ class AzureOpenAIService(AIBaseService):
     def get_pydantic_model(self, model_name: str):
         from pydantic_ai.models.openai import OpenAIResponsesModel
         from pydantic_ai.providers.openai import OpenAIProvider
+        from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
+
         model = OpenAIResponsesModel(
             model_name=model_name,
             provider=OpenAIProvider(
                 api_key=self.integration.api_key,
                 base_url=f"{self.integration.azure_endpoint}/openai/{self.integration.azure_api_version}/"
             ),
+            profile=openai_profile_overrides(model_name) or None,
         )
         return model
 
@@ -333,6 +337,7 @@ class AzureOpenAIService(AIBaseService):
     def build_model_from_credentials(model_name: str, credentials: dict):
         from pydantic_ai.models.openai import OpenAIResponsesModel
         from pydantic_ai.providers.openai import OpenAIProvider
+        from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
 
         return OpenAIResponsesModel(
             model_name=model_name,
@@ -340,6 +345,7 @@ class AzureOpenAIService(AIBaseService):
                 api_key=credentials.get("api_key"),
                 base_url=credentials.get("base_url"),
             ),
+            profile=openai_profile_overrides(model_name) or None,
         )
 
     def load_llama_index_embedding_model(self, model_name: Optional[str] = None, **kwargs):
@@ -367,14 +373,39 @@ class AzureOpenAIService(AIBaseService):
         return embed_model
 
     def load_llama_index_llm(self, model, **kwargs):
-        from llama_index.llms.openai import OpenAI
+        from autobotAI_integrations.utils.llama_index_helpers import (
+            build_openai_compatible_llm,
+            llama_index_knows_openai_model,
+            openai_context_window,
+        )
+        from autobotAI_integrations.utils.model_helpers import model_rejects_temperature
 
-        llm = OpenAI(
+        api_base = f"{self.integration.azure_endpoint}/openai/{self.integration.azure_api_version}/"
+
+        # llama-index's OpenAI class raises "Unknown model" for anything outside
+        # its built-in table (gpt-6-luna, renamed deployments) and always sends
+        # temperature. Known models keep the class they have always used.
+        if llama_index_knows_openai_model(model) and not model_rejects_temperature(model):
+            from llama_index.llms.openai import OpenAI
+
+            return OpenAI(
+                api_key=self.integration.api_key,
+                api_base=api_base,
+                model=model,
+                **kwargs)
+
+        # Every Azure Foundry OpenAI deployment is a chat model with tool
+        # calling; declare it rather than letting llama-index guess from the
+        # name.
+        kwargs.setdefault("context_window", openai_context_window(model))
+        return build_openai_compatible_llm(
+            model,
             api_key=self.integration.api_key,
-            api_base=f"{self.integration.azure_endpoint}/openai/{self.integration.azure_api_version}/",
-            model=model,
-            **kwargs)
-        return llm
+            api_base=api_base,
+            is_chat_model=True,
+            is_function_calling_model=True,
+            **kwargs,
+        )
 
     def generate_llm_credentials(self):
         api_version = self.integration.azure_api_version or "v1"

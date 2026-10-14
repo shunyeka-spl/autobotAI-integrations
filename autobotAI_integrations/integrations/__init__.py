@@ -39,7 +39,10 @@ class IntegrationServiceFactory:
         return sorted(
             f.name
             for f in os.scandir(cls._integrations_dir())
-            if f.is_dir() and not f.name.startswith(".") and not f.name.startswith("__")
+            if f.is_dir()
+            and not f.name.startswith(".")
+            and not f.name.startswith("__")
+            and os.path.isfile(os.path.join(f.path, "__init__.py"))
         )
 
     # ------------------------------------------------------------------

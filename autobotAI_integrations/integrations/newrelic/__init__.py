@@ -32,9 +32,15 @@ class NewrelicService(BaseService):
 
     def _test_integration(self) -> dict:
         try:
+            base_domain = (
+                "api.eu.newrelic.com"
+                if (self.integration.region or "").lower() == "eu"
+                else "api.newrelic.com"
+            )
             response = requests.get(
-                "https://api.newrelic.com/v2/applications.json",
+                f"https://{base_domain}/v2/applications.json",
                 headers={"X-Api-Key": self.integration.api_key},
+                timeout=15,
             )
 
             if response.status_code == 200:
@@ -44,8 +50,10 @@ class NewrelicService(BaseService):
                     "success": False,
                     "error": f"Request failed with status code: {response.status_code}",
                 }
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             return {"success": False, "error": "Connection is unreachable"}
+        except Exception as e:
+            return {"success": False, "error": f"Request failed with error: {str(e)}"}
 
     @staticmethod
     def get_forms():
@@ -100,6 +108,7 @@ class NewrelicService(BaseService):
         return [
             ConnectionInterfaces.STEAMPIPE,
             ConnectionInterfaces.CLI,
+            ConnectionInterfaces.MCP_SERVER,
         ]
 
     def generate_steampipe_creds(self) -> SteampipeCreds:
@@ -118,4 +127,12 @@ class NewrelicService(BaseService):
             connection_name="newrelic",
             conf_path=conf_path,
             config=config,
+        )
+
+    def generate_mcp_creds(self) -> MCPCreds:
+        headers = {}
+        if self.integration.api_key:
+            headers["Api-Key"] = self.integration.api_key
+        return MCPCreds(
+            headers=headers,
         )

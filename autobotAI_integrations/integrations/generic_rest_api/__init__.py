@@ -42,6 +42,8 @@ class GenericRestAPIIntegration(BaseSchema):
     api_key_in: Optional[str] = Field(
         default="header", description="API Key Location (header, query, etc)"
     )
+    # Values for custom-integration headers defined on the form.
+    custom_header_params: Optional[list] = Field(default=None, exclude=True)
 
     name: Optional[str] = "Generic REST API"
     category: Optional[str] = IntegrationCategory.OTHERS.value
@@ -77,6 +79,18 @@ class GenericRestAPIService(BaseService):
             integration = GenericRestAPIIntegration(**integration)
         super().__init__(ctx, integration)
 
+    def _custom_headers(self):
+        headers = {}
+        for item in self.integration.custom_header_params or []:
+            if not isinstance(item, dict):
+                continue
+            name = str(item.get("name") or "").strip()
+            value = item.get("value")
+            if not name or value in (None, ""):
+                continue
+            headers[name] = str(value)
+        return headers
+
     def _test_integration(self) -> dict:
         try:
             urlparse(self.integration.api_url)
@@ -100,6 +114,12 @@ class GenericRestAPIService(BaseService):
                     parameters["params"] = {
                         self.integration.api_key_name: self.integration.api_key_value
                     }
+            extra_headers = self._custom_headers()
+            if extra_headers:
+                parameters["headers"] = {
+                    **(parameters.get("headers") or {}),
+                    **extra_headers,
+                }
             test_url = self.integration.api_url.rstrip('/') + '/' + self.integration.healthcheck_get_api_path.lstrip('/')
             verify_ssl = not self.integration.ignore_ssl
             response = requests.get(url=test_url, **parameters, verify=verify_ssl)
@@ -381,5 +401,12 @@ class GenericRestAPIService(BaseService):
                 base_creds['headers'] = key_param
             elif self.integration.api_key_in == "query":
                 base_creds['query_params'] = key_param
-                
+
+        extra_headers = self._custom_headers()
+        if extra_headers:
+            base_creds["headers"] = {
+                **(base_creds.get("headers") or {}),
+                **extra_headers,
+            }
+
         return RestAPICreds(**base_creds)

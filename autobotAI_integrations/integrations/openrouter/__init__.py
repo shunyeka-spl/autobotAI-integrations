@@ -72,7 +72,9 @@ class OpenRouterService(AIBaseService):
     def get_integration_specific_details(self) -> dict:
         try:
             available_models = [
+                "openai/gpt-5.6-sol",
                 "openai/gpt-5.5",
+                "anthropic/claude-opus-5.5",
                 "anthropic/claude-sonnet-5",
                 "anthropic/claude-fable-5",
                 "openai/gpt-5",
@@ -104,6 +106,7 @@ class OpenRouterService(AIBaseService):
                 "nvidia/nemotron-3-super-120b-a12b:free",
                 "openai/gpt-oss-120b",
                 "z-ai/glm-5.1",
+                "moonshotai/kimi-k3"
             ]
             return {
                 "integration_id": self.integration.accountId,
@@ -244,12 +247,19 @@ class OpenRouterService(AIBaseService):
     def get_pydantic_model(self, model_name: str):
         from pydantic_ai.models.openai import OpenAIChatModel
         from pydantic_ai.providers.openai import OpenAIProvider
+        from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
+
         model = OpenAIChatModel(
             model_name=model_name,
             provider=OpenAIProvider(
                 api_key=self.integration.api_key,
                 base_url=OPENROUTER_BASE_URL,
             ),
+            # OpenRouter ids are vendor/model, so pydantic-ai's OpenAIProvider
+            # cannot apply Anthropic's constraints by itself (e.g.
+            # anthropic/claude-opus-5.5 rejects temperature and forced tool
+            # choice).
+            profile=openai_profile_overrides(model_name) or None,
         )
         return model
 
@@ -257,6 +267,7 @@ class OpenRouterService(AIBaseService):
     def build_model_from_credentials(model_name: str, credentials: dict):
         from pydantic_ai.models.openai import OpenAIChatModel
         from pydantic_ai.providers.openai import OpenAIProvider
+        from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
 
         return OpenAIChatModel(
             model_name=model_name,
@@ -264,19 +275,22 @@ class OpenRouterService(AIBaseService):
                 api_key=credentials.get("api_key"),
                 base_url=credentials.get("base_url") or OPENROUTER_BASE_URL,
             ),
+            profile=openai_profile_overrides(model_name) or None,
         )
 
     def load_llama_index_llm(self, model, **kwargs):
-        from llama_index.llms.openai_like import OpenAILike
+        from autobotAI_integrations.utils.llama_index_helpers import (
+            build_openai_compatible_llm,
+        )
 
-        llm = OpenAILike(
+        # OpenAILike that drops temperature for models that reject it.
+        return build_openai_compatible_llm(
+            model,
             api_key=self.integration.api_key,
             api_base=OPENROUTER_BASE_URL,
-            model=model,
             is_chat_model=True,
             **kwargs,
         )
-        return llm
 
     def load_llama_index_embedding_model(
         self, model_name: Optional[str] = None, **kwargs
@@ -305,4 +319,3 @@ class OpenRouterService(AIBaseService):
             **kwargs,
         )
         return embed_model
-

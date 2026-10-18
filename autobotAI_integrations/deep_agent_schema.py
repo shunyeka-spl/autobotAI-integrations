@@ -310,6 +310,16 @@ class OffensiveTarget(BaseModel):
     label: Optional[str] = Field(
         None, description="Human-readable label (e.g. domain name or repo slug)"
     )
+    ownership_verified: bool = Field(
+        False,
+        description=(
+            "True when this target's host passed TXT domain-ownership "
+            "verification. The runtime pre-flight refuses to scan a hostname "
+            "that resolves to a public internet address without it — "
+            "operator-asserted internal targets are trusted for private "
+            "address space only."
+        ),
+    )
 
 
 class RulesOfEngagement(BaseModel):

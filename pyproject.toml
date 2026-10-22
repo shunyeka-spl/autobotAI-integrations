@@ -26,13 +26,14 @@ dependencies = [
     "jmespath>=1.0.1",
     "oauthlib>=3.3.1",
     "ollama>=0.6.2",
-    "openai>=2.42.0",
+    # pydantic-ai-slim 2.59's OpenAI extra requires openai>=3.26.
+    "openai>=3.26.0,<4",
     "opensearch-py>=3.2.0",
     "pyasn1>=0.6.4",
     "pyasn1-modules>=0.4.2",
     "pycparser>=2.22",
     "pydantic>=2.13.4",
-    "pydantic-ai-slim>=1.56.0",
+    "pydantic-ai-slim>=2.59.0",
     "pydantic-core>=2.33.2",
     "pydash>=8.0.6",
     "pygitguardian>=1.24.0",
@@ -87,11 +88,12 @@ full = [
     "python-dotenv>=1.2.2",
     "pymsteams>=0.2.5",
     "python-gitlab>=8.4.0",
-    "openai>=2.42.0",
+    # pydantic-ai-slim 2.59's OpenAI extra requires openai>=3.26.
+    "openai>=3.26.0,<4",
     "slack-sdk>=3.42.0",
     "ollama>=0.6.2",
     "jira>=3.10.5",
-    "pydantic-ai-slim[bedrock,openai,mcp]>=1.38.0",
+    "pydantic-ai-slim[bedrock,openai,mcp]>=2.59.0",
     "llama-index>=0.14.18",
     "llama-index-llms-openai>=0.7.3",
     "llama-index-llms-bedrock>=0.5.0",
@@ -142,7 +144,12 @@ override-dependencies = [
     "banks>=2.5.1",
     "multidict>=6.9.1",
     "oauthlib>=4.0.0",
-    "pydantic-ai-slim>=2.52.0",
+    # 2.59.0 includes GHSA-4whf-38hw-pxxh (web_fetch) and the 2.58 MCP
+    # telemetry fix (GHSA-xv4x-g8mx-ch56). The OpenAI extra requires
+    # openai>=3.26; llama-index-llms-openai still declares openai<3, so
+    # that upper bound has to be overridden here.
+    "openai>=3.26.0,<4",
+    "pydantic-ai-slim>=2.59.0",
     "pyjwt>=2.15.0",
     "urllib3>=2.8.0",
 ]

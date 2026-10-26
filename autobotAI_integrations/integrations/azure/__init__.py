@@ -64,7 +64,7 @@ class AzureService(BaseService):
             if self.integration.subscription_id:
                 # Full test: validate credentials AND subscription access via the
                 # resource management plane (original behaviour).
-                from azure.mgmt.resource import ResourceManagementClient  # type: ignore
+                from azure.mgmt.resource.resources import ResourceManagementClient  # type: ignore
 
                 client = ResourceManagementClient(
                     credential=credentials,

@@ -5,7 +5,7 @@
   pip_package_names:
     - azure-mgmt-compute
 - class_name: ResourceManagementClient
-  module: azure.mgmt.resource
+  module: azure.mgmt.resource.resources
   name: ResourceManagementClient
   pip_package_names:
     - azure-mgmt-resource

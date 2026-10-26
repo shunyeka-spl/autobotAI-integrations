@@ -57,6 +57,7 @@ class TestClassOpenRouter:
         assert len(details["models"]) > 0
         # Multi-provider routing — names should be namespaced.
         assert any("/" in m for m in details["models"])
+        assert "openai/gpt-6-sol" in details["models"]
         # Memory Spaces offer these as selectable embedding models.
         assert details["embedding_models"] == OPENROUTER_EMBEDDING_MODELS
         assert "openai/text-embedding-3-small" in details["embedding_models"]

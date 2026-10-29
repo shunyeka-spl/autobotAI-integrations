@@ -26,6 +26,11 @@ def test_declaring_the_interface_is_not_enough():
     assert factory._get_metadata_for_type("kubernetes")["cli"] is None
 
 
+def test_google_api_does_not_inherit_the_gcloud_cli():
+    assert factory.get_service_cls("google_api").cli_spec() is None
+    assert factory._get_metadata_for_type("google_api")["cli"] is None
+
+
 def test_aws_session_disables_ambient_creds(tmp_path):
     cls = factory.get_service_cls("aws")
     session = cls.prepare_cli_session(

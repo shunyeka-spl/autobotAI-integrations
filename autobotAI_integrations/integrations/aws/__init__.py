@@ -13,6 +13,7 @@ from autobotAI_integrations.models import *
 from autobotAI_integrations.utils.boto3_helper import Boto3Helper
 from autobotAI_integrations.utils.aws_mcp_auth import build_aws_mcp_creds
 from autobotAI_integrations.utils.logging_config import logger
+from autobotAI_integrations.cli import CLISession, CLISpec, has_flag, integration_field
 from autobotAI_integrations.utils.refreshable_creds import (
     build_refreshable_aws_session,
     current_aws_creds_resolver,
@@ -350,7 +351,68 @@ class AWSService(BaseService):
         )
 
     def generate_cli_creds(self) -> CLICreds:
-        raise NotImplementedError()
+        return CLICreds(
+            envs=self._temp_credentials(),
+            installer_check="aws --version",
+            install_command="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html",
+        )
+
+    @classmethod
+    def cli_spec(cls) -> CLISpec:
+        return CLISpec(
+            binary="aws",
+            display_name="AWS CLI",
+            example="ec2 describe-instances --query 'Reservations[].Instances[].InstanceId'",
+            filter_hint="--query (JMESPath) and --output",
+            blocked_subcommands=[
+                ["configure"],
+                ["sts", "get-session-token"],
+                ["sts", "get-federation-token"],
+                ["sts", "assume-role"],
+                ["sts", "assume-role-with-saml"],
+                ["sts", "assume-role-with-web-identity"],
+                ["sso"],
+                ["login"],
+                ["logout"],
+            ],
+            blocked_flags=["--profile", "--debug"],
+            global_value_flags=[
+                "--region", "--output", "--query", "--endpoint-url", "--color",
+                "--ca-bundle", "--cli-read-timeout", "--cli-connect-timeout",
+                "--cli-binary-format", "--profile",
+            ],
+            supports_regions=True,
+        )
+
+    @classmethod
+    def prepare_cli_session(cls, envs, integration, home, region=None, argv=None) -> CLISession:
+        if not envs.get("AWS_ACCESS_KEY_ID") or not envs.get("AWS_SECRET_ACCESS_KEY"):
+            return CLISession(error="no AWS credentials available for this integration")
+        region = (
+            region
+            or (integration_field(integration, "activeRegions") or [None])[0]
+            or "us-east-1"
+        )
+        env = {
+            "AWS_ACCESS_KEY_ID": envs["AWS_ACCESS_KEY_ID"],
+            "AWS_SECRET_ACCESS_KEY": envs["AWS_SECRET_ACCESS_KEY"],
+            "AWS_DEFAULT_REGION": region,
+            "AWS_REGION": region,
+            "AWS_PAGER": "",
+            "AWS_CLI_AUTO_PROMPT": "off",
+            "AWS_DEFAULT_OUTPUT": "json",
+            # No ambient credential source may stand in for the integration's:
+            # no profiles, no instance metadata.
+            "AWS_CONFIG_FILE": os.path.join(home, "config"),
+            "AWS_SHARED_CREDENTIALS_FILE": os.path.join(home, "credentials"),
+            "AWS_EC2_METADATA_DISABLED": "true",
+        }
+        if envs.get("AWS_SESSION_TOKEN"):
+            env["AWS_SESSION_TOKEN"] = envs["AWS_SESSION_TOKEN"]
+        return CLISession(
+            env=env,
+            secrets=[envs["AWS_SECRET_ACCESS_KEY"], envs.get("AWS_SESSION_TOKEN") or ""],
+        )
 
     def _temp_credentials(self):
         if self.integration.roleArn not in ["None", None]:

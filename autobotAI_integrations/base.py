@@ -351,6 +351,26 @@ def executor(context):
     def generate_cli_creds(self) -> CLICreds:
         raise NotImplementedError()
 
+    @classmethod
+    def cli_spec(cls):
+        """The integration's CLI (``autobotAI_integrations.cli.CLISpec``), or
+        ``None`` when it has none. See ``autobotAI_integrations/cli.py``."""
+        return None
+
+    @classmethod
+    def prepare_cli_session(
+        cls,
+        envs: Dict[str, str],
+        integration: Any,
+        home: str,
+        region: Optional[str] = None,
+        argv: Optional[List[str]] = None,
+    ):
+        """``CLISession`` for one command run with *envs* (from
+        ``generate_cli_creds``). *home* is a private per-run directory the
+        caller deletes afterwards; *argv* is the user's command."""
+        raise NotImplementedError()
+
     def generate_mcp_creds(self) -> MCPCreds:
         raise NotImplementedError()
 

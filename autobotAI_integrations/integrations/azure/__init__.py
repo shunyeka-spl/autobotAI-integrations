@@ -1,7 +1,9 @@
+import os
 from typing import List, Optional, Type, Union
 from pydantic import Field
 
 from autobotAI_integrations import BaseService, list_of_unique_elements, PayloadTask
+from autobotAI_integrations.cli import CLISession, CLISpec, has_flag, integration_field
 
 import importlib
 
@@ -215,7 +217,62 @@ class AzureService(BaseService):
         ]
 
     def generate_cli_creds(self) -> CLICreds:
-        raise NotImplementedError()
+        return CLICreds(
+            envs=self._temp_credentials(),
+            installer_check="az --version",
+            install_command="https://learn.microsoft.com/cli/azure/install-azure-cli",
+        )
+
+    @classmethod
+    def cli_spec(cls) -> CLISpec:
+        return CLISpec(
+            binary="az",
+            display_name="Azure CLI",
+            example="vm list --query '[].{name:name, rg:resourceGroup}'",
+            filter_hint="--query (JMESPath) and --output",
+            blocked_subcommands=[
+                ["login"],
+                ["logout"],
+                ["account", "get-access-token"],
+                ["account", "clear"],
+                ["config"],
+                ["extension"],
+                ["upgrade"],
+            ],
+            blocked_flags=["--debug"],
+            global_value_flags=["--output", "-o", "--query", "--subscription"],
+        )
+
+    @classmethod
+    def prepare_cli_session(cls, envs, integration, home, region=None, argv=None) -> CLISession:
+        for key in ("AZURE_TENANT_ID", "AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET"):
+            if not envs.get(key):
+                return CLISession(error=f"no Azure credentials available ({key} missing)")
+        session = CLISession(
+            env={
+                # Token cache and the service-principal entry live here, inside
+                # the per-run HOME the caller deletes.
+                "AZURE_CONFIG_DIR": os.path.join(home, "azure"),
+                "AZURE_CORE_COLLECT_TELEMETRY": "false",
+                "AZURE_CORE_OUTPUT": "json",
+                "AZURE_CORE_ONLY_SHOW_ERRORS": "true",
+                "AZURE_CORE_NO_COLOR": "true",
+                "AZURE_CORE_LOGIN_EXPERIENCE_V2": "off",
+                "AZURE_EXTENSION_USE_DYNAMIC_INSTALL": "no",
+            },
+            setup_commands=[[
+                "login", "--service-principal",
+                "--username", envs["AZURE_CLIENT_ID"],
+                "--password", envs["AZURE_CLIENT_SECRET"],
+                "--tenant", envs["AZURE_TENANT_ID"],
+                "--allow-no-subscriptions", "--output", "none",
+            ]],
+            secrets=[envs["AZURE_CLIENT_SECRET"]],
+        )
+        sub = envs.get("AZURE_SUBSCRIPTION_ID")
+        if sub and not has_flag(list(argv or []), "--subscription"):
+            session.extra_args = ["--subscription", sub]
+        return session
 
     def _temp_credentials(self) -> dict:
         """

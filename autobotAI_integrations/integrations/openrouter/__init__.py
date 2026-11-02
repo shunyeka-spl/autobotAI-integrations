@@ -282,8 +282,13 @@ class OpenRouterService(AIBaseService):
     def load_llama_index_llm(self, model, **kwargs):
         from autobotAI_integrations.utils.llama_index_helpers import (
             build_openai_compatible_llm,
+            openai_context_window,
         )
 
+        # Declare the window explicitly: without it llama-index falls back to
+        # 3900, and core's agent pre-flight (get_model_context_window) then
+        # rejects any system/user prompt over 3900 chars.
+        kwargs.setdefault("context_window", openai_context_window(model))
         # OpenAILike that drops temperature for models that reject it.
         return build_openai_compatible_llm(
             model,

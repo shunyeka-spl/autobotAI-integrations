@@ -16,6 +16,7 @@ when the gateway expects one (``x-api-key``, ``api-key``, ...).
 import importlib
 import json
 import os
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -41,6 +42,17 @@ DEFAULT_AUTH_HEADER = "Authorization"
 NO_KEY_PLACEHOLDER = "not-needed"
 _HTTP_TIMEOUT_SECONDS = 20
 _MAX_ERROR_BODY = 300
+# Room for a reasoning model to think briefly before the gateway returns 2xx.
+_PROBE_MAX_TOKENS = 64
+_SSL_ERROR = (
+    "TLS certificate verification failed. If the gateway uses a "
+    "private or self-signed certificate, turn off 'Verify SSL'."
+)
+_CONNECT_ERROR = (
+    "Could not connect to the gateway. Check the base URL and that "
+    "it is reachable from autobotAI (private gateways must be exposed "
+    "or allowlist autobotAI's egress)."
+)
 
 
 class OpenAICompatibleIntegration(BaseSchema):
@@ -198,7 +210,53 @@ class OpenAICompatibleService(AIBaseService):
             "your gateway does not use 'Authorization: Bearer', the auth header name."
         )
 
+    def _probe_chat(self, model: str) -> dict:
+        """One tiny raw completion; any 2xx means the gateway serves the model.
+
+        The reply text is not checked: reasoning models (e.g. Sarvam's
+        sarvam-105b) can spend a small token budget thinking and return no
+        content, which is still a working model.
+        """
+        start = time.time()
+        chat = requests.post(
+            f"{self._require_base_url()}/chat/completions",
+            headers=self._request_headers(),
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": "ping"}],
+                "max_tokens": _PROBE_MAX_TOKENS,
+            },
+            timeout=_HTTP_TIMEOUT_SECONDS * 3,
+            verify=self._verify,
+        )
+        if chat.ok:
+            return {"success": True, "latency_ms": int((time.time() - start) * 1000)}
+        if chat.status_code in (401, 403):
+            return {"success": False, "error": self._auth_error(chat.status_code)}
+        return {
+            "success": False,
+            "error": (
+                f"Test call to model '{model}' failed: HTTP "
+                f"{chat.status_code} - {chat.text[:_MAX_ERROR_BODY]}"
+            ),
+        }
+
     # -- AIBaseService ------------------------------------------------------
+
+    def test_model(self, model: str) -> dict:
+        """Per-model probe behind the model picker's "selectable" check."""
+        try:
+            wire_model = (model or "").strip()
+            if not wire_model:
+                return {"success": False, "model": model, "error": "Model is required."}
+            result = self._probe_chat(wire_model)
+        except requests.exceptions.SSLError:
+            result = {"success": False, "error": _SSL_ERROR}
+        except requests.exceptions.ConnectionError:
+            result = {"success": False, "error": _CONNECT_ERROR}
+        except Exception as e:
+            result = {"success": False, "error": str(e)}
+        return {"model": model, **result}
 
     def _test_integration(self):
         try:
@@ -228,45 +286,12 @@ class OpenAICompatibleService(AIBaseService):
                         "in the Models field so the connection can be tested with them."
                     ),
                 }
-            chat = requests.post(
-                f"{base_url}/chat/completions",
-                headers=self._request_headers(),
-                json={
-                    "model": configured[0],
-                    "messages": [{"role": "user", "content": "ping"}],
-                    "max_tokens": 16,
-                },
-                timeout=_HTTP_TIMEOUT_SECONDS * 3,
-                verify=self._verify,
-            )
-            if chat.ok:
-                return {"success": True}
-            if chat.status_code in (401, 403):
-                return {"success": False, "error": self._auth_error(chat.status_code)}
-            return {
-                "success": False,
-                "error": (
-                    f"Test call to model '{configured[0]}' failed: HTTP "
-                    f"{chat.status_code} - {chat.text[:_MAX_ERROR_BODY]}"
-                ),
-            }
+            probe = self._probe_chat(configured[0])
+            return {k: v for k, v in probe.items() if k != "latency_ms"}
         except requests.exceptions.SSLError:
-            return {
-                "success": False,
-                "error": (
-                    "TLS certificate verification failed. If the gateway uses a "
-                    "private or self-signed certificate, turn off 'Verify SSL'."
-                ),
-            }
+            return {"success": False, "error": _SSL_ERROR}
         except requests.exceptions.ConnectionError:
-            return {
-                "success": False,
-                "error": (
-                    "Could not connect to the gateway. Check the base URL and that "
-                    "it is reachable from autobotAI (private gateways must be exposed "
-                    "or allowlist autobotAI's egress)."
-                ),
-            }
+            return {"success": False, "error": _CONNECT_ERROR}
         except BaseException as e:
             return {"success": False, "error": str(e)}
 

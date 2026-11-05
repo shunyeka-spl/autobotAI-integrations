@@ -64,6 +64,8 @@ class _Gateway(BaseHTTPRequestHandler):
             return self._send(404, {"error": "not found"})
         if body.get("model") not in self.server.models:
             return self._send(404, {"error": f"model {body.get('model')} not found"})
+        if getattr(self.server, "chat_handler", None):
+            return self.server.chat_handler(self, body)
         return self._send(
             200,
             {
@@ -313,3 +315,50 @@ def test_llama_index_llm_goes_through_the_gateway_with_headers(gateway):
     _, path, headers, body = gateway.requests[-1]
     assert path == "/v1/chat/completions"
     assert {k.lower(): v for k, v in headers.items()}["api-key"] == "k-9"
+
+
+# -- per-model probe (model picker "selectable" check) -------------------------
+
+
+def test_test_model_accepts_a_reasoning_model_with_no_content(gateway):
+    """sarvam-105b-style: 2xx with empty content + finish_reason=length is fine."""
+    gateway.models = ["sarvam-105b"]
+
+    def reasoning_only(handler, body):
+        return handler._send(
+            200,
+            {
+                "id": "c",
+                "object": "chat.completion",
+                "created": 0,
+                "model": body["model"],
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": None, "reasoning_content": "Hmm"},
+                        "finish_reason": "length",
+                    }
+                ],
+            },
+        )
+
+    gateway.chat_handler = reasoning_only
+    svc = _service(base_url=gateway.base_url, api_key="sk-rt-good")
+    res = svc.test_model("sarvam-105b")
+    assert res["success"] is True and res["model"] == "sarvam-105b"
+    assert isinstance(res["latency_ms"], int)
+    body = gateway.requests[-1][3]
+    assert body["max_tokens"] >= 64
+
+
+def test_test_model_reports_unknown_model_and_bad_key(gateway):
+    svc = _service(base_url=gateway.base_url, api_key="sk-rt-good")
+    res = svc.test_model("nope")
+    assert res["success"] is False and "HTTP 404" in res["error"]
+    bad = _service(base_url=gateway.base_url, api_key="wrong").test_model("smart")
+    assert bad["success"] is False and "Authentication failed" in bad["error"]
+
+
+def test_test_model_unreachable_gateway():
+    res = _service(base_url="http://127.0.0.1:9/v1", api_key="k").test_model("m")
+    assert res["success"] is False and "Could not connect" in res["error"]

@@ -168,3 +168,51 @@ def format_prompt_for_model(prompt: str, model: str) -> str:
     for marker in _LLAMA_PROMPT_MARKERS:
         cleaned = cleaned.replace(marker, "")
     return cleaned.strip()
+
+
+def parse_model_aliases(raw) -> dict:
+    """Parse a gateway alias map into ``{alias: underlying_model_id}``.
+
+    Self-hosted routers (LiteLLM, Portkey, Envoy AI Gateway, Routerly, ...)
+    expose operator-defined names such as ``smart`` or ``prod-claude``. The
+    model-specific compatibility rules in this module key off the real model id,
+    so an alias hides e.g. "Claude Opus 5.5 rejects temperature" and every call
+    400s. The integration lets the user declare what each alias really is.
+
+    Accepts a dict, or text with one ``alias=model`` (or ``alias: model``) per
+    line. Blank lines and ``#`` comments are ignored; malformed lines are
+    skipped rather than raised, because this only tunes request parameters.
+    """
+    if not raw:
+        return {}
+    if isinstance(raw, dict):
+        return {
+            str(k).strip(): str(v).strip()
+            for k, v in raw.items()
+            if str(k).strip() and str(v).strip()
+        }
+    aliases: dict = {}
+    for line in str(raw).splitlines():
+        line = line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        sep = "=" if "=" in line else (":" if ":" in line else None)
+        if sep is None:
+            continue
+        alias, _, target = line.partition(sep)
+        alias, target = alias.strip(), target.strip()
+        if alias and target:
+            aliases[alias] = target
+    return aliases
+
+
+def resolve_model_alias(model: str, aliases=None) -> str:
+    """Return the underlying model id for compatibility checks.
+
+    Only for deciding which parameters a model accepts; the id sent on the wire
+    is always the one the user selected (the gateway's own name).
+    """
+    if not model:
+        return model
+    mapped = parse_model_aliases(aliases).get(model)
+    return mapped or model

@@ -54,6 +54,18 @@ def _build_model(llm_config: LLMConfig):
 
         return OpenRouterService.build_model_from_credentials(llm_config.model, credentials)
 
+    if provider == "openai_compatible":
+        from autobotAI_integrations.integrations.openai_compatible import (
+            OpenAICompatibleService,
+        )
+
+        credentials["default_headers"] = llm_config.default_headers
+        credentials["verify_ssl"] = llm_config.verify_ssl
+        credentials["model_aliases"] = llm_config.model_aliases
+        return OpenAICompatibleService.build_model_from_credentials(
+            llm_config.model, credentials
+        )
+
     if provider == "aws_bedrock":
         from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService
 
@@ -62,7 +74,7 @@ def _build_model(llm_config: LLMConfig):
     raise ValueError(
         f"Unsupported LLM provider: {provider!r}. "
         "Supported: openai, anthropic, aws_bedrock, azure_foundry_openai, "
-        "google_genai, openrouter"
+        "google_genai, openrouter, openai_compatible"
     )
 
 
@@ -100,7 +112,10 @@ async def quick_llm_call(
 
     model = _build_model(llm_config)
     model_settings_kwargs: dict = {"max_tokens": max_tokens}
-    if not bedrock_model_rejects_temperature(llm_config.model):
+    from autobotAI_integrations.utils.model_helpers import resolve_model_alias
+
+    underlying = resolve_model_alias(llm_config.model, llm_config.model_aliases)
+    if not bedrock_model_rejects_temperature(underlying):
         model_settings_kwargs["temperature"] = temperature
     agent: Agent = Agent(
         model,

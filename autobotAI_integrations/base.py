@@ -1150,8 +1150,46 @@ class AIBaseService(BaseService):
                 "is_within_limit": estimated_tokens < 15000,
             }
 
+    # Enough room for a reasoning model to think briefly and still return.
+    _TEST_MODEL_MAX_TOKENS = 64
+
     def test_model(self, model: str) -> dict:
-        """Lightweight live verification of a specific model for this AI integration."""
+        """Lightweight live verification of a specific model for this AI integration.
+
+        Sends one raw model request and passes on any response. The reply text
+        is not required: reasoning models (DeepSeek, gpt-5.x, Sarvam, ...) can
+        spend a small token budget thinking and return no content, which is
+        still a working model. Errors (auth, unknown model, quota) still fail.
+        """
+        import time
+
+        from pydantic_ai.direct import model_request
+        from pydantic_ai.messages import ModelRequest
+        from pydantic_ai.settings import ModelSettings
+
+        try:
+            pydantic_model = self.get_pydantic_model(model)
+        except NotImplementedError:
+            return self._test_model_via_prompt(model)
+        except Exception as e:
+            return {"success": False, "model": model, "error": str(e)}
+
+        try:
+            start_t = time.time()
+            asyncio.run(
+                model_request(
+                    pydantic_model,
+                    [ModelRequest.user_text_prompt("ping")],
+                    model_settings=ModelSettings(max_tokens=self._TEST_MODEL_MAX_TOKENS),
+                )
+            )
+            latency_ms = int((time.time() - start_t) * 1000)
+            return {"success": True, "model": model, "latency_ms": latency_ms}
+        except Exception as e:
+            return {"success": False, "model": model, "error": str(e)}
+
+    def _test_model_via_prompt(self, model: str) -> dict:
+        """Fallback for providers without get_pydantic_model."""
         import time
         try:
             start_t = time.time()
@@ -1159,7 +1197,7 @@ class AIBaseService(BaseService):
                 model=model,
                 prompt="ping",
                 params="chat",
-                options={"max_tokens": 16},
+                options={"max_tokens": self._TEST_MODEL_MAX_TOKENS},
             )
             if isinstance(res, str):
                 try:

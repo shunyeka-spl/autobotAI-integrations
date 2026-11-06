@@ -66,7 +66,20 @@ class LLMConfig(BaseModel):
     session_token: Optional[str] = Field(
         None, description="AWS session token (for Bedrock)"
     )
-    temperature: float = Field(0.7, description="Sampling temperature")
+    temperature: Optional[float] = Field(
+        0.7,
+        description=(
+            "Sampling temperature. None sends no temperature, so the provider's "
+            "default applies (reasoning models reject or ignore other values)."
+        ),
+    )
+    reasoning_effort: Optional[str] = Field(
+        None,
+        description=(
+            "off | low | medium | high | max. None uses the runtime default. Applied "
+            "only where the model supports adjustable reasoning."
+        ),
+    )
     max_tokens: int = Field(8192, description="Maximum tokens in response")
     max_iterations: int | None = Field(50, description="Max number of iteration agent can do on single run.")
 

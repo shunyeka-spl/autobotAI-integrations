@@ -78,6 +78,34 @@ def _build_model(llm_config: LLMConfig):
     )
 
 
+# LLMConfig.reasoning_effort → pydantic-ai's unified ``thinking`` level.
+_THINKING = {"off": False, "none": False, "minimal": "minimal", "low": "low",
+             "medium": "medium", "high": "high", "max": "xhigh", "xhigh": "xhigh"}
+# OpenRouter takes ``reasoning: {effort}`` for every model it serves.
+_OPENROUTER_EFFORT = {"minimal": "low", "low": "low", "medium": "medium",
+                      "high": "high", "max": "high", "xhigh": "high"}
+
+
+def reasoning_settings(provider: Optional[str], effort: Optional[str]) -> dict:
+    """ModelSettings entries for ``effort`` on ``provider`` ({} when unset or
+    unknown).
+
+    OpenRouter is built as an OpenAI chat model whose profile does not know
+    that the routed model reasons, so pydantic-ai would drop the unified
+    ``thinking`` field; it gets OpenRouter's own ``reasoning`` body field
+    instead. Elsewhere the unified field applies, and pydantic-ai sends it only
+    to models whose profile supports thinking.
+    """
+    level = str(effort or "").strip().lower()
+    if level not in _THINKING:
+        return {}
+    if provider == "openrouter":
+        reasoning = ({"enabled": False} if _THINKING[level] is False
+                     else {"effort": _OPENROUTER_EFFORT[level]})
+        return {"extra_body": {"reasoning": reasoning}}
+    return {"thinking": _THINKING[level]}
+
+
 async def quick_llm_call(
     prompt: str,
     llm_config: LLMConfig,
@@ -86,6 +114,7 @@ async def quick_llm_call(
     system_prompt: Optional[str] = None,
     max_tokens: int = 500,
     temperature: float = 0.1,
+    reasoning_effort: Optional[str] = None,
 ) -> "T | str":
     """Single lightweight LLM call — no agent state, no tools, no memory.
 
@@ -102,6 +131,11 @@ async def quick_llm_call(
             call costs low — increase only for longer free-text outputs.
         temperature: Sampling temperature. Defaults to 0.1 for deterministic
             structured calls (classifiers, intent extraction, etc.).
+        reasoning_effort: off | low | medium | high | max; falls back to
+            ``llm_config.reasoning_effort``. Unset leaves the provider default,
+            which for reasoning models (DeepSeek, GLM, o-series) can mean
+            minutes of thinking before a short structured answer. Ignored by
+            models without adjustable reasoning.
 
     Returns:
         Validated Pydantic instance when output_schema is provided, else str.
@@ -117,6 +151,9 @@ async def quick_llm_call(
     underlying = resolve_model_alias(llm_config.model, llm_config.model_aliases)
     if not bedrock_model_rejects_temperature(underlying):
         model_settings_kwargs["temperature"] = temperature
+    model_settings_kwargs.update(
+        reasoning_settings(llm_config.provider, reasoning_effort or llm_config.reasoning_effort)
+    )
     agent: Agent = Agent(
         model,
         output_type=output_schema if output_schema is not None else str,

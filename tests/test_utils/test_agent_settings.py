@@ -1,0 +1,109 @@
+"""prepare_agent_model_settings: settings each model family accepts."""
+
+import pytest
+
+from autobotAI_integrations.utils.agent_settings import (
+    is_claude_model,
+    prepare_agent_model_settings,
+    prepare_agent_options,
+)
+
+BEDROCK_OPUS_55 = "global.anthropic.claude-opus-5-5"
+BEDROCK_SONNET_45 = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+NOVA = "global.amazon.nova-2-lite-v1:0"
+LLAMA = "us.meta.llama3-3-70b-instruct-v1:0"
+GROK = "xai.grok-4-6"
+
+
+def test_none_values_removed():
+    assert prepare_agent_model_settings("aws_bedrock", NOVA, {"temperature": None}) == {}
+
+
+def test_temperature_kept_for_models_that_accept_it():
+    for model in (NOVA, LLAMA, BEDROCK_SONNET_45, "gpt-4.1"):
+        out = prepare_agent_model_settings("aws_bedrock", model, {"temperature": 0.2})
+        assert out == {"temperature": 0.2}, model
+
+
+@pytest.mark.parametrize("model", [BEDROCK_OPUS_55, GROK, "gpt-5-6", "gpt-6-luna", "anthropic/claude-opus-5.5"])
+def test_temperature_dropped_for_models_that_reject_it(model):
+    out = prepare_agent_model_settings("openrouter", model, {"temperature": 0.2, "top_p": 0.9})
+    assert "temperature" not in out and "top_p" not in out
+
+
+def test_reasoning_effort_maps_to_thinking():
+    out = prepare_agent_model_settings("aws_bedrock", NOVA, {"reasoning_effort": "high"})
+    assert out == {"thinking": "high"}
+
+
+def test_reasoning_off():
+    out = prepare_agent_model_settings("aws_bedrock", NOVA, {"reasoning_effort": "off", "temperature": 0.3})
+    assert out == {"thinking": False, "temperature": 0.3}
+
+
+def test_unknown_effort_is_ignored():
+    out = prepare_agent_model_settings("aws_bedrock", NOVA, {"reasoning_effort": "turbo"})
+    assert out == {}
+
+
+def test_claude_thinking_drops_sampling_and_raises_max_tokens():
+    out = prepare_agent_model_settings(
+        "aws_bedrock",
+        BEDROCK_SONNET_45,
+        {"reasoning_effort": "medium", "temperature": 0.2, "top_p": 0.9, "top_k": 5, "max_tokens": 1000},
+    )
+    assert out == {"thinking": "medium", "max_tokens": 10000 + 4096}
+
+
+def test_claude_thinking_keeps_large_max_tokens():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", BEDROCK_SONNET_45, {"reasoning_effort": "low", "max_tokens": 50000}
+    )
+    assert out["max_tokens"] == 50000
+
+
+def test_claude_without_thinking_keeps_temperature():
+    out = prepare_agent_model_settings("aws_bedrock", BEDROCK_SONNET_45, {"temperature": 0.4})
+    assert out == {"temperature": 0.4}
+
+
+def test_non_claude_thinking_keeps_temperature():
+    out = prepare_agent_model_settings("aws_bedrock", NOVA, {"reasoning_effort": "low", "temperature": 0.4})
+    assert out == {"thinking": "low", "temperature": 0.4}
+
+
+def test_openrouter_uses_reasoning_body_and_merges_extra_body():
+    out = prepare_agent_model_settings(
+        "openrouter",
+        "anthropic/claude-sonnet-4.5",
+        {"reasoning_effort": "high", "temperature": 0.2, "extra_body": {"provider": {"sort": "price"}}},
+    )
+    assert out["extra_body"] == {"provider": {"sort": "price"}, "reasoning": {"effort": "high"}}
+    assert "temperature" not in out
+    assert "thinking" not in out
+
+
+def test_input_not_mutated():
+    given = {"reasoning_effort": "high", "temperature": 0.2}
+    prepare_agent_model_settings("aws_bedrock", BEDROCK_SONNET_45, given)
+    assert given == {"reasoning_effort": "high", "temperature": 0.2}
+
+
+def test_prepare_agent_options_removes_empty_settings():
+    assert prepare_agent_options("openai", "gpt-4.1", {"name": "a", "model_settings": {"temperature": None}}) == {"name": "a"}
+    assert prepare_agent_options("openai", "gpt-4.1", {"name": "a"}) == {"name": "a"}
+
+
+@pytest.mark.parametrize(
+    "model,expected",
+    [
+        (BEDROCK_OPUS_55, True),
+        ("anthropic/claude-opus-5.5", True),
+        ("claude-sonnet-5-5", True),
+        (NOVA, False),
+        ("gpt-5", False),
+        ("", False),
+    ],
+)
+def test_is_claude_model(model, expected):
+    assert is_claude_model(model) is expected

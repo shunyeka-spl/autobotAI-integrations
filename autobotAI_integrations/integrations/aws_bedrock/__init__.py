@@ -489,7 +489,13 @@ class AWSBedrockService(AIBaseService):
 
         model_instance = self.get_pydantic_model(model,credentials=credentials)
 
-        provider_settings = (options.pop("model_settings", {}) or {}).copy()
+        from autobotAI_integrations.utils.agent_settings import (
+            prepare_agent_model_settings,
+        )
+
+        provider_settings = prepare_agent_model_settings(
+            "aws_bedrock", model, options.pop("model_settings", {}) or {}
+        )
 
         t = provider_settings.get("temperature")
         if t is not None and bedrock_model_rejects_temperature(model):

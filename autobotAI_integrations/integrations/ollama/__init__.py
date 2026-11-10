@@ -243,7 +243,10 @@ def executor(context):
         self, model: str, tools, system_prompt: str, options: dict = {}, credentials: Optional[dict] = None
     ):
         from pydantic_ai import Agent
+        from autobotAI_integrations.utils.agent_settings import prepare_agent_options
+
         model_instance = self.get_pydantic_model(model, credentials)
+        options = prepare_agent_options("ollama", model, options)
         return Agent(model_instance, system_prompt=system_prompt, tools=tools, **options)
 
     def get_pydantic_model(self, model_name: str, credentials: Optional[dict] = None):

@@ -126,3 +126,95 @@ def test_max_tokens_clamped_to_model_limit(model, requested, expected):
 )
 def test_is_claude_model(model, expected):
     assert is_claude_model(model) is expected
+
+
+# --- review fixes -----------------------------------------------------------
+
+
+def test_adaptive_claude_thinking_leaves_max_tokens_unset():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", BEDROCK_OPUS_55, {"reasoning_effort": "medium", "temperature": 0.2}
+    )
+    assert out == {"thinking": "medium"}
+
+
+def test_adaptive_claude_thinking_keeps_given_max_tokens():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", BEDROCK_OPUS_55, {"reasoning_effort": "high", "max_tokens": 16384}
+    )
+    assert out == {"thinking": "high", "max_tokens": 16384}
+
+
+@pytest.mark.parametrize("value,expected", [("16384", 16384), (" 2000 ", 2000), (8000.0, 8000)])
+def test_max_tokens_string_is_coerced(value, expected):
+    out = prepare_agent_model_settings("aws_bedrock", NOVA, {"max_tokens": value})
+    assert out == {"max_tokens": expected}
+
+
+@pytest.mark.parametrize("value", ["abc", "", 0, -5, True, 1.5])
+def test_unusable_max_tokens_is_dropped(value):
+    assert prepare_agent_model_settings("aws_bedrock", NOVA, {"max_tokens": value}) == {}
+
+
+def test_string_max_tokens_with_claude_thinking():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", BEDROCK_SONNET_45, {"reasoning_effort": "high", "max_tokens": "16384"}
+    )
+    assert out == {"thinking": "high", "max_tokens": 16384 + 4096}
+
+
+def test_opus_41_max_effort_steps_thinking_down_to_fit():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", "us.anthropic.claude-opus-4-1-20250805-v1:0", {"reasoning_effort": "max"}
+    )
+    assert out["thinking"] == "high"
+    assert out["max_tokens"] == 16384 + 4096
+    assert out["max_tokens"] <= 32000
+
+
+def test_opus_4_max_tokens_clamped():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", "us.anthropic.claude-opus-4-20250514-v1:0", {"max_tokens": 64000}
+    )
+    assert out["max_tokens"] == 32000
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        "us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+        "anthropic.claude-3-haiku-20240307-v1:0",
+        "anthropic.claude-3-opus-20240229-v1:0",
+    ],
+)
+def test_claude_without_thinking_support_keeps_temperature(model):
+    out = prepare_agent_model_settings(
+        "aws_bedrock", model, {"reasoning_effort": "low", "temperature": 0.1, "max_tokens": 4000}
+    )
+    assert out["temperature"] == 0.1
+    assert out["max_tokens"] == 4000
+
+
+@pytest.mark.parametrize(
+    "provider,model",
+    [
+        ("ollama", "llama3.1"),
+        ("openai_compatible", "meta-llama/Llama-3.1-70B-Instruct"),
+        ("openrouter", "mistralai/mistral-large"),
+    ],
+)
+def test_open_weight_limits_only_apply_on_bedrock(provider, model):
+    out = prepare_agent_model_settings(provider, model, {"max_tokens": 32000})
+    assert out["max_tokens"] == 32000
+
+
+def test_provider_independent_limits_apply_everywhere():
+    out = prepare_agent_model_settings("openrouter", "anthropic/claude-3.5-sonnet", {"max_tokens": 16384})
+    assert out["max_tokens"] == 8192
+
+
+def test_prompt_caching_none_is_kept_as_off():
+    out = prepare_agent_model_settings(
+        "aws_bedrock", NOVA, {"enable_prompt_caching": None, "temperature": None}
+    )
+    assert out == {"enable_prompt_caching": None}

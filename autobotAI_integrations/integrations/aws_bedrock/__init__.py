@@ -478,7 +478,6 @@ class AWSBedrockService(AIBaseService):
     ):
         from pydantic_ai import Agent
         from autobotAI_integrations.utils.model_helpers import (
-            bedrock_model_rejects_temperature,
             bedrock_model_supports_extended_cache_ttl,
         )
 
@@ -496,10 +495,6 @@ class AWSBedrockService(AIBaseService):
         provider_settings = prepare_agent_model_settings(
             "aws_bedrock", model, options.pop("model_settings", {}) or {}
         )
-
-        t = provider_settings.get("temperature")
-        if t is not None and bedrock_model_rejects_temperature(model):
-            provider_settings.pop("temperature", None)
 
         enable_caching = provider_settings.pop("enable_prompt_caching", True)
         if enable_caching:

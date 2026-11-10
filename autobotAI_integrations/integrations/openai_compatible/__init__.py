@@ -532,8 +532,12 @@ class OpenAICompatibleService(AIBaseService):
         self, model: str, tools, system_prompt: str, options: dict = {}
     ):
         from pydantic_ai import Agent
+        from autobotAI_integrations.utils.agent_settings import prepare_agent_options
+        from autobotAI_integrations.utils.model_helpers import resolve_model_alias
 
         model_instance = self.get_pydantic_model(model)
+        underlying = resolve_model_alias(model, self._model_aliases() or None)
+        options = prepare_agent_options("openai_compatible", underlying, options)
         return Agent(model_instance, system_prompt=system_prompt, tools=tools, **options)
 
     def get_pydantic_model(self, model_name: str):

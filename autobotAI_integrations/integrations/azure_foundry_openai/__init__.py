@@ -309,8 +309,10 @@ class AzureOpenAIService(AIBaseService):
         options: dict = {},
     ):
         from pydantic_ai import Agent
+        from autobotAI_integrations.utils.agent_settings import prepare_agent_options
 
         model_instance = self.get_pydantic_model(model)
+        options = prepare_agent_options("azure_foundry_openai", model, options)
 
         return Agent(
             model_instance,

@@ -39,6 +39,13 @@ class LLMConfig(BaseModel):
         ...,
         description="Model identifier, e.g. gpt-5-mini, claude-sonnet-4-20250514",
     )
+    public_name: Optional[str] = Field(
+        None,
+        description=(
+            "Name the agent uses for itself. Set only for the platform model. "
+            "Never sent to the provider; ``model`` remains the provider id."
+        ),
+    )
     api_key: Optional[str] = Field(
         None, description="API key (OpenAI, Anthropic, Google)"
     )

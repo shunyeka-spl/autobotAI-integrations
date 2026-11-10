@@ -16,6 +16,8 @@ What it does:
   dropped. Budget-based Claude thinking also needs ``max_tokens`` above the
   thinking budget, so ``max_tokens`` is raised when it is missing or too small.
 * ``None`` values are removed, so "not set" never reaches a provider.
+* ``max_tokens`` is clamped to the model's known output maximum
+  (``model_max_output_tokens``), so a 16K request does not 400 on an older model.
 
 Unknown models keep the settings they were given. ``bedrock_fallback`` still
 retries once without a field a provider names in a 400, as the last guard.
@@ -46,6 +48,45 @@ _CLAUDE_THINKING_BUDGET = {
 }
 # Room for the visible answer on top of the thinking budget.
 _ANSWER_TOKENS = 4096
+
+# Models whose maximum output is below what callers may ask for (AI agents ask
+# for at least 16384). A request above the model's maximum is rejected with a
+# 400, so ``max_tokens`` is clamped. Matched on the normalized model id; first
+# match wins, so specific ids come before families. Unlisted models keep the
+# requested value (newer models allow 16K+; core retries lower on a 400).
+_MAX_OUTPUT_TOKENS = (
+    ("claude-3-5-sonnet", 8192),
+    ("claude-3-5-haiku", 8192),
+    ("claude-3-haiku", 4096),
+    ("claude-3-sonnet", 4096),
+    ("claude-3-opus", 4096),
+    ("claude-instant", 4096),
+    ("claude-v2", 4096),
+    ("nova-micro-v1", 10000),
+    ("nova-lite-v1", 10000),
+    ("nova-pro-v1", 10000),
+    ("titan-text", 8192),
+    ("mistral", 8192),
+    ("mixtral", 8192),
+    ("llama", 8192),
+    ("command-r", 4096),
+    ("jamba", 4096),
+    ("gpt-4o-mini", 16384),
+    ("gpt-4o", 16384),
+    ("gpt-4-turbo", 4096),
+    ("gpt-3-5", 4096),
+)
+
+
+def model_max_output_tokens(model: Optional[str]) -> Optional[int]:
+    """Known output-token maximum for ``model``, or None when not listed."""
+    if not model:
+        return None
+    needle = _normalized_model_needle(model)
+    for key, limit in _MAX_OUTPUT_TOKENS:
+        if key in needle:
+            return limit
+    return None
 
 
 def is_claude_model(model: Optional[str]) -> bool:
@@ -99,6 +140,10 @@ def prepare_agent_model_settings(
             minimum = budget + _ANSWER_TOKENS
             if (settings.get("max_tokens") or 0) < minimum:
                 settings["max_tokens"] = minimum
+
+    limit = model_max_output_tokens(model)
+    if limit and isinstance(settings.get("max_tokens"), int) and settings["max_tokens"] > limit:
+        settings["max_tokens"] = limit
 
     return settings
 

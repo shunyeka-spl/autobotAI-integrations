@@ -95,6 +95,25 @@ def test_prepare_agent_options_removes_empty_settings():
 
 
 @pytest.mark.parametrize(
+    "model,requested,expected",
+    [
+        ("us.anthropic.claude-3-5-sonnet-20241022-v2:0", 16384, 8192),
+        ("anthropic.claude-3-haiku-20240307-v1:0", 16384, 4096),
+        ("amazon.nova-lite-v1:0", 16384, 10000),
+        ("us.meta.llama3-3-70b-instruct-v1:0", 16384, 8192),
+        ("gpt-4o", 32000, 16384),
+        (BEDROCK_OPUS_55, 16384, 16384),
+        (NOVA, 16384, 16384),  # nova 2 is not in the low-limit list
+        ("unknown-model", 16384, 16384),
+        ("anthropic.claude-3-haiku-20240307-v1:0", 1000, 1000),
+    ],
+)
+def test_max_tokens_clamped_to_model_limit(model, requested, expected):
+    out = prepare_agent_model_settings("aws_bedrock", model, {"max_tokens": requested})
+    assert out["max_tokens"] == expected
+
+
+@pytest.mark.parametrize(
     "model,expected",
     [
         (BEDROCK_OPUS_55, True),

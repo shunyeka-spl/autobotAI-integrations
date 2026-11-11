@@ -32,24 +32,61 @@ class LLMConfig(BaseModel):
         ...,
         description=(
             "LLM provider: openai, anthropic, aws_bedrock, "
-            "azure_foundry_openai, google_genai"
+            "azure_foundry_openai, google_genai, openrouter, openai_compatible"
         ),
     )
     model: str = Field(
         ...,
         description="Model identifier, e.g. gpt-5-mini, claude-sonnet-4-20250514",
     )
+    public_name: Optional[str] = Field(
+        None,
+        description=(
+            "Name the agent uses for itself. Set only for the platform model. "
+            "Never sent to the provider; ``model`` remains the provider id."
+        ),
+    )
     api_key: Optional[str] = Field(
         None, description="API key (OpenAI, Anthropic, Google)"
     )
     base_url: Optional[str] = Field(None, description="Custom endpoint URL")
+    default_headers: Optional[Dict[str, str]] = Field(
+        None,
+        description=(
+            "Extra HTTP headers sent on every LLM request (openai_compatible "
+            "gateways: custom auth header, routing headers)"
+        ),
+    )
+    verify_ssl: bool = Field(
+        True, description="Verify the endpoint's TLS certificate (openai_compatible)"
+    )
+    model_aliases: Optional[Dict[str, str]] = Field(
+        None,
+        description=(
+            "Gateway model name -> underlying model id. Only used to decide which "
+            "parameters the model accepts; the gateway name is what is sent."
+        ),
+    )
     region: Optional[str] = Field(None, description="AWS region (for Bedrock)")
     access_key: Optional[str] = Field(None, description="AWS access key (for Bedrock)")
     secret_key: Optional[str] = Field(None, description="AWS secret key (for Bedrock)")
     session_token: Optional[str] = Field(
         None, description="AWS session token (for Bedrock)"
     )
-    temperature: float = Field(0.7, description="Sampling temperature")
+    temperature: Optional[float] = Field(
+        0.7,
+        description=(
+            "Sampling temperature. None sends no temperature, so the provider's "
+            "default applies (reasoning models reject or ignore other values)."
+        ),
+    )
+    reasoning_effort: Optional[str] = Field(
+        None,
+        description=(
+            "off | low | medium | high | max. None uses the runtime default. Applied "
+            "only where the model supports adjustable reasoning."
+        ),
+    )
     max_tokens: int = Field(8192, description="Maximum tokens in response")
     max_iterations: int | None = Field(50, description="Max number of iteration agent can do on single run.")
 

@@ -140,6 +140,12 @@ class IntegrationServiceFactory:
                     ]
                 except Exception:
                     pass
+            cli = None
+            try:
+                spec = service_cls.cli_spec() if hasattr(service_cls, "cli_spec") else None
+                cli = spec.public_dict() if spec is not None else None
+            except Exception:
+                pass
             return {
                 "module_name": integration_type,
                 "name": integration_type,
@@ -148,6 +154,9 @@ class IntegrationServiceFactory:
                 "category": category,
                 "logo": logo,
                 "supported_interfaces": supported_interfaces,
+                # Set only when the integration implements a CLI (cli_spec);
+                # declaring the CLI interface alone does not make one runnable.
+                "cli": cli,
             }
         except Exception as e:
             print(

@@ -78,6 +78,12 @@ class GoogleAPIsService(GCPService, BaseService):
             integration = GoogleAPIsIntegration(**integration)
         super().__init__(ctx, integration)
 
+    @classmethod
+    def cli_spec(cls):
+        # Inherited from GCPService, but this integration is Workspace APIs via
+        # domain-wide delegation, not a GCP project gcloud can operate on.
+        return None
+
     @staticmethod
     def get_forms():
         return {

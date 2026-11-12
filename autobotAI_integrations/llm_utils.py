@@ -106,6 +106,14 @@ def reasoning_settings(provider: Optional[str], effort: Optional[str]) -> dict:
     return {"thinking": _THINKING[level]}
 
 
+def _reasoning_on(settings: dict) -> bool:
+    """True when ``reasoning_settings`` output turns thinking on."""
+    if settings.get("thinking"):
+        return True
+    reasoning = (settings.get("extra_body") or {}).get("reasoning") or {}
+    return bool(reasoning) and reasoning.get("enabled") is not False
+
+
 async def quick_llm_call(
     prompt: str,
     llm_config: LLMConfig,
@@ -149,11 +157,15 @@ async def quick_llm_call(
     from autobotAI_integrations.utils.model_helpers import resolve_model_alias
 
     underlying = resolve_model_alias(llm_config.model, llm_config.model_aliases)
-    if not bedrock_model_rejects_temperature(underlying):
-        model_settings_kwargs["temperature"] = temperature
-    model_settings_kwargs.update(
-        reasoning_settings(llm_config.provider, reasoning_effort or llm_config.reasoning_effort)
+    reasoning = reasoning_settings(
+        llm_config.provider, reasoning_effort or llm_config.reasoning_effort
     )
+    # Anthropic models with thinking on (Bedrock, Anthropic API, Vertex) 400
+    # on any temperature but 1, so a reasoning call leaves it unset. Models
+    # without adjustable thinking ignore the thinking field and keep it.
+    if not bedrock_model_rejects_temperature(underlying) and not _reasoning_on(reasoning):
+        model_settings_kwargs["temperature"] = temperature
+    model_settings_kwargs.update(reasoning)
     agent: Agent = Agent(
         model,
         output_type=output_schema if output_schema is not None else str,

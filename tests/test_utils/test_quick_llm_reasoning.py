@@ -65,3 +65,52 @@ def test_llm_config_effort_is_the_fallback(monkeypatch):
 def test_no_effort_leaves_the_request_unchanged(monkeypatch):
     sent = _capture_openrouter_body(monkeypatch)
     assert "reasoning" not in sent
+    assert sent["temperature"] == 0.1
+
+
+def test_reasoning_on_omits_temperature(monkeypatch):
+    # Anthropic with thinking on 400s on temperature != 1 (goal review on
+    # global.anthropic.claude-opus-4-6-v1 with reasoning_effort="low").
+    sent = _capture_openrouter_body(monkeypatch, reasoning_effort="low", temperature=0.0)
+    assert "temperature" not in sent
+
+
+def test_reasoning_off_keeps_temperature(monkeypatch):
+    sent = _capture_openrouter_body(monkeypatch, reasoning_effort="off", temperature=0.0)
+    assert sent["temperature"] == 0.0
+
+
+def _capture_model_settings(monkeypatch, provider, model_id, **call_kw):
+    captured = {}
+
+    class _Result:
+        output = "ok"
+
+    class _FakeAgent:
+        def __init__(self, model, *, model_settings, **_):
+            captured.update(model_settings)
+
+        async def run(self, prompt):
+            return _Result()
+
+    monkeypatch.setattr(llm_utils, "_build_model", lambda cfg: object())
+    monkeypatch.setattr(llm_utils, "Agent", _FakeAgent)
+    cfg = LLMConfig(provider=provider, model=model_id, api_key="k")
+    asyncio.run(quick_llm_call("hi", cfg, **call_kw))
+    return captured
+
+
+def test_bedrock_opus_4_6_thinking_drops_temperature(monkeypatch):
+    settings = _capture_model_settings(
+        monkeypatch, "aws_bedrock", "global.anthropic.claude-opus-4-6-v1",
+        reasoning_effort="low", temperature=0.0,
+    )
+    assert settings["thinking"] == "low"
+    assert "temperature" not in settings
+
+
+def test_bedrock_opus_4_6_without_thinking_keeps_temperature(monkeypatch):
+    settings = _capture_model_settings(
+        monkeypatch, "aws_bedrock", "global.anthropic.claude-opus-4-6-v1", temperature=0.0,
+    )
+    assert settings["temperature"] == 0.0

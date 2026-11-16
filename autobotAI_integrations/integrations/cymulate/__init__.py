@@ -25,7 +25,7 @@ CYMULATE_API_URLS = (
     "https://api.cymulate.com",
 )
 DEFAULT_API_URL = CYMULATE_API_URLS[0]
-ENVIRONMENTS_PATH = "/v1/environments"
+ENVIRONMENTS_PATH = "/v2/threats"
 TOKEN_PATH = "/oauth2/token"
 _BLOCKED_MCP_HOSTS = {"localhost", "metadata.google.internal", "169.254.169.254"}
 

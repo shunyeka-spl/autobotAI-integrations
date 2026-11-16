@@ -1,0 +1,211 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Cymulate API",
+    "description": "Curated Cymulate REST API for exposure validation: environments, agents, findings, and assessment status.\n\nAuthentication: API token as `x-token`, or OAuth2 client credentials as `Authorization: Bearer`.\n\nRegional hosts:\n- US: `https://api.us-app.cymulate.com`\n- EU: `https://api.app.cymulate.com`\n- US legacy: `https://us-api.cymulate.com`\n- EU legacy: `https://api.cymulate.com`",
+    "version": "2.0.62"
+  },
+  "externalDocs": {
+    "description": "Cymulate API documentation",
+    "url": "https://api.cymulate.com/docs"
+  },
+  "servers": [
+    {
+      "url": "{base_url}",
+      "description": "Cymulate regional API host"
+    }
+  ],
+  "tags": [
+    {"name": "General"},
+    {"name": "Agents"},
+    {"name": "Findings"},
+    {"name": "Assessments"}
+  ],
+  "paths": {
+    "/v1/environments": {
+      "get": {
+        "tags": ["General"],
+        "operationId": "listEnvironments",
+        "summary": "Get all environments",
+        "description": "List Cymulate environments for the authenticated account.",
+        "responses": {
+          "200": {"description": "Environment list"}
+        }
+      }
+    },
+    "/v1/all/status": {
+      "get": {
+        "tags": ["General"],
+        "operationId": "getAllAssessmentStatuses",
+        "summary": "Get all assessment statuses",
+        "description": "Return the status of assessments across Cymulate modules.",
+        "responses": {
+          "200": {"description": "Assessment statuses"}
+        }
+      }
+    },
+    "/v1/integrations": {
+      "get": {
+        "tags": ["General"],
+        "operationId": "listConnectedIntegrations",
+        "summary": "Get connected integrations",
+        "description": "List integrations connected in the Cymulate account.",
+        "responses": {
+          "200": {"description": "Connected integrations"}
+        }
+      }
+    },
+    "/v1/agents/get": {
+      "get": {
+        "tags": ["Agents"],
+        "operationId": "listConnectedAgents",
+        "summary": "Get connected agents",
+        "description": "List agents that are currently connected.",
+        "responses": {
+          "200": {"description": "Connected agents"}
+        }
+      }
+    },
+    "/v1/agents/get-all": {
+      "get": {
+        "tags": ["Agents"],
+        "operationId": "listAllAgents",
+        "summary": "Get all agents",
+        "description": "List every Cymulate agent, including agents that are not connected.",
+        "responses": {
+          "200": {"description": "All agents"}
+        }
+      }
+    },
+    "/msfinding/api/v2/search": {
+      "post": {
+        "tags": ["Findings"],
+        "operationId": "searchFindings",
+        "summary": "Search findings",
+        "description": "Search findings from the Cymulate Findings page.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "skip": {"type": "integer", "description": "Number of records to skip."},
+                  "limit": {"type": "integer", "description": "Maximum number of findings to return."}
+                }
+              },
+              "example": {"skip": 0, "limit": 25}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Matching findings"}
+        }
+      }
+    },
+    "/msfinding/api/v2/filters": {
+      "post": {
+        "tags": ["Findings"],
+        "operationId": "getFindingsFilters",
+        "summary": "Get findings filters",
+        "description": "Return filter options for the Findings page.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {"type": "object"},
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Findings filters"}
+        }
+      }
+    },
+    "/msfinding/api/v2/info/{findingID}": {
+      "get": {
+        "tags": ["Findings"],
+        "operationId": "getFindingInfo",
+        "summary": "Get finding info",
+        "description": "Retrieve additional information for one finding.",
+        "parameters": [
+          {
+            "name": "findingID",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Finding identifier."
+          }
+        ],
+        "responses": {
+          "200": {"description": "Finding detail"}
+        }
+      }
+    },
+    "/msfinding/api/v2/mitigations/{findingID}": {
+      "get": {
+        "tags": ["Findings"],
+        "operationId": "getFindingMitigations",
+        "summary": "Get finding mitigations",
+        "description": "Retrieve mitigations for one finding.",
+        "parameters": [
+          {
+            "name": "findingID",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"},
+            "description": "Finding identifier."
+          }
+        ],
+        "responses": {
+          "200": {"description": "Finding mitigations"}
+        }
+      }
+    },
+    "/v1/edr/status": {
+      "get": {
+        "tags": ["Assessments"],
+        "operationId": "getEndpointSecurityStatus",
+        "summary": "Get endpoint security status",
+        "description": "Return the Endpoint Security assessment status.",
+        "responses": {
+          "200": {"description": "Endpoint security status"}
+        }
+      }
+    },
+    "/v1/immediate-threats/status": {
+      "get": {
+        "tags": ["Assessments"],
+        "operationId": "getImmediateThreatsStatus",
+        "summary": "Get immediate threats status",
+        "description": "Return the Immediate Threats assessment status.",
+        "responses": {
+          "200": {"description": "Immediate threats status"}
+        }
+      }
+    },
+    "/v1/immediate-threats/attacks": {
+      "get": {
+        "tags": ["Assessments"],
+        "operationId": "getImmediateThreatsResults",
+        "summary": "Get immediate threats results",
+        "description": "Return the latest Immediate Threats assessment results.",
+        "responses": {
+          "200": {"description": "Immediate threats results"}
+        }
+      }
+    },
+    "/v2/assessments/launched": {
+      "get": {
+        "tags": ["Assessments"],
+        "operationId": "listLaunchedAssessments",
+        "summary": "List launched assessments",
+        "description": "List exposure-validation assessments that have been launched.",
+        "responses": {
+          "200": {"description": "Launched assessments"}
+        }
+      }
+    }
+  }
+}

@@ -332,3 +332,52 @@ class TestAwsBedrock:
         assert result["success"] is False
         assert result["model"] == "global.anthropic.claude-opus-4-6-v1"
         assert "AccessDeniedException" in result["error"]
+
+    def test_default_model_list_includes_added_ids(self, monkeypatch):
+        from unittest.mock import MagicMock
+        from autobotAI_integrations.integrations.aws_bedrock import AWSBedrockService, AWSBedrockIntegration
+
+        added = (
+            "global.anthropic.claude-opus-4-8",
+            "global.anthropic.claude-haiku-5-5",
+            "global.anthropic.claude-sonnet-5-5",
+            "global.openai.gpt-6.1-sol",
+            "global.openai.gpt-6.1-terra",
+            "global.openai.gpt-5.6-terra",
+            "global.openai.gpt-5.4",
+            "global.zai.glm-5.3",
+            "global.moonshotai.kimi-k3.1",
+            "zai.glm-5",
+            "deepseek.v3.2",
+            "google.gemma-3-27b-it",
+        )
+        kept = (
+            "global.anthropic.claude-opus-5-5",
+            "global.openai.gpt-5.6-sol",
+            "global.anthropic.claude-sonnet-5",
+            "global.xai.grok-4.7",
+        )
+
+        integration = AWSBedrockIntegration(
+            userId="test-user",
+            cspName="aws_bedrock",
+            alias="test-bedrock",
+            access_key="test_ak",
+            secret_key="test_sk",
+            region="us-east-1",
+        )
+        service = AWSBedrockService(ctx={}, integration=integration)
+
+        mock_bedrock = MagicMock()
+        mock_bedrock.list_inference_profiles.return_value = {"inferenceProfileSummaries": []}
+
+        def fake_get_client(client_name, *args, **kwargs):
+            assert client_name == "bedrock"
+            return mock_bedrock
+
+        monkeypatch.setattr(service, "_get_aws_client", fake_get_client)
+
+        details = service.get_integration_specific_details()
+        assert "error" not in details
+        for model_id in added + kept:
+            assert model_id in details["models"]

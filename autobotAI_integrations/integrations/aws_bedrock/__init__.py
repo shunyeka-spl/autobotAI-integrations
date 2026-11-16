@@ -280,6 +280,18 @@ class AWSBedrockService(AIBaseService):
                 "global.anthropic.claude-opus-4-6-v1",
                 f"{prefix}amazon.nova-lite-v1:0",
                 "global.amazon.nova-2-lite-v1:0",
+                "global.anthropic.claude-opus-4-8",
+                "global.anthropic.claude-haiku-5-5",
+                "global.anthropic.claude-sonnet-5-5",
+                "global.openai.gpt-6.1-sol",
+                "global.openai.gpt-6.1-terra",
+                "global.openai.gpt-5.6-terra",
+                "global.openai.gpt-5.4",
+                "global.zai.glm-5.3",
+                "zai.glm-5",
+                "global.moonshotai.kimi-k3.1",
+                "deepseek.v3.2",
+                "google.gemma-3-27b-it",
             ]
 
             available_models = default_top_models

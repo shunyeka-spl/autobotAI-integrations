@@ -33,6 +33,13 @@ class AwsSesIntegration(BaseSchema):
     # Optional sender. Empty = core picks a verified SES identity (a verified
     # domain as noreply@<domain>, else a verified address).
     from_address: Optional[str] = None
+    # Skip the SES checks in _test_integration and report success. Backward
+    # compatible: integrations saved before this field existed (they have a
+    # createdAt but no skip_test) default to True, so the new checks never
+    # turn an existing, working SES integration INACTIVE. New integrations
+    # default to False and get the full checks. Sending is unaffected: it
+    # still uses from_address or a verified identity core finds.
+    skip_test: bool = False
 
     name: Optional[str] = "AWS SES"
     category: Optional[str] = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
@@ -45,6 +52,20 @@ class AwsSesIntegration(BaseSchema):
     def ensure_region(cls, values: Any) -> Any:
         if isinstance(values, dict) and not values.get("region"):
             values["region"] = resolve_aws_sub_integration_region()
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_skip_test(cls, values: Any) -> Any:
+        """Missing skip_test: True for a stored record (has createdAt, so it
+        predates the SES checks), False for a new integration."""
+        if not isinstance(values, dict):
+            return values
+        raw = values.get("skip_test")
+        if raw is None or raw == "":
+            values["skip_test"] = bool(values.get("createdAt"))
+        elif isinstance(raw, str):
+            values["skip_test"] = raw.strip().lower() in ("true", "1", "yes", "on")
         return values
 
     def __init__(self, **kwargs):
@@ -143,6 +164,15 @@ class AwsSesService(BaseService):
         to verified recipients.
         """
         region = self.integration.region or "us-east-1"
+        if self.integration.skip_test:
+            return {
+                "success": True,
+                "warnings": [
+                    "SES checks were skipped (Skip SES checks is on). Emails "
+                    "are still attempted; set Sender email if SES cannot "
+                    "list its verified identities."
+                ],
+            }
         try:
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
@@ -246,6 +276,17 @@ class AwsSesService(BaseService):
                     "label": "Sender email (optional)",
                     "placeholder": "Leave empty to use a verified SES address or domain",
                     "required": False,
+                },
+                {
+                    "name": "skip_test",
+                    "type": "checkbox",
+                    "label": "Skip SES checks",
+                    "default": False,
+                    "description": (
+                        "Mark the integration active without checking for a "
+                        "verified sender. Use only if the checks block a "
+                        "working SES setup."
+                    ),
                 },
             ],
         }

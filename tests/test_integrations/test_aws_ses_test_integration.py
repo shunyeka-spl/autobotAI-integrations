@@ -84,3 +84,30 @@ def test_access_denied_names_the_missing_permission():
     result = _service(_Sesv2(error_code="AccessDeniedException"))._test_integration()
     assert result["success"] is False
     assert "ses:ListEmailIdentities" in result["error"]
+
+
+def test_new_integration_runs_the_checks_by_default():
+    svc = _service(_Sesv2())
+    assert svc.integration.skip_test is False
+    assert svc._test_integration()["success"] is False
+
+
+def test_stored_integration_without_the_field_skips_the_checks():
+    """Backward compatibility: records saved before skip_test existed."""
+    svc = _service(_Sesv2(), createdAt="2026-01-01T00:00:00")
+    assert svc.integration.skip_test is True
+    result = svc._test_integration()
+    assert result["success"] is True
+    assert "skipped" in result["warnings"][0]
+
+
+def test_explicit_skip_test_wins_over_the_default():
+    assert _service(_Sesv2(), createdAt="2026-01-01", skip_test=False).integration.skip_test is False
+    assert _service(_Sesv2(), skip_test="true").integration.skip_test is True
+    assert _service(_Sesv2(), skip_test="false").integration.skip_test is False
+
+
+def test_skip_makes_no_aws_calls():
+    svc = _service(_Sesv2(), skip_test=True)
+    svc._get_aws_client = lambda name: (_ for _ in ()).throw(AssertionError(name))
+    assert svc._test_integration()["success"] is True

@@ -30,6 +30,16 @@ class AwsSesIntegration(BaseSchema):
     account_id: Optional[str] = None
     roleArn: Optional[str] = None
     externalId: Optional[str] = None
+    # Optional sender. Empty = core picks a verified SES identity (a verified
+    # domain as noreply@<domain>, else a verified address).
+    from_address: Optional[str] = None
+    # Skip the SES checks in _test_integration and report success. Backward
+    # compatible: integrations saved before this field existed (they have a
+    # createdAt but no skip_test) default to True, so the new checks never
+    # turn an existing, working SES integration INACTIVE. New integrations
+    # default to False and get the full checks. Sending is unaffected: it
+    # still uses from_address or a verified identity core finds.
+    skip_test: bool = False
 
     name: Optional[str] = "AWS SES"
     category: Optional[str] = IntegrationCategory.NOTIFICATIONS_AND_COMMUNICATIONS.value
@@ -42,6 +52,20 @@ class AwsSesIntegration(BaseSchema):
     def ensure_region(cls, values: Any) -> Any:
         if isinstance(values, dict) and not values.get("region"):
             values["region"] = resolve_aws_sub_integration_region()
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_skip_test(cls, values: Any) -> Any:
+        """Missing skip_test: True for a stored record (has createdAt, so it
+        predates the SES checks), False for a new integration."""
+        if not isinstance(values, dict):
+            return values
+        raw = values.get("skip_test")
+        if raw is None or raw == "":
+            values["skip_test"] = bool(values.get("createdAt"))
+        elif isinstance(raw, str):
+            values["skip_test"] = raw.strip().lower() in ("true", "1", "yes", "on")
         return values
 
     def __init__(self, **kwargs):
@@ -92,18 +116,124 @@ class AwsSesService(BaseService):
                 region_name=self.integration.region,
             )
 
+    def _verified_identities(self, sesv2_client) -> dict:
+        """``{"domains": [...], "emails": [...]}`` SES can send from now:
+        verification succeeded AND sending is enabled for the identity."""
+        domains, emails = set(), set()
+        token = None
+        # Bounded: a non-string token (or a huge account) must never spin.
+        for _ in range(20):
+            kwargs = {"PageSize": 1000}
+            if token:
+                kwargs["NextToken"] = token
+            page = sesv2_client.list_email_identities(**kwargs)
+            if not isinstance(page, dict):
+                break
+            for ident in page.get("EmailIdentities") or []:
+                if not isinstance(ident, dict):
+                    continue
+                if not ident.get("SendingEnabled"):
+                    continue
+                if str(ident.get("VerificationStatus") or "").upper() != "SUCCESS":
+                    continue
+                name = str(ident.get("IdentityName") or "").strip()
+                kind = str(ident.get("IdentityType") or "").upper()
+                if name and kind == "DOMAIN":
+                    domains.add(name.lower())
+                elif name and kind == "EMAIL_ADDRESS":
+                    emails.add(name.lower())
+            token = page.get("NextToken")
+            if not isinstance(token, str) or not token:
+                break
+        return {"domains": sorted(domains), "emails": sorted(emails)}
+
+    @staticmethod
+    def _sender_covered(sender: str, identities: dict) -> bool:
+        sender = (sender or "").strip().lower()
+        if not sender or "@" not in sender:
+            return False
+        domain = sender.rsplit("@", 1)[1]
+        return sender in identities["emails"] or domain in identities["domains"]
+
     def _test_integration(self) -> dict:
+        """Pass only when SES can actually send: at least one verified email
+        address or domain in this region, sending enabled, and — when a
+        ``from_address`` is set — that address (or its domain) verified.
+
+        Sandbox mode is a warning, not a failure: SES still sends, but only
+        to verified recipients.
+        """
+        region = self.integration.region or "us-east-1"
+        if self.integration.skip_test:
+            return {
+                "success": True,
+                "warnings": [
+                    "SES checks were skipped (Skip SES checks is on). Emails "
+                    "are still attempted; set Sender email if SES cannot "
+                    "list its verified identities."
+                ],
+            }
         try:
-            ses_client = self._get_aws_client("ses")
-            response = ses_client.list_identities()
             sts_client = self._get_aws_client("sts")
             identity_data = sts_client.get_caller_identity()
-            account_id = str(identity_data["Account"])
-            self.integration.account_id = account_id
-            return {"success": True}
+            self.integration.account_id = str(identity_data["Account"])
+
+            sesv2_client = self._get_aws_client("sesv2")
+            identities = self._verified_identities(sesv2_client)
+            if not identities["domains"] and not identities["emails"]:
+                return {
+                    "success": False,
+                    "error": (
+                        f"AWS SES in {region} has no verified sender. Verify an "
+                        f"email address or a domain in SES ({region}) for this "
+                        "AWS account, then test this integration again."
+                    ),
+                }
+            sender = (self.integration.from_address or "").strip()
+            if sender and not self._sender_covered(sender, identities):
+                return {
+                    "success": False,
+                    "error": (
+                        f"The sender {sender} is not verified in AWS SES "
+                        f"({region}). Verify it (or its domain) in SES, or "
+                        "clear the sender field to use a verified identity."
+                    ),
+                }
+
+            result = {
+                "success": True,
+                "verified_identities": identities,
+                "warnings": [],
+            }
+            account = sesv2_client.get_account() or {}
+            if account.get("SendingEnabled") is False:
+                return {
+                    "success": False,
+                    "error": f"AWS SES sending is paused for this account in {region}.",
+                }
+            if not account.get("ProductionAccessEnabled"):
+                result["warnings"].append(
+                    f"AWS SES in {region} is in the sandbox: it only delivers "
+                    "to verified recipient addresses. Request production "
+                    "access in the SES console to email anyone."
+                )
+            return result
         except ClientError as e:
+            code = str((e.response.get("Error") or {}).get("Code") or "")
+            if code in ("AccessDenied", "AccessDeniedException"):
+                return {
+                    "success": False,
+                    "error": (
+                        "The IAM role is not allowed to read AWS SES "
+                        "(needs ses:ListEmailIdentities and ses:GetAccount). "
+                        f"AWS said: {e}"
+                    ),
+                }
             print(traceback.format_exc())
-            return {"success": False, "error": traceback.format_exc()}
+            return {"success": False, "error": f"AWS SES check failed: {e}"}
+        except Exception as e:
+            print(traceback.format_exc())
+            return {"success": False, "error": f"AWS SES check failed: {type(e).__name__}: {e}"}
 
     def get_integration_specific_details(self) -> dict:
         try:
@@ -139,6 +269,24 @@ class AwsSesService(BaseService):
                     "label": "Region",
                     "placeholder": "Select Region (defaults to parent AWS region or us-east-1)",
                     "required": False,
+                },
+                {
+                    "name": "from_address",
+                    "type": "text",
+                    "label": "Sender email (optional)",
+                    "placeholder": "Leave empty to use a verified SES address or domain",
+                    "required": False,
+                },
+                {
+                    "name": "skip_test",
+                    "type": "checkbox",
+                    "label": "Skip SES checks",
+                    "default": False,
+                    "description": (
+                        "Mark the integration active without checking for a "
+                        "verified sender. Use only if the checks block a "
+                        "working SES setup."
+                    ),
                 },
             ],
         }

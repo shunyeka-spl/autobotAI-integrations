@@ -1,0 +1,34 @@
+{
+    "cymulate": {
+        "streamable_http": {
+            "document_link": "https://cymulate.com/blog/mcp-server-and-claude-plugin/",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "Cymulate All",
+                    "description": "All tools exposed by the configured Cymulate MCP server (findings, assessments, agents, and environments).",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Cymulate Findings",
+                    "description": "Cymulate findings tools: search findings, finding detail, and mitigations.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Cymulate Assessments",
+                    "description": "Cymulate assessment tools: status and launched exposure-validation assessments.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Cymulate Agents and Environments",
+                    "description": "Cymulate agent and environment tools.",
+                    "url": "{base_url}",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

@@ -80,6 +80,18 @@ def test_from_address_must_be_covered():
     assert "me@other.io" in result["error"]
 
 
+def test_verified_domain_covers_subdomain_senders():
+    sesv2 = _Sesv2([_ident("acme.com", kind="DOMAIN")])
+    assert _service(sesv2, from_address="Alerts@Mail.Acme.com")._test_integration()["success"]
+    # A look-alike domain is not covered.
+    assert not _service(sesv2, from_address="a@notacme.com")._test_integration()["success"]
+
+
+def test_verified_address_matches_case_insensitively():
+    sesv2 = _Sesv2([_ident("Ops@Other.io")])
+    assert _service(sesv2, from_address="ops@other.io")._test_integration()["success"]
+
+
 def test_access_denied_names_the_missing_permission():
     result = _service(_Sesv2(error_code="AccessDeniedException"))._test_integration()
     assert result["success"] is False

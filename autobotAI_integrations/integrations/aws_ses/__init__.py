@@ -152,8 +152,13 @@ class AwsSesService(BaseService):
         sender = (sender or "").strip().lower()
         if not sender or "@" not in sender:
             return False
-        domain = sender.rsplit("@", 1)[1]
-        return sender in identities["emails"] or domain in identities["domains"]
+        if sender in {e.lower() for e in identities["emails"]}:
+            return True
+        # A verified domain covers every address on it and its subdomains
+        # (alerts@mail.acme.com is covered by acme.com).
+        parts = sender.rsplit("@", 1)[1].split(".")
+        domains = {d.lower() for d in identities["domains"]}
+        return any(".".join(parts[i:]) in domains for i in range(len(parts) - 1))
 
     def _test_integration(self) -> dict:
         """Pass only when SES can actually send: at least one verified email
@@ -195,8 +200,9 @@ class AwsSesService(BaseService):
                     "success": False,
                     "error": (
                         f"The sender {sender} is not verified in AWS SES "
-                        f"({region}). Verify it (or its domain) in SES, or "
-                        "clear the sender field to use a verified identity."
+                        f"({region}): neither the address nor its domain is "
+                        "verified. Verify one of them in SES, or change the "
+                        "sender to an address SES has verified."
                     ),
                 }
 

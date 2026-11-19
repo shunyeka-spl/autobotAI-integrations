@@ -1,0 +1,5 @@
+- name: cymulate
+  import_library_names:
+    - cymulate_oauth2_client
+  pip_package_names:
+    - cymulate-oauth2-client

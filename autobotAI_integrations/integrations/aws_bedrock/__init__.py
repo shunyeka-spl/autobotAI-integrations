@@ -280,6 +280,18 @@ class AWSBedrockService(AIBaseService):
                 "global.anthropic.claude-opus-4-6-v1",
                 f"{prefix}amazon.nova-lite-v1:0",
                 "global.amazon.nova-2-lite-v1:0",
+                "global.anthropic.claude-opus-4-8",
+                "global.anthropic.claude-haiku-5-5",
+                "global.anthropic.claude-sonnet-5-5",
+                "global.openai.gpt-6.1-sol",
+                "global.openai.gpt-6.1-terra",
+                "global.openai.gpt-5.6-terra",
+                "global.openai.gpt-5.4",
+                "global.zai.glm-5.3",
+                "zai.glm-5",
+                "global.moonshotai.kimi-k3.1",
+                "deepseek.v3.2",
+                "google.gemma-3-27b-it",
             ]
 
             available_models = default_top_models
@@ -478,7 +490,6 @@ class AWSBedrockService(AIBaseService):
     ):
         from pydantic_ai import Agent
         from autobotAI_integrations.utils.model_helpers import (
-            bedrock_model_rejects_temperature,
             bedrock_model_supports_extended_cache_ttl,
         )
 
@@ -489,11 +500,13 @@ class AWSBedrockService(AIBaseService):
 
         model_instance = self.get_pydantic_model(model,credentials=credentials)
 
-        provider_settings = (options.pop("model_settings", {}) or {}).copy()
+        from autobotAI_integrations.utils.agent_settings import (
+            prepare_agent_model_settings,
+        )
 
-        t = provider_settings.get("temperature")
-        if t is not None and bedrock_model_rejects_temperature(model):
-            provider_settings.pop("temperature", None)
+        provider_settings = prepare_agent_model_settings(
+            "aws_bedrock", model, options.pop("model_settings", {}) or {}
+        )
 
         enable_caching = provider_settings.pop("enable_prompt_caching", True)
         if enable_caching:

@@ -31,14 +31,17 @@ from typing import Any, Optional
 
 from autobotAI_integrations.utils.model_helpers import model_rejects_temperature
 
-# Context window assumed for a model llama-index has no entry for. It only
-# sizes prompt packing (chat memory buffers, query-engine chunk budgets), never
-# what the provider accepts. 128K is below every current GPT-5/6 and Claude
-# window, so it can under-fill a prompt but never overflow one.
-UNKNOWN_MODEL_CONTEXT_WINDOW = 128_000
+# Context window assumed for a model llama-index has no entry for. Sized for
+# models released in the last year (GPT-5.4+ ~1.05M, Claude 4.6+/5.x 1M,
+# Gemini 3.x 1M, GPT-5.1/5.2 400K, Grok 4.5+ 500K). Core uses this value as the
+# agent-node prompt pre-flight limit, so it is deliberately generous: a prompt
+# too big for a smaller-window model is rejected by the provider with a clear
+# error, instead of being blocked here for every model.
+UNKNOWN_MODEL_CONTEXT_WINDOW = 500_000
 
-# llama-index's own default for OpenAI-compatible models it cannot size.
-_DEFAULT_CONTEXT_WINDOW = 3900
+# Class default when a caller does not pass context_window. llama-index's own
+# 3900 fallback blocked any agent prompt over 3900 chars.
+_DEFAULT_CONTEXT_WINDOW = UNKNOWN_MODEL_CONTEXT_WINDOW
 
 
 @lru_cache(maxsize=1)

@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from functools import wraps
 
 from autobotAI_integrations import list_of_unique_elements
+from autobotAI_integrations.cli import CLISession, CLISpec, has_flag, integration_field
 
 from autobotAI_integrations import BaseSchema, SteampipeCreds, SDKCreds, CLICreds, \
     BaseService, ConnectionInterfaces, PayloadTask, SDKClient
@@ -233,7 +234,63 @@ class GCPService(BaseService):
         ]
 
     def generate_cli_creds(self) -> CLICreds:
-        raise NotImplementedError()
+        return CLICreds(
+            envs=self._temp_credentials(),
+            installer_check="gcloud --version",
+            install_command="https://cloud.google.com/sdk/docs/install",
+        )
+
+    @classmethod
+    def cli_spec(cls) -> CLISpec:
+        return CLISpec(
+            binary="gcloud",
+            display_name="Google Cloud CLI",
+            example="compute instances list --format=json",
+            filter_hint="--filter and --format",
+            blocked_subcommands=[
+                ["auth"],
+                ["config", "config-helper"],
+                ["config", "set"],
+                ["config", "unset"],
+                ["components"],
+            ],
+            blocked_flags=["--access-token-file", "--log-http", "--verbosity=debug"],
+            global_value_flags=[
+                "--project", "--account", "--configuration", "--format", "--verbosity",
+                "--impersonate-service-account", "--billing-project", "--flags-file",
+                "--trace-token",
+            ],
+        )
+
+    @staticmethod
+    def _cli_service_account(raw: str):
+        """Service-account dict from GOOGLE_APPLICATION_CREDENTIALS as
+        ``_temp_credentials`` encodes it (JSON string of the model JSON)."""
+        try:
+            return GCPCredentials.model_validate_json(json.loads(raw)).model_dump()
+        except Exception:
+            return None
+
+    @classmethod
+    def prepare_cli_session(cls, envs, integration, home, region=None, argv=None) -> CLISession:
+        sa = cls._cli_service_account(envs.get("GOOGLE_APPLICATION_CREDENTIALS") or "")
+        if not sa:
+            return CLISession(error="no GCP service-account credentials available")
+        key_path = os.path.join(home, "sa.json")
+        fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "w") as fh:
+            json.dump(sa, fh)
+        env = {
+            "CLOUDSDK_CONFIG": os.path.join(home, "gcloud"),
+            "CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE": key_path,
+            "CLOUDSDK_CORE_DISABLE_PROMPTS": "1",
+            "CLOUDSDK_CORE_DISABLE_USAGE_REPORTING": "true",
+            "CLOUDSDK_COMPONENT_MANAGER_DISABLE_UPDATE_CHECK": "true",
+        }
+        project = envs.get("CLOUDSDK_CORE_PROJECT") or sa.get("project_id")
+        if project:
+            env["CLOUDSDK_CORE_PROJECT"] = str(project)
+        return CLISession(env=env, secrets=[str(sa.get("private_key") or "")])
 
     def _temp_credentials(self):
         return {

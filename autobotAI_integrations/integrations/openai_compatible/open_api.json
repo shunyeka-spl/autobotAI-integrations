@@ -1,0 +1,166 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "OpenAI-Compatible Gateway API",
+    "version": "1.0.0",
+    "description": "Standard OpenAI-compatible routes served by LLM gateways and inference servers. The server URL is the integration's Base URL."
+  },
+  "servers": [
+    {
+      "url": "https://llm-gateway.example.com/v1",
+      "description": "Replaced by the integration's Base URL"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/chat/completions": {
+      "post": {
+        "summary": "Create chat completion",
+        "description": "Create a model response for the given chat conversation. OpenAI-compatible.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "messages"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "description": "The model identifier exactly as your gateway names it."
+                  },
+                  "messages": {
+                    "type": "array",
+                    "description": "List of chat messages in OpenAI format.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "system",
+                            "user",
+                            "assistant",
+                            "tool"
+                          ]
+                        },
+                        "content": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  },
+                  "temperature": {
+                    "type": "number"
+                  },
+                  "max_tokens": {
+                    "type": "integer"
+                  },
+                  "top_p": {
+                    "type": "number"
+                  },
+                  "stream": {
+                    "type": "boolean"
+                  },
+                  "response_format": {
+                    "type": "object"
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "tool_choice": {}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chat completion response"
+          }
+        }
+      }
+    },
+    "/models": {
+      "get": {
+        "summary": "List available models",
+        "description": "Returns the models the gateway exposes (not every gateway implements this route).",
+        "responses": {
+          "200": {
+            "description": "List of models"
+          }
+        }
+      }
+    },
+    "/embeddings": {
+      "post": {
+        "summary": "Create embeddings",
+        "description": "Create embedding vectors for the input text. OpenAI-compatible.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "input"
+                ],
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "description": "Embedding model identifier as your gateway names it."
+                  },
+                  "input": {
+                    "description": "Text or list of texts to embed.",
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Embedding vectors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

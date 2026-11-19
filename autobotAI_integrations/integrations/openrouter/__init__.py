@@ -21,6 +21,55 @@ from autobotAI_integrations.utils.logging_config import logger
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
+# OpenRouter app attribution: shown as the calling application on the
+# OpenRouter activity/usage pages. LiteLLM reads the OR_* env vars (it
+# otherwise reports every call as "liteLLM").
+OPENROUTER_APP_NAME = "autobotAI"
+OPENROUTER_SITE_URL = "https://autobot.live"
+OPENROUTER_ATTRIBUTION_HEADERS = {
+    "HTTP-Referer": OPENROUTER_SITE_URL,
+    "X-Title": OPENROUTER_APP_NAME,
+}
+OPENROUTER_ATTRIBUTION_ENVS = {
+    "OR_SITE_URL": OPENROUTER_SITE_URL,
+    "OR_APP_NAME": OPENROUTER_APP_NAME,
+}
+
+
+def is_openrouter_url(base_url: Optional[str]) -> bool:
+    """True when ``base_url`` points at OpenRouter (any path or subdomain)."""
+    from urllib.parse import urlparse
+
+    if not base_url:
+        return False
+    host = (urlparse(base_url).hostname or "").lower()
+    return host == "openrouter.ai" or host.endswith(".openrouter.ai")
+
+
+def _openrouter_pydantic_provider(api_key, base_url=None):
+    """pydantic-ai ``OpenAIProvider`` that sends the attribution headers.
+
+    Subclassing (instead of passing ``openai_client=``) keeps the provider the
+    owner of its HTTP client, so pydantic-ai closes it when the agent run
+    exits; a client handed in from outside is never closed and leaks its
+    connection pool on every model build.
+    """
+    from pydantic_ai.providers.openai import OpenAIProvider
+
+    class _AttributedOpenAIProvider(OpenAIProvider):
+        def _create_openai_client(self, *, default_headers=None, **kwargs):
+            return super()._create_openai_client(
+                default_headers={
+                    **OPENROUTER_ATTRIBUTION_HEADERS,
+                    **(default_headers or {}),
+                },
+                **kwargs,
+            )
+
+    return _AttributedOpenAIProvider(
+        api_key=api_key, base_url=base_url or OPENROUTER_BASE_URL
+    )
+
 # Embedding models exposed for Memory Spaces. OpenRouter requires
 # provider-namespaced ids. The first entry is the default (see
 # load_llama_index_embedding_model and MemorySpaceModel defaults in core).
@@ -202,6 +251,7 @@ class OpenRouterService(AIBaseService):
                     "openai": openai.OpenAI(
                         api_key=payload_task.creds.envs.get("OPENROUTER_API_KEY"),
                         base_url=OPENROUTER_BASE_URL,
+                        default_headers=dict(OPENROUTER_ATTRIBUTION_HEADERS),
                     )
                 },
                 "params": self.prepare_params(payload_task.params),
@@ -210,7 +260,10 @@ class OpenRouterService(AIBaseService):
         ]
 
     def generate_rest_api_creds(self) -> RestAPICreds:
-        headers = {"Authorization": f"Bearer {self.integration.api_key}"}
+        headers = {
+            "Authorization": f"Bearer {self.integration.api_key}",
+            **OPENROUTER_ATTRIBUTION_HEADERS,
+        }
         return RestAPICreds(
             base_url=OPENROUTER_BASE_URL,
             api_key=self.integration.api_key,
@@ -221,6 +274,7 @@ class OpenRouterService(AIBaseService):
         envs = {
             "OPENROUTER_API_KEY": self.integration.api_key,
             "OPENROUTER_BASE_URL": OPENROUTER_BASE_URL,
+            **OPENROUTER_ATTRIBUTION_ENVS,
         }
         return SDKCreds(envs=envs)
 
@@ -250,15 +304,11 @@ class OpenRouterService(AIBaseService):
 
     def get_pydantic_model(self, model_name: str):
         from pydantic_ai.models.openai import OpenAIChatModel
-        from pydantic_ai.providers.openai import OpenAIProvider
         from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
 
         model = OpenAIChatModel(
             model_name=model_name,
-            provider=OpenAIProvider(
-                api_key=self.integration.api_key,
-                base_url=OPENROUTER_BASE_URL,
-            ),
+            provider=_openrouter_pydantic_provider(self.integration.api_key),
             # OpenRouter ids are vendor/model, so pydantic-ai's OpenAIProvider
             # cannot apply Anthropic's constraints by itself (e.g.
             # anthropic/claude-opus-5.5 rejects temperature and forced tool
@@ -270,14 +320,12 @@ class OpenRouterService(AIBaseService):
     @staticmethod
     def build_model_from_credentials(model_name: str, credentials: dict):
         from pydantic_ai.models.openai import OpenAIChatModel
-        from pydantic_ai.providers.openai import OpenAIProvider
         from autobotAI_integrations.utils.model_helpers import openai_profile_overrides
 
         return OpenAIChatModel(
             model_name=model_name,
-            provider=OpenAIProvider(
-                api_key=credentials.get("api_key"),
-                base_url=credentials.get("base_url") or OPENROUTER_BASE_URL,
+            provider=_openrouter_pydantic_provider(
+                credentials.get("api_key"), credentials.get("base_url")
             ),
             profile=openai_profile_overrides(model_name) or None,
         )
@@ -292,6 +340,7 @@ class OpenRouterService(AIBaseService):
         # 3900, and core's agent pre-flight (get_model_context_window) then
         # rejects any system/user prompt over 3900 chars.
         kwargs.setdefault("context_window", openai_context_window(model))
+        kwargs.setdefault("default_headers", dict(OPENROUTER_ATTRIBUTION_HEADERS))
         # OpenAILike that drops temperature for models that reject it.
         return build_openai_compatible_llm(
             model,
@@ -325,6 +374,9 @@ class OpenRouterService(AIBaseService):
             api_key=self.integration.api_key,
             api_base=OPENROUTER_BASE_URL,
             model_name=model_name,
+            default_headers=kwargs.pop(
+                "default_headers", dict(OPENROUTER_ATTRIBUTION_HEADERS)
+            ),
             **kwargs,
         )
         return embed_model

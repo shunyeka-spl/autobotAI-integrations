@@ -142,6 +142,23 @@ def test_custom_auth_header_carries_the_key_and_wins_over_extra_headers():
     assert build_headers(None, "x-api-key", None) == {}
 
 
+def test_openrouter_base_url_adds_autobotai_attribution():
+    svc = _service(base_url="https://openrouter.ai/api/v1", api_key="sk-or")
+    headers = svc._default_headers()
+    assert headers["X-Title"] == "autobotAI"
+    assert headers["HTTP-Referer"] == "https://autobot.live"
+    # Reaches the agents runtime through generate_llm_credentials.
+    assert svc.generate_llm_credentials()["default_headers"]["X-Title"] == "autobotAI"
+    # The user's own headers win on a clash.
+    custom = _service(
+        base_url="https://openrouter.ai/api/v1", extra_headers={"X-Title": "Mine"}
+    )
+    assert custom._default_headers()["X-Title"] == "Mine"
+    # Any other gateway is left alone.
+    other = _service(base_url="https://gw.example.com/v1", api_key="k")
+    assert "X-Title" not in other._default_headers()
+
+
 def test_model_list_and_alias_parsing():
     assert parse_model_list("a\n b ,c\n# note\na") == ["a", "b", "c"]
     aliases = parse_model_aliases("smart = claude-opus-5-5\nfast: gpt-5-mini\nbroken\n# x=y")

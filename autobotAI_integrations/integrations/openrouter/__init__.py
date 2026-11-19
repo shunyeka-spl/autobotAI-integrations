@@ -36,16 +36,38 @@ OPENROUTER_ATTRIBUTION_ENVS = {
 }
 
 
+def is_openrouter_url(base_url: Optional[str]) -> bool:
+    """True when ``base_url`` points at OpenRouter (any path or subdomain)."""
+    from urllib.parse import urlparse
+
+    if not base_url:
+        return False
+    host = (urlparse(base_url).hostname or "").lower()
+    return host == "openrouter.ai" or host.endswith(".openrouter.ai")
+
+
 def _openrouter_pydantic_provider(api_key, base_url=None):
-    from openai import AsyncOpenAI
+    """pydantic-ai ``OpenAIProvider`` that sends the attribution headers.
+
+    Subclassing (instead of passing ``openai_client=``) keeps the provider the
+    owner of its HTTP client, so pydantic-ai closes it when the agent run
+    exits; a client handed in from outside is never closed and leaks its
+    connection pool on every model build.
+    """
     from pydantic_ai.providers.openai import OpenAIProvider
 
-    return OpenAIProvider(
-        openai_client=AsyncOpenAI(
-            api_key=api_key,
-            base_url=base_url or OPENROUTER_BASE_URL,
-            default_headers=dict(OPENROUTER_ATTRIBUTION_HEADERS),
-        )
+    class _AttributedOpenAIProvider(OpenAIProvider):
+        def _create_openai_client(self, *, default_headers=None, **kwargs):
+            return super()._create_openai_client(
+                default_headers={
+                    **OPENROUTER_ATTRIBUTION_HEADERS,
+                    **(default_headers or {}),
+                },
+                **kwargs,
+            )
+
+    return _AttributedOpenAIProvider(
+        api_key=api_key, base_url=base_url or OPENROUTER_BASE_URL
     )
 
 # Embedding models exposed for Memory Spaces. OpenRouter requires

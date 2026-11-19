@@ -87,6 +87,34 @@ class TestClassOpenRouter:
         custom = service.load_llama_index_embedding_model("qwen/qwen3-embedding-8b")
         assert custom.model_name == "qwen/qwen3-embedding-8b"
 
+    def test_pydantic_model_sends_attribution_and_owns_its_http_client(
+        self, sample_integration_dict
+    ):
+        integration = sample_integration_dict("openrouter", {"api_key": "sk-or-test"})
+        service = integration_service_factory.get_service(None, integration)
+        for model in (
+            service.get_pydantic_model("openai/gpt-5-mini"),
+            OpenRouterService.build_model_from_credentials(
+                "openai/gpt-5-mini", {"api_key": "sk-or-test"}
+            ),
+        ):
+            provider = model._provider
+            headers = provider.client.default_headers
+            assert headers["X-Title"] == "autobotAI"
+            assert headers["HTTP-Referer"] == "https://autobot.live"
+            assert str(provider.client.base_url).rstrip("/") == OPENROUTER_BASE_URL
+            # Provider-owned client: pydantic-ai closes it when the run exits.
+            assert provider._own_http_client is not None
+
+    def test_is_openrouter_url(self):
+        from autobotAI_integrations.integrations.openrouter import is_openrouter_url
+
+        assert is_openrouter_url("https://openrouter.ai/api/v1")
+        assert is_openrouter_url("https://eu.openrouter.ai/api/v1")
+        assert not is_openrouter_url("https://notopenrouter.ai/v1")
+        assert not is_openrouter_url("https://openrouter.ai.evil.com/v1")
+        assert not is_openrouter_url(None)
+
     def test_ai_prompt_python_template(self):
         template = OpenRouterService.ai_prompt_python_template()
         assert template["integration_type"] == "openrouter"

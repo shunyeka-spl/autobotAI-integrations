@@ -168,11 +168,21 @@ class OpenAICompatibleService(AIBaseService):
         return self.integration.verify_ssl is not False
 
     def _default_headers(self) -> Dict[str, str]:
-        return build_headers(
+        headers = build_headers(
             self._api_key if self.integration.api_key else None,
             self.integration.auth_header_name,
             self.integration.extra_headers,
         )
+        from autobotAI_integrations.integrations.openrouter import (
+            OPENROUTER_ATTRIBUTION_HEADERS,
+            is_openrouter_url,
+        )
+
+        if is_openrouter_url(self.integration.base_url):
+            # A gateway integration pointed at OpenRouter still identifies
+            # as autobotAI; the user's own headers win on a name clash.
+            headers = {**OPENROUTER_ATTRIBUTION_HEADERS, **headers}
+        return headers
 
     def _request_headers(self) -> Dict[str, str]:
         return {

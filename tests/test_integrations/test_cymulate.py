@@ -15,7 +15,6 @@ def _tokens(get_keys, *, valid=True):
     if not valid:
         token = token[:-2]
     return {
-        "auth_type": "api_token",
         "api_token": token,
         "api_url": get_keys.get("CYMULATE_API_URL") or US_API,
     }

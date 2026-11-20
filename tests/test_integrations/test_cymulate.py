@@ -1,5 +1,7 @@
+import traceback
 import pytest
 
+from autobotAI_integrations.handlers.task_handler import handle_task
 from autobotAI_integrations.integrations import integration_service_factory
 from autobotAI_integrations.models import ConnectionInterfaces
 
@@ -62,3 +64,33 @@ class TestClassCymulate:
         assert creds.base_url == tokens["api_url"].rstrip("/")
         assert creds.headers["x-token"] == tokens["api_token"]
         assert "Authorization" not in creds.headers
+
+    def test_action_run(
+        self, get_keys, sample_restapi_task, test_result_format, sample_integration_dict
+    ):
+        """Execute REST API action: Get Immediate Threats assessment status (GET /v1/immediate-threats/status)."""
+        tokens = _tokens(get_keys)
+        integration = sample_integration_dict("cymulate", tokens)
+        service = integration_service_factory.get_service(None, integration)
+        actions = service.get_all_rest_api_actions()
+
+        target_action = None
+        for action in actions:
+            if action.name == "Get Immediate Threats assessment status":
+                target_action = action
+                break
+
+        assert target_action is not None, (
+            "Action 'Get immediate threats status' not found in Cymulate REST API actions. "
+            f"Available: {[a.name for a in actions]}"
+        )
+
+        try:
+            task = sample_restapi_task(
+                integration, target_action.code, target_action.parameters_definition
+            )
+            result = handle_task(task)
+            test_result_format(result)
+        except Exception:
+            traceback.print_exc()
+            raise

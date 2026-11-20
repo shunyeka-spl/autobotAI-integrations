@@ -1,3 +1,4 @@
+import contextvars
 import importlib
 from enum import Enum
 from typing import List, Optional, Union
@@ -17,7 +18,7 @@ from autobotAI_integrations import (
 )
 from autobotAI_integrations.models import IntegrationCategory, MCPCreds
 
-# Public Cymulate API hosts. API token covers REST and MCP. OAuth covers REST and the SDK.
+# Public Cymulate API hosts. API token covers REST and MCP. OAuth covers the Python SDK.
 CYMULATE_API_URLS = (
     "https://api.us-app.cymulate.com",
     "https://api.app.cymulate.com",
@@ -37,6 +38,9 @@ class CymulateAuthTypes(str, Enum):
 
 class TokenExchangeError(Exception):
     """OAuth token exchange failed. The message must not include secrets."""
+
+
+_secrets_omitted = contextvars.ContextVar("cymulate_secrets_omitted", default=False)
 
 
 def api_token_headers(api_token: str) -> dict:
@@ -163,6 +167,15 @@ class CymulateIntegration(BaseSchema):
             raise ValueError("client_id must be a 24-character hexadecimal id")
         return cleaned
 
+    @model_validator(mode="before")
+    @classmethod
+    def note_omitted_secrets(cls, values):
+        if isinstance(values, dict):
+            _secrets_omitted.set("api_token" not in values and "client_secret" not in values)
+        else:
+            _secrets_omitted.set(False)
+        return values
+
     @model_validator(mode="after")
     def validate_selected_auth(self):
         allowed = {
@@ -176,7 +189,11 @@ class CymulateIntegration(BaseSchema):
                 self.auth_type = CymulateAuthTypes.OAUTH_CLIENT.value
             else:
                 self.auth_type = CymulateAuthTypes.API_TOKEN.value
-        if self.auth_type == CymulateAuthTypes.API_TOKEN.value and not self.api_token:
+        if (
+            not _secrets_omitted.get()
+            and self.auth_type == CymulateAuthTypes.API_TOKEN.value
+            and not self.api_token
+        ):
             raise ValueError("API token is required")
         if self.auth_type == CymulateAuthTypes.OAUTH_CLIENT.value and (
             not self.client_id or not self.client_secret
@@ -363,7 +380,7 @@ class CymulateService(BaseService):
                             "label": "Client ID",
                             "placeholder": "24-character client id",
                             "description": (
-                                "OAuth client id for the official Python SDK and the REST API. "
+                                "OAuth client id for the official Python SDK. "
                                 "Must be a 24-character hexadecimal id."
                             ),
                             "required": True,
@@ -376,8 +393,7 @@ class CymulateService(BaseService):
                             "label": "Client Secret",
                             "placeholder": "Enter the client secret",
                             "description": (
-                                "OAuth client secret. Used with the client id for "
-                                "the Python SDK and the REST API."
+                                "OAuth client secret. Used with the client id for the Python SDK."
                             ),
                             "required": True,
                             "help_url": "https://github.com/cymulate-ltd/oauth2-client",
@@ -433,13 +449,11 @@ class CymulateService(BaseService):
         ]
 
     def generate_rest_api_creds(self) -> RestAPICreds:
-        if self.integration.uses_api_token():
-            headers = api_token_headers(self.integration.api_token)
-        else:
-            headers = bearer_headers(self._access_token())
+        if not self.integration.uses_api_token():
+            raise ValueError("The Cymulate REST API requires the API token")
         return RestAPICreds(
             base_url=self.integration.api_url,
-            headers=headers,
+            headers=api_token_headers(self.integration.api_token),
             verify_ssl=not self.integration.ignore_ssl,
         )
 

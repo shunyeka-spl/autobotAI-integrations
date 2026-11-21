@@ -37,14 +37,13 @@ class PaloAltoSCMClient:
 
         response = self.session.post(
             self.auth_url,
+            auth=(self.client_id, self.client_secret),
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Accept": "application/json",
             },
             data={
                 "grant_type": "client_credentials",
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
                 "scope": self.scope,
             },
             timeout=30,

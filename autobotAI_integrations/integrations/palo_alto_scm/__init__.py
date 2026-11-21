@@ -51,14 +51,13 @@ class PaloAltoSCMService(BaseService):
         """
         response = requests.post(
             self.integration.auth_url,
+            auth=(self.integration.client_id, self.integration.client_secret),
             headers={
                 "Content-Type": "application/x-www-form-urlencoded",
                 "Accept": "application/json",
             },
             data={
                 "grant_type": "client_credentials",
-                "client_id": self.integration.client_id,
-                "client_secret": self.integration.client_secret,
                 "scope": self.integration.scope,
             },
             timeout=30,

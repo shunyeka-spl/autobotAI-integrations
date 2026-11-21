@@ -1,0 +1,32 @@
+{
+    "newrelic": {
+        "streamable_http": {
+            "document_link": "https://docs.newrelic.com/docs/agentic-ai/mcp/overview",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "New Relic US MCP Server",
+                    "description": "Official New Relic US Model Context Protocol server for querying telemetry data, NRQL, alerts, incidents, and performance analytics.",
+                    "url": "https://mcp.newrelic.com/mcp/",
+                    "headers": {
+                        "Api-Key": {
+                            "type": "string",
+                            "description": "New Relic User Key (NRAK-...)"
+                        }
+                    }
+                },
+                {
+                    "name": "New Relic EU MCP Server",
+                    "description": "Official New Relic EU Model Context Protocol server for querying telemetry data, NRQL, alerts, incidents, and performance analytics.",
+                    "url": "https://mcp.eu.newrelic.com/mcp/",
+                    "headers": {
+                        "Api-Key": {
+                            "type": "string",
+                            "description": "New Relic User Key (NRAK-...)"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

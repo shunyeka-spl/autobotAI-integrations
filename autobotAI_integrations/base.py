@@ -2,6 +2,7 @@ import importlib
 import importlib.metadata
 import shutil
 import os
+import re
 import subprocess
 import sys
 import inspect

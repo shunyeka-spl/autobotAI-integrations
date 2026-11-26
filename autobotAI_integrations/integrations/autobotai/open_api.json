@@ -773,7 +773,7 @@
         "description": "Batch create or update discovered work items (tasks) in the Guardian task register. Idempotent based on source, source_event_id, and application.",
         "operationId": "recordGuardianTasks",
         "requestBody": {
-          "description": "Payload schema:\n- application_id: (Optional) Unique ID of the workload application (find via 'List AppSec Workloads').\n- thread_id: (Optional) Unique thread ID of the active bot execution context.\n- tasks: (Required) List of findings to record:\n  - source: (Required) Detector/tool name (e.g. trivy, snyk, manual).\n  - name: (Required) Title of the finding.\n  - domain: (Required) security, cloud_ops, observability, cost, identity, compliance.\n  - category: (Required) Finding category (e.g. vulnerability, cloud_misconfig).\n  - source_event_id: (Optional) Scanner finding ID.\n  - description: (Optional) Finding details.\n  - severity: (Optional) Critical, High, Medium, Low, Informational.\n  - application: (Optional) Workload name.\n  - team: (Optional) Owner team slug.\n  - owner_ref: (Optional) Owner email.\n  - assignee_ref: (Optional) Assignee email.",
+          "description": "Payload schema:\n- application_id: (Optional) Unique ID of the workload application (find via 'List AppSec Workloads').\n- application: (Optional) Workload name/slug for standalone scans.\n- thread_id: (Optional) Unique thread ID of the active bot execution context.\n- tasks: (Required) List of findings to record:\n  - source: (Required) Detector/tool name (e.g. trivy, snyk, manual).\n  - name: (Required) Title of the finding.\n  - domain: (Required) security, cloud_ops, observability, cost, identity, compliance.\n  - category: (Required) Finding category (e.g. vulnerability, cloud_misconfig).\n  - source_event_id: (Optional) Scanner finding ID.\n  - description: (Optional) Finding details.\n  - severity: (Optional) Critical, High, Medium, Low, Informational.\n  - application: (Optional) Workload name.\n  - team: (Optional) Owner team slug.\n  - owner_ref: (Optional) Owner email.\n  - assignee_ref: (Optional) Assignee email.\n  - extra_details: (Optional) Object with details (CVE, location, evidence).\n  - detected_at: (Optional) ISO-8601 detection timestamp.",
           "required": true,
           "content": {
             "application/json": {
@@ -783,6 +783,10 @@
                   "application_id": {
                     "type": "string",
                     "description": "Optional: Unique ID of the workload application. Retrieve via 'List AppSec Workloads' action. Required to trigger automatic resolver bot runs."
+                  },
+                  "application": {
+                    "type": "string",
+                    "description": "Optional: Workload name or slug for standalone runs without a registered application_id."
                   },
                   "thread_id": {
                     "type": "string",
@@ -804,7 +808,14 @@
                         "application": { "type": "string", "description": "Optional: legacy application name slug." },
                         "team": { "type": "string", "description": "Optional: owner team slug." },
                         "owner_ref": { "type": "string", "description": "Optional: risk owner email." },
-                        "assignee_ref": { "type": "string", "description": "Optional: human analyst email." }
+                        "assignee_ref": { "type": "string", "description": "Optional: human analyst email." },
+                        "extra_details": { "type": "object", "description": "Optional: Rich finding details (location, CVSS, CVE, evidence, remediation)." },
+                        "detected_at": { "type": "string", "description": "Optional: Timestamp when detected (ISO-8601 or epoch string)." },
+                        "sla_hours": { "type": "integer", "description": "Optional: SLA deadline hours from now." },
+                        "ocsf": { "type": "object", "description": "Optional: OCSF event dictionary." },
+                        "harness_id": { "type": "string", "description": "Optional: Harness ID." },
+                        "input_id": { "type": "string", "description": "Optional: Input ID." },
+                        "intake_event_id": { "type": "string", "description": "Optional: Intake event ID." }
                       },
                       "required": ["source", "name", "domain", "category"]
                     }
@@ -831,7 +842,188 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response"
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "description": "'success', 'partial', or 'error'" },
+                    "task_id": { "type": "string", "description": "Primary task ID of the created or deduped task." },
+                    "task": { "type": "object", "description": "Primary task document with all metadata." },
+                    "created": { "type": "integer", "description": "Count of new tasks created." },
+                    "deduped": { "type": "integer", "description": "Count of duplicate tasks deduped." },
+                    "dispatched": { "type": "integer", "description": "Count of resolvers dispatched." },
+                    "tasks": {
+                      "type": "array",
+                      "description": "List of recorded/deduped tasks with metadata and task IDs.",
+                      "items": { "type": "object" }
+                    },
+                    "errors": {
+                      "type": "array",
+                      "description": "List of errors (e.g. application not found, resolver dispatch issues).",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guardian/tasks/ensure": {
+      "post": {
+        "summary": "Ensure Guardian Task",
+        "description": "Deterministic create-at-dispatch (idempotent per thread), or attach an existing task to this run's thread when attach_task_id is set.",
+        "operationId": "ensureGuardianTask",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "thread_id": { "type": "string", "description": "Chat thread ID of the active run." },
+                  "attach_task_id": { "type": "string", "description": "Optional: attach existing task to this thread." },
+                  "bot_id": { "type": "string", "description": "Optional: executing bot ID." },
+                  "execution_ref": { "type": "string", "description": "Optional: execution reference ID." },
+                  "task_seed": {
+                    "type": "object",
+                    "description": "Task seed containing name, source, domain, category, etc."
+                  }
+                },
+                "required": ["thread_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "task_id": { "type": "string" },
+                    "is_new": { "type": "boolean" },
+                    "attached": { "type": "boolean" },
+                    "task": { "type": "object" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guardian/tasks/archive": {
+      "post": {
+        "summary": "Archive Guardian Tasks",
+        "description": "Batch archive (or unarchive) Guardian tasks/alerts so their data no longer appears on Guardian UI dashboards, metrics, or Optimus reports.",
+        "operationId": "archiveGuardianTasks",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "task_ids": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "List of task IDs to archive or unarchive."
+                  },
+                  "archived": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "True to archive, False to unarchive."
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "Optional reason or note for archiving."
+                  }
+                },
+                "required": ["task_ids"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "archived": { "type": "boolean" },
+                    "count": { "type": "integer" },
+                    "task_ids": { "type": "array", "items": { "type": "string" } },
+                    "tasks": { "type": "array", "items": { "type": "object" } },
+                    "not_found": { "type": "array", "items": { "type": "string" } },
+                    "errors": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/guardian/tasks/{task_id}/archive": {
+      "post": {
+        "summary": "Archive Guardian Task",
+        "description": "Archive (or unarchive) a single Guardian task/alert so it no longer appears on Guardian UI dashboards, metrics, or Optimus reports.",
+        "operationId": "archiveGuardianTask",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The ID of the task/alert to archive."
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "archived": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "True to archive, False to unarchive."
+                  },
+                  "note": {
+                    "type": "string",
+                    "description": "Optional reason or note for archiving."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "task_id": { "type": "string" },
+                    "archived": { "type": "boolean" },
+                    "task": { "type": "object" }
+                  }
+                }
+              }
+            }
           }
         }
       }

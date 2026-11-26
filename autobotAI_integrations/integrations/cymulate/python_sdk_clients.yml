@@ -1,3 +1,9 @@
+- name: cymulate_api
+  import_library_names:
+    - requests
+  pip_package_names:
+    - requests
+
 - name: cymulate
   import_library_names:
     - cymulate_oauth2_client

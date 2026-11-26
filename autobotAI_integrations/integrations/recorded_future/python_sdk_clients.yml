@@ -1,0 +1,6 @@
+- name: recorded_future
+  import_library_names:
+    - requests
+  pip_package_names:
+    - requests
+

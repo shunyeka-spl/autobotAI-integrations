@@ -54,7 +54,38 @@ class TestClassRecordedFuture:
 
     def test_supported_interfaces(self):
         interfaces = RecordedFutureService.supported_connection_interfaces()
-        assert interfaces == [ConnectionInterfaces.REST_API]
+        assert interfaces == [
+            ConnectionInterfaces.REST_API,
+            ConnectionInterfaces.PYTHON_SDK,
+        ]
+
+    def test_python_sdk_creds_and_task(
+        self, sample_integration_dict, sample_python_task, test_result_format
+    ):
+        integration = sample_integration_dict(
+            "recorded_future", {"api_token": "rf-test-token"}
+        )
+        service = integration_service_factory.get_service(None, integration)
+        creds = service.generate_python_sdk_creds()
+        assert creds.envs["RECORDED_FUTURE_API_TOKEN"] == "rf-test-token"
+        assert creds.envs["RECORDED_FUTURE_BASE_URL"] == RECORDED_FUTURE_BASE_URL
+
+        details = RecordedFutureService.get_details()
+        assert any(c["name"] == "recorded_future" for c in details["clients"])
+
+        code = """
+def executor(context):
+    client = context["clients"]["recorded_future"]
+    return {
+        "has_token_header": client.headers.get("X-RFToken") == "rf-test-token",
+        "base_url": client.base_url,
+    }
+"""
+        task = sample_python_task(integration, code=code, clients=["recorded_future"])
+        result = handle_task(task)
+        test_result_format(result)
+        assert result.resources[0]["has_token_header"] is True
+        assert result.resources[0]["base_url"] == RECORDED_FUTURE_BASE_URL
 
     def test_rest_api_creds(self, sample_integration_dict):
         integration = sample_integration_dict(

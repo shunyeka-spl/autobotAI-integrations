@@ -1,12 +1,16 @@
 import requests
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
+from urllib.parse import urlparse
 from pydantic import Field
 
 from autobotAI_integrations import (
     BaseSchema,
     BaseService,
     ConnectionInterfaces,
-    RestAPICreds
+    PayloadTask,
+    RestAPICreds,
+    SDKClient,
+    SDKCreds,
 )
 from autobotAI_integrations.models import IntegrationCategory
 
@@ -120,7 +124,10 @@ class ProofpointITMService(BaseService):
 
     @staticmethod
     def supported_connection_interfaces():
-        return [ConnectionInterfaces.REST_API]
+        return [
+            ConnectionInterfaces.REST_API,
+            ConnectionInterfaces.PYTHON_SDK,
+        ]
 
     def generate_rest_api_creds(self) -> RestAPICreds:
         """
@@ -139,3 +146,59 @@ class ProofpointITMService(BaseService):
             base_url=self.integration.base_url.rstrip("/"),
             headers=headers
         )
+
+    def generate_python_sdk_creds(self) -> SDKCreds:
+        return SDKCreds(
+            envs={
+                "PROOFPOINT_ITM_BASE_URL": (self.integration.base_url or "").rstrip("/"),
+                "PROOFPOINT_ITM_CLIENT_ID": self.integration.client_id or "",
+                "PROOFPOINT_ITM_CLIENT_SECRET": self.integration.client_secret or "",
+            }
+        )
+
+    def build_python_exec_combinations_hook(
+        self, payload_task: PayloadTask, client_definitions: List[SDKClient]
+    ) -> list:
+        envs = payload_task.creds.envs or {}
+        base_url = envs.get("PROOFPOINT_ITM_BASE_URL", "").rstrip("/")
+        client_id = envs.get("PROOFPOINT_ITM_CLIENT_ID", "")
+        client_secret = envs.get("PROOFPOINT_ITM_CLIENT_SECRET", "")
+
+        session = requests.Session()
+        session.base_url = base_url
+        session.client_id = client_id
+        session.client_secret = client_secret
+        session.headers.update(
+            {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+        )
+        parsed_url = urlparse(base_url)
+        host = (parsed_url.hostname or "").lower()
+        if (
+            parsed_url.scheme == "https"
+            and host.endswith(".itmsaas.proofpoint.com")
+            and client_id
+            and client_secret
+        ):
+            resp = requests.post(
+                f"{base_url}/v2/oauth/token",
+                data={
+                    "grant_type": "client_credentials",
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                },
+                timeout=10,
+                allow_redirects=False,
+            )
+            if resp.ok and resp.json().get("access_token"):
+                session.headers["Authorization"] = f"Bearer {resp.json()['access_token']}"
+
+        return [
+            {
+                "clients": {"proofpoint_itm": session},
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context,
+            }
+        ]

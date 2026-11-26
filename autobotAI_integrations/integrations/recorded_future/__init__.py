@@ -1,4 +1,4 @@
-from typing import Optional, Type, Union
+from typing import List, Optional, Type, Union
 from pydantic import Field
 import requests
 
@@ -6,6 +6,9 @@ from autobotAI_integrations import (
     BaseSchema,
     BaseService,
     ConnectionInterfaces,
+    PayloadTask,
+    SDKClient,
+    SDKCreds,
 )
 from autobotAI_integrations.models import IntegrationCategory, RestAPICreds
 
@@ -92,7 +95,10 @@ class RecordedFutureService(BaseService):
 
     @staticmethod
     def supported_connection_interfaces():
-        return [ConnectionInterfaces.REST_API]
+        return [
+            ConnectionInterfaces.REST_API,
+            ConnectionInterfaces.PYTHON_SDK,
+        ]
 
     def generate_rest_api_creds(self) -> RestAPICreds:
         return RestAPICreds(
@@ -104,3 +110,35 @@ class RecordedFutureService(BaseService):
                 "Content-Type": "application/json",
             },
         )
+
+    def generate_python_sdk_creds(self) -> SDKCreds:
+        return SDKCreds(
+            envs={
+                "RECORDED_FUTURE_API_TOKEN": self.integration.api_token or "",
+                "RECORDED_FUTURE_BASE_URL": RECORDED_FUTURE_BASE_URL,
+            }
+        )
+
+    def build_python_exec_combinations_hook(
+        self, payload_task: PayloadTask, client_definitions: List[SDKClient]
+    ) -> list:
+        token = payload_task.creds.envs.get("RECORDED_FUTURE_API_TOKEN", "")
+        base_url = payload_task.creds.envs.get(
+            "RECORDED_FUTURE_BASE_URL", RECORDED_FUTURE_BASE_URL
+        )
+        session = requests.Session()
+        session.headers.update(
+            {
+                "X-RFToken": token,
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+        )
+        session.base_url = base_url
+        return [
+            {
+                "clients": {"recorded_future": session},
+                "params": self.prepare_params(payload_task.params),
+                "context": payload_task.context,
+            }
+        ]

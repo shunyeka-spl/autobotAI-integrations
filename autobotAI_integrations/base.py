@@ -43,6 +43,26 @@ from autobotAI_integrations.utils import (
 from autobotAI_integrations.utils.security_measures import SecurityError
 
 
+def _sanitize_for_json(val: Any) -> Any:
+    """Sanitize strings in JSON payloads removing null bytes, surrogate characters,
+    and invalid control characters that break JSON encoders or API endpoints."""
+    if isinstance(val, str):
+        val = val.replace("\x00", "")
+        val = val.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+        val = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", val)
+        return val
+    elif isinstance(val, dict):
+        return {
+            (_sanitize_for_json(k) if isinstance(k, str) else k): _sanitize_for_json(v)
+            for k, v in val.items()
+        }
+    elif isinstance(val, list):
+        return [_sanitize_for_json(x) for x in val]
+    elif isinstance(val, tuple):
+        return tuple(_sanitize_for_json(x) for x in val)
+    return val
+
+
 class BaseService:
 
     # Per-platform body-size budget for notification / approval messages.
@@ -788,6 +808,14 @@ def executor(context):
 
         response = None
         try:
+            # Sanitize input payloads from surrogate characters, null bytes, and illegal control chars
+            if json_data is not None:
+                json_data = _sanitize_for_json(json_data)
+            if params is not None:
+                params = _sanitize_for_json(params)
+            if headers is not None:
+                headers = _sanitize_for_json(headers)
+
             # Ensure we don't send both json and form data in same request
             if json_data and form_data:
                 logger.info("Both JSON and form data provided - using JSON data only")
@@ -927,7 +955,7 @@ def executor(context):
                 },
                 json_data=params.get("json_data", None),
                 form_data=params.get("form_data", None),
-                timeout=params.get("timeout") or 30,
+                timeout=params.get("timeout") or getattr(payload_task.creds, "timeout", None) or 60,
                 verify_ssl=payload_task.creds.verify_ssl,
                 auth=payload_task.creds.auth,
             )

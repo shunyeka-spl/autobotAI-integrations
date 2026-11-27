@@ -1,0 +1,46 @@
+{
+    "netskope": {
+        "streamable_http": {
+            "document_link": "https://docs.netskope.com/en/netskope-copilot-for-mcp-server",
+            "headers": {},
+            "servers": [
+                {
+                    "name": "Netskope All",
+                    "description": "All tools on the hosted Netskope MCP server: events, incidents, policy, users, DEM, DNS, and IPsec.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Netskope Events",
+                    "description": "Search and export Netskope alert, application, network, page, audit, and client events.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Netskope Incidents",
+                    "description": "DLP incident search, forensics, and incident analysis.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Netskope Policy",
+                    "description": "URL lists, tags, policy deploy, DNS profiles, and IPsec tunnels.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Netskope Users",
+                    "description": "SCIM users and groups, and user-group membership.",
+                    "url": "{base_url}",
+                    "headers": {}
+                },
+                {
+                    "name": "Netskope DEM",
+                    "description": "Digital experience and device telemetry tools.",
+                    "url": "{base_url}",
+                    "headers": {}
+                }
+            ]
+        }
+    }
+}

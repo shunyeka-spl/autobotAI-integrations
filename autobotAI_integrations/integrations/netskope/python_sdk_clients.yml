@@ -1,0 +1,7 @@
+- name: netskope
+  doc_url: https://github.com/netskopeoss/netskope-py-sdk
+  class_name: NetskopeClient
+  import_library_names:
+    - netskope
+  pip_package_names:
+    - netskope-py-sdk

@@ -8,6 +8,7 @@ import inspect
 import platform
 import json
 import asyncio
+from contextlib import contextmanager
 from copy import deepcopy
 import traceback
 from enum import Enum
@@ -42,6 +43,43 @@ from autobotAI_integrations.utils import (
 )
 from autobotAI_integrations.utils.security_measures import SecurityError
 
+
+
+def _reset_default_aws_session():
+    """Drop boto3's module-level default session (it caches the credentials
+    resolved from the environment the first time a bare boto3.client() runs)."""
+    boto3_mod = sys.modules.get("boto3")
+    if boto3_mod is not None:
+        boto3_mod.DEFAULT_SESSION = None
+
+
+@contextmanager
+def task_environment(envs: Optional[Dict[str, Any]]):
+    """Expose one task's credential env vars only while that task runs.
+
+    Task code (python_sdk) reads its integration credentials from os.environ,
+    and the same worker process (a warm Lambda) then runs the next task, which
+    may belong to another tenant. Previously the variables were set and never
+    removed, so the next tenant's code could read them. On exit the process
+    environment is restored to exactly what it was on entry, which also drops
+    anything the task code itself added or changed, and boto3's cached default
+    session is discarded on the way in and out.
+    """
+    before = dict(os.environ)
+    _reset_default_aws_session()
+    try:
+        for key, value in (envs or {}).items():
+            if key and value:
+                os.environ[key] = str(value)
+        yield
+    finally:
+        for key in list(os.environ):
+            if key not in before:
+                del os.environ[key]
+        for key, value in before.items():
+            if os.environ.get(key) != value:
+                os.environ[key] = value
+        _reset_default_aws_session()
 
 class BaseService:
 
@@ -489,11 +527,11 @@ def executor(context):
         return client_details
 
     def python_sdk_processor(self, payload_task: PayloadTask) -> (List[Dict[str, Any]], List[str]):  # type: ignore
-        if payload_task.creds and payload_task.creds.envs:
-            for key, value in payload_task.creds.envs.items():
-                if key and value:
-                    os.environ[key] = value
+        envs = (payload_task.creds.envs if payload_task.creds else None) or {}
+        with task_environment(envs):
+            return self._python_sdk_processor(payload_task)
 
+    def _python_sdk_processor(self, payload_task: PayloadTask) -> (List[Dict[str, Any]], List[str]):  # type: ignore
         results = []
         errors = []
         combinations = self.build_python_exec_combinations(payload_task)
@@ -587,8 +625,8 @@ def executor(context):
 
     def set_steampipe_spc_config(self, config_str, plugin_name):
         config_path = self._get_steampipe_config_path(plugin_name)
+        # The config holds the tenant's credentials: never log its contents.
         logger.info(f"Setting {plugin_name}.spc file to PATH: {config_path}")
-        logger.info(f"SPC Config {plugin_name}.spc file is: {config_str}")
         with open(config_path, "w") as f:
             f.write(config_str)
 
@@ -682,38 +720,42 @@ def executor(context):
             config_str=payload_task.creds.config,
             plugin_name=payload_task.creds.plugin_name,
         )
-        execution_mode = None
+        # Removed even when the run fails, so the next task in this worker
+        # (possibly another tenant) never finds these credentials on disk.
+        try:
+            execution_mode = None
 
-        logger.debug("Checking for Query type")
-        if payload_task.executable.startswith(
-            f"{payload_task.creds.plugin_name}_compliance"
-        ):
-            execution_mode = "compliance"
-        elif payload_task.executable.lower().startswith("select"):
-            execution_mode = "query"
-        else:
-            raise ValueError("Execution mode is not supported.")
+            logger.debug("Checking for Query type")
+            if payload_task.executable.startswith(
+                f"{payload_task.creds.plugin_name}_compliance"
+            ):
+                execution_mode = "compliance"
+            elif payload_task.executable.lower().startswith("select"):
+                execution_mode = "query"
+            else:
+                raise ValueError("Execution mode is not supported.")
 
-        if execution_mode == "compliance":
-            logger.info(f"Running compliance benchmark: '{payload_task.executable}'")
-            process = self._execute_steampipe_compliance(payload_task)
+            if execution_mode == "compliance":
+                logger.info(f"Running compliance benchmark: '{payload_task.executable}'")
+                process = self._execute_steampipe_compliance(payload_task)
 
-        else:
-            logger.info(f"Running query: '{payload_task.executable}'")
-            process = subprocess.run(
-                [
-                    "/usr/local/bin/steampipe",
-                    "query",
-                    "{}".format(payload_task.executable),
-                    "--output",
-                    "json",
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env={**os.environ, **payload_task.creds.envs},
-            )
+            else:
+                logger.info(f"Running query: '{payload_task.executable}'")
+                process = subprocess.run(
+                    [
+                        "/usr/local/bin/steampipe",
+                        "query",
+                        "{}".format(payload_task.executable),
+                        "--output",
+                        "json",
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env={**os.environ, **payload_task.creds.envs},
+                )
 
-        self.clear_steampipe_spc_config(plugin_name=payload_task.creds.plugin_name)
+        finally:
+            self.clear_steampipe_spc_config(plugin_name=payload_task.creds.plugin_name)
 
         stdout = process.stdout.decode("utf-8")
         error_str = process.stderr.decode("utf-8")

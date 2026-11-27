@@ -219,37 +219,3 @@ class TestClassCrowdstrike:
         test_result_format(result)
         print(result.model_dump_json(indent=2))
 
-    def test_crowdstrike_api_client_lambda_safe(
-        self, monkeypatch, sample_integration_dict, sample_python_task, test_result_format
-    ):
-        """crowdstrike_api client works on Lambda without falconpy installed."""
-        service_cls = integration_service_factory.get_service_cls("crowdstrike")
-        details = service_cls.get_details()
-        assert any(c["name"] == "crowdstrike_api" for c in details["clients"])
-
-        monkeypatch.setattr(
-            "autobotAI_integrations.integrations.crowdstrike._get_token",
-            lambda client_id, client_secret, client_cloud: "mock-cs-token",
-        )
-        integration = sample_integration_dict(
-            "crowdstrike",
-            {
-                "client_id": "cs-id",
-                "client_secret": "cs-secret",
-                "client_cloud": "us-2",
-            },
-        )
-        code = """
-def executor(context):
-    client = context["clients"]["crowdstrike_api"]
-    return {
-        "auth": client.headers.get("Authorization"),
-        "base_url": client.base_url,
-    }
-"""
-        task = sample_python_task(integration, code=code, clients=["crowdstrike_api"])
-        result = handle_task(task)
-        test_result_format(result)
-        assert result.resources[0]["auth"] == "Bearer mock-cs-token"
-        assert result.resources[0]["base_url"] == "https://api.us-2.crowdstrike.com"
-

@@ -190,56 +190,28 @@ class CrowdstrikeService(BaseService):
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        envs = payload_task.creds.envs or {}
-        client_id = envs.get("FALCON_CLIENT_ID")
-        client_secret = envs.get("FALCON_CLIENT_SECRET")
-        client_cloud = envs.get("FALCON_CLOUD", "us-2")
+        falconpy = importlib.import_module("falconpy", package=None)
+        client_id = payload_task.creds.envs.get("FALCON_CLIENT_ID")
+        client_secret = payload_task.creds.envs.get("FALCON_CLIENT_SECRET")
+        client_cloud = payload_task.creds.envs.get("FALCON_CLOUD")
 
-        requested = {c.name for c in (client_definitions or [])}
-        falcon_clients = {
-            "detects": "Detects",
-            "hosts": "Hosts",
-            "incidents": "Incidents",
-            "alerts": "Alerts",
-            "real_time_response": "RealTimeResponse",
-            "identity_protection": "IdentityProtection",
-        }
-
-        clients = {}
-        if not requested or "crowdstrike_api" in requested:
-            token = _get_token(client_id, client_secret, client_cloud)
-            session = requests.Session()
-            session.base_url = _get_base_url(client_cloud)
-            session.headers.update(
-                {
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json",
-                }
+        def _make_client(class_name: str):
+            return getattr(falconpy, class_name)(
+                client_id=client_id,
+                client_secret=client_secret,
+                base_url=client_cloud,
             )
-            clients["crowdstrike_api"] = session
-
-        needed_falcon = (
-            [name for name in falcon_clients if name in requested]
-            if requested
-            else list(falcon_clients.keys())
-        )
-        if needed_falcon:
-            try:
-                falconpy = importlib.import_module("falconpy", package=None)
-                for name in needed_falcon:
-                    cls_name = falcon_clients[name]
-                    clients[name] = getattr(falconpy, cls_name)(
-                        client_id=client_id,
-                        client_secret=client_secret,
-                        base_url=client_cloud,
-                    )
-            except ModuleNotFoundError:
-                if requested & set(falcon_clients.keys()):
-                    raise
 
         return [
             {
-                "clients": clients,
+                "clients": {
+                    "detects": _make_client("Detects"),
+                    "hosts": _make_client("Hosts"),
+                    "incidents": _make_client("Incidents"),
+                    "alerts": _make_client("Alerts"),
+                    "real_time_response": _make_client("RealTimeResponse"),
+                    "identity_protection": _make_client("IdentityProtection"),
+                },
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context,
             }

@@ -1,5 +1,6 @@
 import importlib
 import importlib.metadata
+import re
 import shutil
 import os
 import subprocess
@@ -472,20 +473,21 @@ def executor(context):
                 continue
 
             logger.info(f"Installing package '{package}' in /tmp/{idx}/")
+            pkg_name = re.split(r"[<>=!~;\[]", package, maxsplit=1)[0].strip()
             try:
                 # prevents the reinstallation of the same package for different tasks
                 if exec_mode == "frozen":
-                    # this might be replacable by simple 'importlib.metadata.version(package)' check
+                    # this might be replacable by simple 'importlib.metadata.version(pkg_name)' check
                     subprocess.check_call(
-                        [python_exec, "-m", "pip", "show", package],
+                        [python_exec, "-m", "pip", "show", pkg_name],
                         env={**os.environ, "PYTHONPATH": f"/tmp/{idx}/"},
                     )
                     # Not sure if this line should be here
                     sys.path.insert(1, f"/tmp/{idx}/")
                 else:
-                    # subprocess.check_call(["pip", "show", package])
+                    # subprocess.check_call(["pip", "show", pkg_name])
                     # Efficient way to check package
-                    importlib.metadata.version(package)
+                    importlib.metadata.version(pkg_name)
                 logger.info(f"Python package '{package}' already installed.")
 
             except (

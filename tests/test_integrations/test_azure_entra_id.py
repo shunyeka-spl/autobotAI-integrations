@@ -123,3 +123,78 @@ class TestClassAzure_entra_id:
         service = integration_service_factory.get_service(None, integration)
         res = service.is_active()
         assert not res["success"]
+
+    def test_azure_graph_api_client_fast_lambda(
+        self, monkeypatch, sample_integration_dict, sample_python_task, test_result_format
+    ):
+        """azure_graph_api client runs without msgraph-sdk or azure-identity."""
+        service_cls = integration_service_factory.get_service_cls("azure_entra_id")
+        details = service_cls.get_details()
+        assert any(c["name"] == "azure_graph_api" for c in details["clients"])
+
+        monkeypatch.setattr(
+            service_cls,
+            "_get_graph_token",
+            lambda self, tid, cid, csec: "mock-graph-token",
+        )
+        integration = sample_integration_dict(
+            "azure_entra_id",
+            {
+                "tenant_id": "test-tenant-id",
+                "client_id": "test-client-id",
+                "client_secret": "test-client-secret",
+            },
+        )
+        code = """
+def executor(context):
+    client = context["clients"]["azure_graph_api"]
+    return {
+        "auth": client.headers.get("Authorization"),
+        "base_url": client.base_url,
+    }
+"""
+        task = sample_python_task(integration, code=code, clients=["azure_graph_api"])
+        result = handle_task(task)
+        test_result_format(result)
+        assert result.resources[0]["auth"] == "Bearer mock-graph-token"
+        assert result.resources[0]["base_url"] == "https://graph.microsoft.com/v1.0"
+
+    def test_frozen_pip_show_strips_version_specifier(
+        self, monkeypatch, sample_integration_dict, sample_python_task
+    ):
+        """Frozen mode strips >= version specifiers before calling pip show."""
+        import subprocess
+        import sys
+
+        seen_cmds = []
+
+        def fake_check_call(cmd, env=None):
+            seen_cmds.append(cmd)
+            return 0
+
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        monkeypatch.setattr(sys, "_MEIPASS", "/tmp/meipass", raising=False)
+        monkeypatch.setattr(subprocess, "check_call", fake_check_call)
+
+        service_cls = integration_service_factory.get_service_cls("azure_entra_id")
+        integration = sample_integration_dict(
+            "azure_entra_id",
+            {
+                "tenant_id": "test-tenant-id",
+                "client_id": "test-client-id",
+                "client_secret": "test-client-secret",
+            },
+        )
+        service = service_cls(None, integration)
+        client_defs = service.find_client_definitions(["msgraph"])
+        assert client_defs[0].pip_package_names == ["msgraph-sdk>=1.52.0"]
+
+        # Call just the package check path via build_python_exec_combinations
+        monkeypatch.setattr(
+            service,
+            "build_python_exec_combinations_hook",
+            lambda task, defs: [{"clients": {}, "params": {}, "context": task.context}],
+        )
+        task = sample_python_task(integration, code="def executor(c): return []", clients=["msgraph"])
+        service.build_python_exec_combinations(task)
+        assert any(cmd[-2:] == ["show", "msgraph-sdk"] for cmd in seen_cmds)

@@ -124,31 +124,77 @@ class AzureEntraIdService(BaseService):
             config=config,
         )
 
+    def _get_graph_token(self, tenant_id: str, client_id: str, client_secret: str) -> str:
+        """Fetch an OAuth2 access token for Microsoft Graph using client credentials."""
+        if not tenant_id or any(c in str(tenant_id) for c in "/?#\\@ \r\n"):
+            raise ValueError("Invalid Azure tenant_id")
+        token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        resp = requests.post(
+            token_url,
+            data={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "scope": "https://graph.microsoft.com/.default",
+                "grant_type": "client_credentials",
+            },
+            timeout=15,
+            allow_redirects=False,
+        )
+        resp.raise_for_status()
+        token = resp.json().get("access_token")
+        if not token:
+            raise ValueError("Azure token response did not contain access_token")
+        return token
+
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        from azure.identity import ClientSecretCredential
-        credential = ClientSecretCredential(
-            tenant_id=payload_task.creds.envs.get("AZURE_TENANT_ID"),
-            client_id=payload_task.creds.envs.get("AZURE_CLIENT_ID"),
-            client_secret=payload_task.creds.envs.get("AZURE_CLIENT_SECRET"),
-        )
-        scopes = ["https://graph.microsoft.com/.default"]
+        envs = payload_task.creds.envs or {}
+        tenant_id = envs.get("AZURE_TENANT_ID")
+        client_id = envs.get("AZURE_CLIENT_ID")
+        client_secret = envs.get("AZURE_CLIENT_SECRET")
+
         clients_classes = {}
-        for client in client_definitions:
-            try:
-                client_module = importlib.import_module(client.module, package=None)
-                if hasattr(client_module, client.class_name):
-                    cls = getattr(client_module, client.class_name)
-                    try:
-                        clients_classes[client.name] = cls(
-                            credentials=credential, scopes=scopes
-                        )
-                    except BaseException:
-                        clients_classes[client.name] = cls(credentials=credential)
-            except BaseException as e:
-                print(e)
-                continue
+        sdk_defs = []
+        for client in client_definitions or []:
+            if client.name == "azure_graph_api":
+                token = self._get_graph_token(tenant_id, client_id, client_secret)
+                session = requests.Session()
+                session.base_url = "https://graph.microsoft.com/v1.0"
+                session.headers.update(
+                    {
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/json",
+                        "Content-Type": "application/json",
+                    }
+                )
+                clients_classes["azure_graph_api"] = session
+            else:
+                sdk_defs.append(client)
+
+        if sdk_defs:
+            from azure.identity import ClientSecretCredential
+
+            credential = ClientSecretCredential(
+                tenant_id=tenant_id,
+                client_id=client_id,
+                client_secret=client_secret,
+            )
+            scopes = ["https://graph.microsoft.com/.default"]
+            for client in sdk_defs:
+                try:
+                    client_module = importlib.import_module(client.module, package=None)
+                    if hasattr(client_module, client.class_name):
+                        cls = getattr(client_module, client.class_name)
+                        try:
+                            clients_classes[client.name] = cls(
+                                credentials=credential, scopes=scopes
+                            )
+                        except BaseException:
+                            clients_classes[client.name] = cls(credentials=credential)
+                except BaseException as e:
+                    print(e)
+                    continue
         return [
             {
                 "clients": clients_classes,

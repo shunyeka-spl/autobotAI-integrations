@@ -93,3 +93,35 @@ class TestClassCymulate:
         except Exception:
             traceback.print_exc()
             raise
+
+    def test_cymulate_api_python_sdk_lambda_safe(
+        self, sample_integration_dict, sample_python_task, test_result_format
+    ):
+        """cymulate_api client works with API token without cymulate_oauth2_client."""
+        service_cls = integration_service_factory.get_service_cls("cymulate")
+        assert any(c["name"] == "cymulate_api" for c in service_cls.get_details()["clients"])
+
+        integration = sample_integration_dict(
+            "cymulate",
+            {
+                "api_token": "cym-test-token",
+                "api_url": US_API,
+            },
+        )
+        service = integration_service_factory.get_service(None, integration)
+        creds = service.generate_python_sdk_creds()
+        assert creds.envs["CYMULATE_API_TOKEN"] == "cym-test-token"
+
+        code = """
+def executor(context):
+    client = context["clients"]["cymulate_api"]
+    return {
+        "x_token": client.headers.get("x-token"),
+        "base_url": client.base_url,
+    }
+"""
+        task = sample_python_task(integration, code=code, clients=["cymulate_api"])
+        result = handle_task(task)
+        test_result_format(result)
+        assert result.resources[0]["x_token"] == "cym-test-token"
+        assert result.resources[0]["base_url"] == US_API

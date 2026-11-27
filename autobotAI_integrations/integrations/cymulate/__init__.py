@@ -426,23 +426,41 @@ class CymulateService(BaseService):
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        sdk = importlib.import_module(
-            client_definitions[0].import_library_names[0], package=None
-        )
-        envs = payload_task.creds.envs
-        client_id = envs.get("CYMULATE_CLIENT_ID")
-        client_secret = envs.get("CYMULATE_CLIENT_SECRET")
-        if not client_id or not client_secret:
-            raise ValueError("The Cymulate Python SDK requires the OAuth client")
+        envs = payload_task.creds.envs or {}
+        requested = {c.name for c in (client_definitions or [])}
+        clients = {}
+
+        if envs.get("CYMULATE_API_TOKEN") or "cymulate_api" in requested:
+            api_token = envs.get("CYMULATE_API_TOKEN")
+            if not api_token:
+                raise ValueError("The Cymulate API client requires an API token")
+            session = requests.Session()
+            session.base_url = envs.get("CYMULATE_API_URL", DEFAULT_API_URL)
+            session.verify = not self.integration.ignore_ssl
+            session.headers.update(api_token_headers(api_token))
+            clients["cymulate_api"] = session
+
+        if not clients or "cymulate" in requested:
+            oauth_defs = [c for c in (client_definitions or []) if c.name == "cymulate"]
+            lib_name = (
+                oauth_defs[0].import_library_names[0]
+                if oauth_defs
+                else "cymulate_oauth2_client"
+            )
+            sdk = importlib.import_module(lib_name, package=None)
+            client_id = envs.get("CYMULATE_CLIENT_ID")
+            client_secret = envs.get("CYMULATE_CLIENT_SECRET")
+            if not client_id or not client_secret:
+                raise ValueError("The Cymulate Python SDK requires the OAuth client")
+            clients["cymulate"] = sdk.CymulateOAuth2Client(
+                client_id=client_id,
+                client_secret=client_secret,
+                base_url=envs["CYMULATE_API_URL"],
+            )
+
         return [
             {
-                "clients": {
-                    "cymulate": sdk.CymulateOAuth2Client(
-                        client_id=client_id,
-                        client_secret=client_secret,
-                        base_url=envs["CYMULATE_API_URL"],
-                    )
-                },
+                "clients": clients,
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context,
             }
@@ -459,7 +477,12 @@ class CymulateService(BaseService):
 
     def generate_python_sdk_creds(self) -> SDKCreds:
         if self.integration.uses_api_token():
-            raise ValueError("The Cymulate Python SDK requires the OAuth client")
+            return SDKCreds(
+                envs={
+                    "CYMULATE_API_URL": self.integration.api_url,
+                    "CYMULATE_API_TOKEN": self.integration.api_token or "",
+                }
+            )
         return SDKCreds(
             envs={
                 "CYMULATE_API_URL": self.integration.api_url,

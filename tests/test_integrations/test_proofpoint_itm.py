@@ -30,3 +30,41 @@ def test_proofpoint_itm_service_metadata():
 
     interfaces = ProofpointITMService.supported_connection_interfaces()
     assert "REST_API" in [i.name for i in interfaces]
+    assert "PYTHON_SDK" in [i.name for i in interfaces]
+
+
+def test_proofpoint_itm_python_sdk_task(
+    sample_integration_dict, sample_python_task, test_result_format
+):
+    from autobotAI_integrations.handlers.task_handler import handle_task
+
+    integration = sample_integration_dict(
+        "proofpoint_itm",
+        {
+            "base_url": "https://persistentindia.explore.proofpoint.com",
+            "client_id": "pp-client-id",
+            "client_secret": "pp-client-secret",
+        },
+    )
+    service = ProofpointITMService(None, integration)
+    creds = service.generate_python_sdk_creds()
+    assert creds.envs["PROOFPOINT_ITM_CLIENT_ID"] == "pp-client-id"
+    assert creds.envs["PROOFPOINT_ITM_CLIENT_SECRET"] == "pp-client-secret"
+
+    details = ProofpointITMService.get_details()
+    assert any(c["name"] == "proofpoint_itm" for c in details["clients"])
+
+    code = """
+def executor(context):
+    client = context["clients"]["proofpoint_itm"]
+    return {
+        "base_url": client.base_url,
+        "client_id": client.client_id,
+        "client_secret": client.client_secret,
+    }
+"""
+    task = sample_python_task(integration, code=code, clients=["proofpoint_itm"])
+    result = handle_task(task)
+    test_result_format(result)
+    assert result.resources[0]["client_id"] == "pp-client-id"
+    assert result.resources[0]["client_secret"] == "pp-client-secret"

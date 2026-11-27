@@ -132,13 +132,9 @@ class CrowdstrikeService(BaseService):
 
     @classmethod
     def get_details(cls):
-        return {
-            "clients": [],
-            "supported_executor": "ecs",
-            "compliance_supported": False,
-            "supported_interfaces": cls.supported_connection_interfaces(),
-            "preview": True
-        }
+        details = super().get_details()
+        details["preview"] = True
+        return details
 
     @staticmethod
     def supported_connection_interfaces():

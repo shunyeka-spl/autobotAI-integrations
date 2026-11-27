@@ -1,0 +1,178 @@
+- name: recorded_future
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: RFClient
+  token_arg: api_token
+  import_library_names:
+    - psengine
+  pip_package_names:
+    - psengine
+
+- name: analyst_notes
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: AnalystNoteMgr
+  import_library_names:
+    - psengine.analyst_notes
+  pip_package_names:
+    - psengine
+
+- name: attack_surface
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: AttackSurfaceMgr
+  token_arg: api_token
+  import_library_names:
+    - psengine.asi
+  pip_package_names:
+    - psengine
+
+- name: classic_alerts
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: ClassicAlertMgr
+  import_library_names:
+    - psengine.classic_alerts
+  pip_package_names:
+    - psengine
+
+- name: collective_insights
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: CollectiveInsights
+  import_library_names:
+    - psengine.collective_insights
+  pip_package_names:
+    - psengine
+
+- name: detection
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: DetectionMgr
+  import_library_names:
+    - psengine.detection
+  pip_package_names:
+    - psengine
+
+- name: enrich
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: LookupMgr
+  import_library_names:
+    - psengine.enrich
+  pip_package_names:
+    - psengine
+
+- name: soar
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: SoarMgr
+  import_library_names:
+    - psengine.enrich
+  pip_package_names:
+    - psengine
+
+- name: entity_lists
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: EntityListMgr
+  import_library_names:
+    - psengine.entity_lists
+  pip_package_names:
+    - psengine
+
+- name: entity_match
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: EntityMatchMgr
+  import_library_names:
+    - psengine.entity_match
+  pip_package_names:
+    - psengine
+
+- name: fusion
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: FusionMgr
+  import_library_names:
+    - psengine.fusion
+  pip_package_names:
+    - psengine
+
+- name: identity
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: IdentityMgr
+  import_library_names:
+    - psengine.identity
+  pip_package_names:
+    - psengine
+
+- name: links
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: LinksMgr
+  import_library_names:
+    - psengine.links
+  pip_package_names:
+    - psengine
+
+- name: malware_intel
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: MalwareIntelMgr
+  import_library_names:
+    - psengine.malware_intel
+  pip_package_names:
+    - psengine
+
+- name: auto_sigma
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: AutoSigmaMgr
+  import_library_names:
+    - psengine.malware_intel
+  pip_package_names:
+    - psengine
+
+- name: auto_yara
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: AutoYaraMgr
+  import_library_names:
+    - psengine.malware_intel
+  pip_package_names:
+    - psengine
+
+- name: playbook_alerts
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: PlaybookAlertMgr
+  import_library_names:
+    - psengine.playbook_alerts
+  pip_package_names:
+    - psengine
+
+- name: risk_history
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: RiskHistoryMgr
+  import_library_names:
+    - psengine.risk_history
+  pip_package_names:
+    - psengine
+
+- name: risk_rules
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: RiskRuleMgr
+  import_library_names:
+    - psengine.risk_rules
+  pip_package_names:
+    - psengine
+
+- name: risklists
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: RisklistMgr
+  import_library_names:
+    - psengine.risklists
+  pip_package_names:
+    - psengine
+
+- name: sandbox
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: SandboxMgr
+  token_arg: api_token
+  import_library_names:
+    - psengine.sandbox
+  pip_package_names:
+    - psengine
+
+- name: threat_maps
+  doc_url: https://recordedfuture-professionalservices.github.io/psengine/latest/
+  class_name: ThreatMapMgr
+  import_library_names:
+    - psengine.threat_maps
+  pip_package_names:
+    - psengine

@@ -54,7 +54,43 @@ class TestClassRecordedFuture:
 
     def test_supported_interfaces(self):
         interfaces = RecordedFutureService.supported_connection_interfaces()
-        assert interfaces == [ConnectionInterfaces.REST_API]
+        assert interfaces == [
+            ConnectionInterfaces.REST_API,
+            ConnectionInterfaces.PYTHON_SDK,
+        ]
+
+    def test_python_sdk_creds(self, sample_integration_dict):
+        integration = sample_integration_dict(
+            "recorded_future", {"api_token": "rf-test-token"}
+        )
+        service = integration_service_factory.get_service(None, integration)
+        creds = service.generate_python_sdk_creds()
+        assert creds.envs["RECORDED_FUTURE_API_TOKEN"] == "rf-test-token"
+
+        details = RecordedFutureService.get_details()
+        assert any(c["name"] == "recorded_future" for c in details["clients"])
+
+    def test_python_sdk_code_example(
+        self, get_keys, sample_integration_dict, sample_python_task, test_result_format
+    ):
+        if "RECORDED_FUTURE_API_TOKEN" not in get_keys:
+            return
+        from autobotAI_integrations.integrations import recorded_future
+
+        integration = sample_integration_dict(
+            "recorded_future",
+            {"api_token": get_keys["RECORDED_FUTURE_API_TOKEN"]},
+        )
+        code = (
+            Path(recorded_future.__file__).parent / "code_example.py"
+        ).read_text(encoding="utf-8")
+        task = sample_python_task(
+            integration, code=code, clients=["recorded_future"]
+        )
+        result = handle_task(task)
+        test_result_format(result)
+        assert result.resources[0]["status"] == "success"
+        assert result.resources[0]["data"]
 
     def test_rest_api_creds(self, sample_integration_dict):
         integration = sample_integration_dict(

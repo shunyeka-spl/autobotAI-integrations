@@ -1,4 +1,6 @@
+import importlib
 from typing import List, Optional, Type, Union
+
 from pydantic import Field
 import requests
 
@@ -114,30 +116,23 @@ class RecordedFutureService(BaseService):
     def generate_python_sdk_creds(self) -> SDKCreds:
         return SDKCreds(
             envs={
-                "RECORDED_FUTURE_API_TOKEN": self.integration.api_token or "",
-                "RECORDED_FUTURE_BASE_URL": RECORDED_FUTURE_BASE_URL,
-            }
+                "RECORDED_FUTURE_API_TOKEN": self.integration.api_token
+                }
         )
 
     def build_python_exec_combinations_hook(
         self, payload_task: PayloadTask, client_definitions: List[SDKClient]
     ) -> list:
-        token = payload_task.creds.envs.get("RECORDED_FUTURE_API_TOKEN", "")
-        base_url = payload_task.creds.envs.get(
-            "RECORDED_FUTURE_BASE_URL", RECORDED_FUTURE_BASE_URL
-        )
-        session = requests.Session()
-        session.headers.update(
-            {
-                "X-RFToken": token,
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-            }
-        )
-        session.base_url = base_url
+        token = (payload_task.creds.envs or {}).get("RECORDED_FUTURE_API_TOKEN")
+        clients = {}
+        for client in client_definitions or []:
+            module = importlib.import_module(client.import_library_names[0], package=None)
+            extra = client.model_extra or {}
+            token_arg = extra.get("token_arg", "rf_token")
+            clients[client.name] = getattr(module, extra["class_name"])(**{token_arg: token})
         return [
             {
-                "clients": {"recorded_future": session},
+                "clients": clients,
                 "params": self.prepare_params(payload_task.params),
                 "context": payload_task.context,
             }

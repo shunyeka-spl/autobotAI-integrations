@@ -59,33 +59,38 @@ class TestClassRecordedFuture:
             ConnectionInterfaces.PYTHON_SDK,
         ]
 
-    def test_python_sdk_creds_and_task(
-        self, sample_integration_dict, sample_python_task, test_result_format
-    ):
+    def test_python_sdk_creds(self, sample_integration_dict):
         integration = sample_integration_dict(
             "recorded_future", {"api_token": "rf-test-token"}
         )
         service = integration_service_factory.get_service(None, integration)
         creds = service.generate_python_sdk_creds()
         assert creds.envs["RECORDED_FUTURE_API_TOKEN"] == "rf-test-token"
-        assert creds.envs["RECORDED_FUTURE_BASE_URL"] == RECORDED_FUTURE_BASE_URL
 
         details = RecordedFutureService.get_details()
         assert any(c["name"] == "recorded_future" for c in details["clients"])
 
-        code = """
-def executor(context):
-    client = context["clients"]["recorded_future"]
-    return {
-        "has_token_header": client.headers.get("X-RFToken") == "rf-test-token",
-        "base_url": client.base_url,
-    }
-"""
-        task = sample_python_task(integration, code=code, clients=["recorded_future"])
+    def test_python_sdk_code_example(
+        self, get_keys, sample_integration_dict, sample_python_task, test_result_format
+    ):
+        if "RECORDED_FUTURE_API_TOKEN" not in get_keys:
+            return
+        from autobotAI_integrations.integrations import recorded_future
+
+        integration = sample_integration_dict(
+            "recorded_future",
+            {"api_token": get_keys["RECORDED_FUTURE_API_TOKEN"]},
+        )
+        code = (
+            Path(recorded_future.__file__).parent / "code_example.py"
+        ).read_text(encoding="utf-8")
+        task = sample_python_task(
+            integration, code=code, clients=["recorded_future"]
+        )
         result = handle_task(task)
         test_result_format(result)
-        assert result.resources[0]["has_token_header"] is True
-        assert result.resources[0]["base_url"] == RECORDED_FUTURE_BASE_URL
+        assert result.resources[0]["status"] == "success"
+        assert result.resources[0]["data"]
 
     def test_rest_api_creds(self, sample_integration_dict):
         integration = sample_integration_dict(
